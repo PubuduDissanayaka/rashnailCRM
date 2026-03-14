@@ -1,0 +1,7 @@
+<script>
+    window.currencySymbol = "{{ $currencySymbol ?? '$' }}";
+</script>
+<!-- App js -->
+@vite(['resources/js/app.js'])
+
+@yield('scripts')

@@ -1,0 +1,616 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="csrf-token" content="{{ csrf_token() }}">
+    <title>Receipt #{{ $sale->sale_number }}</title>
+    <style>
+        @media print {
+            body { margin: 0; }
+            .no-print { display: none; }
+        }
+
+        body {
+            font-family: 'Courier New', monospace;
+            max-width: 300px;
+            margin: 20px auto;
+            padding: 10px;
+        }
+
+        .receipt {
+            border: 1px solid #ddd;
+            padding: 15px;
+        }
+
+        .header {
+            text-align: center;
+            border-bottom: 2px dashed #000;
+            padding-bottom: 10px;
+            margin-bottom: 10px;
+        }
+
+        .header h1 {
+            margin: 0;
+            font-size: 18px;
+        }
+
+        .header p {
+            margin: 2px 0;
+            font-size: 11px;
+        }
+
+        .sale-info {
+            margin: 10px 0;
+            font-size: 12px;
+        }
+
+        .items {
+            margin: 10px 0;
+            border-top: 1px dashed #000;
+            border-bottom: 1px dashed #000;
+            padding: 10px 0;
+        }
+
+        .item {
+            display: flex;
+            justify-content: space-between;
+            margin: 5px 0;
+            font-size: 12px;
+        }
+
+        .item-details {
+            display: flex;
+            justify-content: space-between;
+            font-size: 10px;
+            color: #666;
+            margin-left: 10px;
+        }
+
+        .totals {
+            margin: 10px 0;
+            font-size: 12px;
+        }
+
+        .total-row {
+            display: flex;
+            justify-content: space-between;
+            margin: 3px 0;
+        }
+
+        .total-row.grand-total {
+            font-weight: bold;
+            font-size: 14px;
+            border-top: 2px solid #000;
+            padding-top: 5px;
+            margin-top: 5px;
+        }
+
+        .payment-info {
+            margin: 10px 0;
+            font-size: 12px;
+            border-top: 1px dashed #000;
+            padding-top: 10px;
+        }
+
+        .footer {
+            text-align: center;
+            margin-top: 15px;
+            border-top: 2px dashed #000;
+            padding-top: 10px;
+            font-size: 11px;
+        }
+
+        .actions {
+            text-align: center;
+            margin-top: 20px;
+        }
+
+        .btn {
+            padding: 10px 20px;
+            margin: 5px;
+            cursor: pointer;
+            border: 1px solid #007bff;
+            background: #007bff;
+            color: white;
+            border-radius: 4px;
+            text-decoration: none;
+            display: inline-block;
+        }
+
+        .btn:hover {
+            background: #0056b3;
+        }
+
+        .btn-secondary {
+            background: #6c757d;
+            border-color: #6c757d;
+        }
+
+        .btn-secondary:hover {
+            background: #545b62;
+        }
+
+        /* Enhanced Enterprise Receipt Styling */
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            max-width: 320px;
+            margin: 20px auto;
+            padding: 15px;
+            background: #f8f9fa;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        }
+
+        /* Receipt Card Styling */
+        .receipt-card {
+            background: white;
+            border-radius: 10px;
+            padding: 20px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+            border: 1px solid #e0e0e0;
+        }
+
+        .enterprise-receipt-header {
+            text-align: center;
+            border-bottom: 2px solid #dee2e6;
+            padding-bottom: 15px;
+            margin-bottom: 15px;
+        }
+
+        .enterprise-receipt-header h1 {
+            margin: 0;
+            font-size: 1.4rem;
+            font-weight: 600;
+            color: #2c3e50;
+        }
+
+        .enterprise-receipt-header p {
+            margin: 3px 0 0;
+            font-size: 0.85rem;
+            color: #6c757d;
+        }
+
+        .receipt-section-title {
+            font-weight: 600;
+            color: #495057;
+            border-bottom: 1px solid #e9ecef;
+            padding-bottom: 5px;
+            margin: 15px 0 10px;
+        }
+
+        .item-detail-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 5px 0;
+            border-bottom: 1px dotted #e9ecef;
+        }
+
+        .item-detail-row:last-child {
+            border-bottom: none;
+        }
+
+        .grand-total-row {
+            font-weight: bold;
+            font-size: 1.1rem;
+            border-top: 2px solid #dee2e6;
+            margin-top: 5px;
+            padding-top: 10px;
+            color: #2c3e50;
+        }
+
+        .footer-text {
+            text-align: center;
+            margin-top: 20px;
+            padding-top: 15px;
+            border-top: 2px dashed #dee2e6;
+            font-size: 0.9rem;
+            color: #6c757d;
+        }
+
+        /* Enhanced Button Styling */
+        .enterprise-actions {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 8px;
+            margin-top: 20px;
+            border-top: 1px solid #e9ecef;
+        }
+
+        .btn-enterprise {
+            padding: 10px 15px;
+            border-radius: 6px;
+            font-weight: 500;
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            border: 1px solid transparent;
+        }
+
+        .btn-enterprise:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+        }
+
+        .btn-primary.btn-enterprise {
+            background: linear-gradient(135deg, #007bff, #0062cc);
+            border-color: #007bff;
+        }
+
+        .btn-primary.btn-enterprise:hover {
+            background: linear-gradient(135deg, #0069d9, #005cbf);
+            border-color: #005cbf;
+        }
+
+        .btn-success.btn-enterprise {
+            background: linear-gradient(135deg, #28a745, #218838);
+            border-color: #28a745;
+        }
+
+        .btn-success.btn-enterprise:hover {
+            background: linear-gradient(135deg, #218838, #1e7e34);
+            border-color: #1e7e34;
+        }
+
+        .btn-light.btn-enterprise {
+            background: linear-gradient(135deg, #f8f9fa, #e9ecef);
+            color: #495057;
+            border-color: #ced4da;
+        }
+
+        .btn-light.btn-enterprise:hover {
+            background: linear-gradient(135deg, #e9ecef, #dee2e6);
+            border-color: #adb5bd;
+        }
+
+        /* Responsive Grid for Buttons */
+        .button-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 12px;
+        }
+
+        @media (min-width: 768px) {
+            .button-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+
+        @media (min-width: 992px) {
+            .button-grid {
+                grid-template-columns: repeat(4, 1fr);
+            }
+        }
+
+        /* Loading and Success States */
+        .btn-loading {
+            pointer-events: none;
+            opacity: 0.7;
+        }
+
+        .btn-loading .btn-text {
+            margin-right: 8px;
+        }
+
+        .spinner-border-sm {
+            width: 1rem;
+            height: 1rem;
+        }
+
+        /* Print Styles - Compact for Paper Conservation */
+        @media print {
+            body {
+                margin: 0;
+                padding: 8px;
+                box-shadow: none;
+                background: white;
+                max-width: none;
+                font-size: 0.8rem;
+            }
+
+            .receipt-card {
+                margin: 0;
+                padding: 10px;
+                box-shadow: none;
+                border: none;
+            }
+
+            .enterprise-receipt-header {
+                text-align: center;
+                padding: 5px 0;
+                margin-bottom: 8px;
+            }
+
+            .enterprise-receipt-header h1 {
+                font-size: 1.1rem;
+                margin: 0;
+            }
+
+            .enterprise-receipt-header p {
+                font-size: 0.7rem;
+                margin: 1px 0;
+            }
+
+            .receipt-section-title {
+                font-size: 0.8rem;
+                margin: 10px 0 5px;
+                padding-bottom: 2px;
+            }
+
+            .item-detail-row {
+                display: flex;
+                justify-content: space-between;
+                padding: 2px 0;
+                font-size: 0.75rem;
+            }
+
+            .item {
+                margin: 3px 0;
+                font-size: 0.75rem;
+            }
+
+            .item-details {
+                display: flex;
+                justify-content: space-between;
+                font-size: 0.7rem;
+                margin-left: 5px;
+            }
+
+            .total-row {
+                display: flex;
+                justify-content: space-between;
+                margin: 2px 0;
+                font-size: 0.75rem;
+            }
+
+            .total-row.grand-total {
+                font-weight: bold;
+                font-size: 0.85rem;
+            }
+
+            .grand-total-row {
+                font-size: 0.85rem;
+            }
+
+            .footer-text {
+                font-size: 0.65rem;
+                margin-top: 10px;
+                padding-top: 8px;
+            }
+
+            .enterprise-actions {
+                display: none;
+            }
+
+            .no-print {
+                display: none;
+            }
+
+            /* Collapse borders for print */
+            .enterprise-receipt-header,
+            .item-detail-row {
+                border: none !important;
+            }
+
+            /* Compact list of items */
+            .items {
+                margin: 8px 0;
+                padding: 8px 0;
+            }
+
+            /* Reduce spacing for print */
+            .sale-info,
+            .totals,
+            .payment-info {
+                margin: 5px 0;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="receipt-card">
+        <!-- Header -->
+        <div class="enterprise-receipt-header">
+            <h1>{{ $businessName }}</h1>
+            <div class="business-details">
+                @if($businessAddress)
+                    <p class="m-1">{{ $businessAddress }}</p>
+                @endif
+                <p class="m-1">
+                    @if($businessPhone) 📞 {{ $businessPhone }} @endif
+                    @if($businessPhone && $businessEmail) | @endif
+                    @if($businessEmail) ✉️ {{ $businessEmail }} @endif
+                </p>
+            </div>
+        </div>
+
+        <!-- Sale Info Section -->
+        <div class="sale-info">
+            <div class="d-flex justify-content-between">
+                <span>Receipt: {{ $sale->sale_number }}</span>
+                <span>{{ $sale->sale_date->format('m/d/Y') }}</span>
+            </div>
+            <div class="d-flex justify-content-between">
+                <span>Cashier: {{ $sale->user->name }}</span>
+                <span>{{ $sale->sale_date->format('h:i A') }}</span>
+            </div>
+            @if($sale->customer)
+            <div class="d-flex justify-content-between">
+                <span>Customer: {{ $sale->customer->first_name }} {{ $sale->customer->last_name }}</span>
+            </div>
+            @endif
+        </div>
+
+        <!-- Items Section -->
+        <div class="items">
+            <div class="fw-semibold mb-1">Items:</div>
+            @foreach($sale->items as $item)
+            <div class="item-detail-row">
+                <div class="flex-grow-1">
+                    <span class="fw-semibold">{{ $item->quantity }}x {{ $item->item_name }}</span>
+                    @if($item->discount_amount > 0)
+                        <small class="text-danger d-block">Disc: -{{ $currencySymbol }}{{ number_format($item->discount_amount, 2) }}</small>
+                    @endif
+                </div>
+                <div class="text-end">
+                    <div>{{ $currencySymbol }}{{ number_format($item->line_total, 2) }}</div>
+                </div>
+            </div>
+            @endforeach
+        </div>
+
+        <!-- Totals Section -->
+        <div class="totals mt-2">
+            <div class="item-detail-row">
+                <span>Subtotal:</span>
+                <span>{{ $currencySymbol }}{{ number_format($sale->subtotal, 2) }}</span>
+            </div>
+            @if($sale->discount_amount > 0)
+            <div class="item-detail-row">
+                <span>Discount:</span>
+                <span class="text-success">-{{ $currencySymbol }}{{ number_format($sale->discount_amount, 2) }}</span>
+            </div>
+            @endif
+            @if($sale->tax_amount > 0)
+            <div class="item-detail-row">
+                <span>Tax:</span>
+                <span>{{ $currencySymbol }}{{ number_format($sale->tax_amount, 2) }}</span>
+            </div>
+            @endif
+            <div class="item-detail-row grand-total-row mt-1 pt-1 border-top">
+                <strong>TOTAL: </strong>
+                <strong>{{ $currencySymbol }}{{ number_format($sale->total_amount, 2) }}</strong>
+            </div>
+        </div>
+
+        <!-- Payment Information -->
+        <div class="payment-info mt-2">
+            @foreach($sale->payments as $payment)
+            <div class="item-detail-row">
+                <span>{{ ucfirst(str_replace('_', ' ', $payment->payment_method)) }}:</span>
+                <span>{{ $currencySymbol }}{{ number_format($payment->amount, 2) }}</span>
+            </div>
+            @endforeach
+            @if($sale->change_amount > 0)
+            <div class="item-detail-row">
+                <strong>Change:</strong>
+                <strong class="text-success">{{ $currencySymbol }}{{ number_format($sale->change_amount, 2) }}</strong>
+            </div>
+            @endif
+        </div>
+
+        <!-- Footer -->
+        <div class="footer footer-text mt-3 pt-2 border-top">
+            <p class="mb-1 text-center">Thank you for your business! 🙏</p>
+            <p class="mb-0 text-center">Visit us again soon!</p>
+            @if($sale->notes)
+            <p class="mt-2 fst-italic text-center">{{ $sale->notes }}</p>
+            @endif
+        </div>
+    </div>
+
+    <!-- Action Buttons (hidden when printing) -->
+    <div class="enterprise-actions no-print">
+        <div class="container-fluid">
+            <div class="button-grid">
+                <button onclick="window.print()" class="btn btn-primary btn-enterprise">
+                    <i class="ti ti-printer"></i> Print Receipt
+                </button>
+                <button onclick="printThermal()" class="btn btn-success btn-enterprise">
+                    <i class="ti ti-printer"></i> Thermal Print
+                </button>
+                @if($sale->customer && $sale->customer->phone)
+                <button onclick="sendViaWhatsApp()" class="btn btn-success btn-enterprise">
+                    <i class="ti ti-brand-whatsapp"></i> WhatsApp Receipt
+                </button>
+                @endif
+                <a href="{{ route('pos.index') }}" class="btn btn-light btn-enterprise">
+                    <i class="ti ti-arrow-left"></i> Back to POS
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function printThermal() {
+            const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+
+            fetch('{{ route('pos.receipt.print', $sale) }}', {
+                method: 'GET',
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest',
+                    'X-CSRF-TOKEN': csrfToken
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    alert('Receipt sent to thermal printer!');
+                } else {
+                    alert('Failed to print: ' + data.message);
+                }
+            })
+            .catch(error => {
+                alert('Error: ' + error.message);
+            });
+        }
+
+        function sendViaWhatsApp() {
+            // Use pre-formatted phone number from controller
+            const phone = "{{ $whatsappPhone ?? '' }}";
+
+            // Validate phone number
+            if (!phone) {
+                alert('Customer phone number not available');
+                return;
+            }
+
+            if (phone.length < 10 || phone.length > 15) {
+                alert('Phone number appears to be invalid. Please check customer details.');
+                return;
+            }
+
+            // Build receipt message
+            const message = buildWhatsAppMessage();
+
+            // Encode message for URL
+            const encodedMessage = encodeURIComponent(message);
+
+            // Build WhatsApp Web URL
+            const whatsappUrl = `https://web.whatsapp.com/send?phone=${phone}&text=${encodedMessage}`;
+
+            // Open in new window
+            window.open(whatsappUrl, '_blank');
+        }
+
+        function buildWhatsAppMessage() {
+            const businessName = "{{ $businessName }}";
+            const saleNumber = "{{ $sale->sale_number }}";
+            const customerName = "{{ $sale->customer?->full_name ?? 'Customer' }}";
+            const total = "{{ $currencySymbol }}{{ number_format($sale->total_amount, 2) }}";
+            const receiptUrl = "{{ url('/pos/receipt/' . $sale->id) }}";
+
+            // Build items summary
+            let itemsList = "";
+            @foreach($sale->items as $item)
+            itemsList += "• {{ $item->quantity }}x {{ $item->item_name }} - {{ $currencySymbol }}{{ number_format($item->line_total, 2) }}\n";
+            @endforeach
+
+            // Format message
+            const message = `🧾 *Receipt from ${businessName}*\n\n` +
+                           `Dear ${customerName},\n\n` +
+                           `Thank you for your purchase!\n\n` +
+                           `*Receipt #:* ${saleNumber}\n` +
+                           `*Date:* {{ $sale->sale_date->format('M d, Y g:i A') }}\n\n` +
+                           `*Items:*\n${itemsList}\n` +
+                           `*Total Amount:* ${total}\n\n` +
+                           `View detailed receipt: ${receiptUrl}\n\n` +
+                           `Thank you for your business! 🙏`;
+
+            return message;
+        }
+    </script>
+</body>
+</html>

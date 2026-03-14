@@ -1,0 +1,24 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(test:*)",
+      "Bash(composer install:*)",
+      "Bash(npm install:*)",
+      "Bash(composer dev:*)",
+      "Bash(php artisan:*)",
+      "Bash(php:*)",
+      "Bash(findstr:*)",
+      "Bash(composer show:*)",
+      "Bash(dir \"G:\\PROJECTS\\RNS-FIXED-FINAL\\database\\migrations\")",
+      "Bash(npm run build:*)",
+      "Bash(del:*)",
+      "Bash(find:*)",
+      "Bash(xargs basename:*)",
+      "Bash(composer require:*)",
+      "Bash(dir:*)",
+      "Bash(grep -rn '\\\\$\\\\s*[0-9]\\\\|Rs\\\\.\\\\|LKR\\\\|currency_symbol\\\\|currencySymbol\\\\|\\\\$[\"\"\\\\x27]' /g/PROJECTS/RNS-FIXED-FINAL/resources/views/reports/coupons/)",
+      "Bash(grep -n \"card-side-img\\\\|auth\\\\.jpg\" /g/PROJECTS/RNS-FIXED-FINAL/resources/views/auth/*.blade.php)",
+      "Bash(grep -rn \"logo-black\\\\.png\\\\|logo\\\\.png\\\\|logo-sm\\\\.png\\\\|$logoPath\" /g/PROJECTS/RNS-FIXED-FINAL/resources/views/auth/)"
+    ]
+  }
+}
