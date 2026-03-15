@@ -1746,5 +1746,17 @@
     "names": [
       "pos-custom.css"
     ]
+  },
+  "node_modules/choices.js/public/assets/scripts/choices.min.js": {
+    "file": "assets/choices.min-88MnUYK2.js",
+    "name": "choices.min",
+    "src": "node_modules/choices.js/public/assets/scripts/choices.min.js?commonjs-entry",
+    "isEntry": true
+  },
+  "node_modules/sweetalert2/dist/sweetalert2.min.js": {
+    "file": "assets/sweetalert2.min-Dp8cOSTp.js",
+    "name": "sweetalert2.min",
+    "src": "node_modules/sweetalert2/dist/sweetalert2.min.js?commonjs-entry",
+    "isEntry": true
   }
 }
