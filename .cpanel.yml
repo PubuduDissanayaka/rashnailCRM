@@ -1,0 +1,12 @@
+---
+deployment:
+  tasks:
+    - export DEPLOYPATH=/home/username/public_html
+    - /bin/mkdir -p $DEPLOYPATH
+    - /bin/cp -r . $DEPLOYPATH
+    - rm -f $DEPLOYPATH/public/hot
+    - /usr/local/cpanel/3rdparty/bin/php $DEPLOYPATH/artisan storage:link --force
+    - /usr/local/cpanel/3rdparty/bin/php $DEPLOYPATH/artisan migrate --force
+    - /usr/local/cpanel/3rdparty/bin/php $DEPLOYPATH/artisan config:cache
+    - /usr/local/cpanel/3rdparty/bin/php $DEPLOYPATH/artisan route:cache
+    - /usr/local/cpanel/3rdparty/bin/php $DEPLOYPATH/artisan view:cache

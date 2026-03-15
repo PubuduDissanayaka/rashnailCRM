@@ -28,6 +28,7 @@ use App\Http\Controllers\Expense\{ExpenseController, ExpenseCategoryController};
 use App\Http\Controllers\CouponController;
 use App\Http\Controllers\CouponReportController;
 use App\Http\Controllers\ReportsController;
+use App\Http\Controllers\SearchController;
 
 // Authentication Routes
 Route::get('/login', [AuthController::class, 'showLoginForm'])->name('login');
@@ -493,10 +494,21 @@ Route::middleware(['auth'])->group(function () {
         Route::get('/reports/{type}/export',     [ReportsController::class, 'export'])      ->name('reports.export');
     });
 
-    // Catch-all routes (must be last)
+    // Search route
+    Route::get('/search', [SearchController::class, 'index'])->name('search');
+
+    // Additional routes
+    Route::delete('alerts/{alert}', [AlertController::class, 'destroy'])->name('alerts.destroy');
+    Route::get('/expenses/attachments/{attachment}/download', [ExpenseController::class, 'downloadAttachment'])->name('expenses.attachments.download');
+    Route::post('/expenses/{expense}/comments', [ExpenseController::class, 'storeComment'])->name('expenses.comments.store');
+
+    // Catch-all routes (must be last) — exclude storage/ and build/ paths
     Route::group(['prefix' => '/'], function () {
-        Route::get('{first}/{second}/{third}', [RoutingController::class, 'thirdLevel'])->name('third');
-        Route::get('{first}/{second}', [RoutingController::class, 'secondLevel'])->name('second');
-        Route::get('{any}', [RoutingController::class, 'root'])->name('any');
+        Route::get('{first}/{second}/{third}', [RoutingController::class, 'thirdLevel'])
+            ->where('first', '(?!storage|build).*')->name('third');
+        Route::get('{first}/{second}', [RoutingController::class, 'secondLevel'])
+            ->where('first', '(?!storage|build).*')->name('second');
+        Route::get('{any}', [RoutingController::class, 'root'])
+            ->where('any', '(?!storage|build).*')->name('any');
     });
 });

@@ -652,7 +652,6 @@ function updateFormFields(selectionData) {
         }
     }
 }
-}
 
 /**
 * Load saved selection from localStorage
