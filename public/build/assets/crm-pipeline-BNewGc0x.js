@@ -1,0 +1,1 @@
+import{S as t}from"./sortable.esm-DdTU3J9A.js";document.addEventListener("DOMContentLoaded",()=>{document.querySelectorAll('[data-plugins="sortable"]').forEach(e=>{new t(e,{animation:150,group:"shared",ghostClass:"sortable-item-ghost",forceFallback:!0,emptyInsertThreshold:100,chosenClass:"sortable-item-active"})})});
