@@ -30,6 +30,7 @@ export default defineConfig({
                 "node_modules/sweetalert2/dist/sweetalert2.min.js",
                 "node_modules/@sjmc11/tourguidejs/dist/css/tour.min.css",
                 "node_modules/jstree/dist/themes/default/style.min.css",
+                "node_modules/datatables.net-bs5/css/dataTables.bootstrap5.min.css",
                 "node_modules/datatables.net-responsive-bs5/css/responsive.bootstrap5.min.css",
                 "node_modules/datatables.net-select-bs5/css/select.bootstrap5.min.css",
                 "node_modules/datatables.net-fixedcolumns-bs5/css/fixedColumns.bootstrap5.min.css",
