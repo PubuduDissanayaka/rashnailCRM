@@ -337,6 +337,8 @@ class AppointmentCalendar {
                 noResultsText: 'No customers found',
                 noChoicesText: 'No customers to choose from'
             });
+            // Expose instance so the quick-add inline script can reach it
+            customerSelect._choices = this.choices.customer;
         }
 
         if (serviceSelect) {

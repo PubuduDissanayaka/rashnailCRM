@@ -48,6 +48,33 @@ class CustomerController extends Controller
     /**
      * Store a newly created customer.
      */
+    /**
+     * Quick-create a customer from the appointment modal (returns JSON).
+     */
+    public function quickStore(Request $request)
+    {
+        $this->authorize('create customers');
+
+        $data = $request->validate([
+            'first_name' => 'required|string|max:255',
+            'last_name'  => 'required|string|max:255',
+            'phone'      => 'required|string|max:30',
+            'email'      => 'nullable|email|unique:customers',
+        ]);
+
+        $data['phone'] = $this->formatPhoneNumberForStorage($data['phone']);
+
+        $customer = Customer::create($data);
+
+        return response()->json([
+            'success' => true,
+            'customer' => [
+                'id'        => $customer->id,
+                'full_name' => $customer->full_name,
+            ],
+        ]);
+    }
+
     public function store(Request $request)
     {
         $this->authorize('create customers');

@@ -151,7 +151,14 @@
                             </div>
                             <div class="col-12">
                                 <div class="mb-2">
-                                    <label class="control-label form-label" for="event-customer">Customer</label>
+                                    <div class="d-flex justify-content-between align-items-center mb-1">
+                                        <label class="control-label form-label mb-0" for="event-customer">Customer</label>
+                                        @can('create customers')
+                                        <button type="button" class="btn btn-sm btn-soft-primary py-0 px-2" id="toggle-quick-customer" title="Add new customer">
+                                            <i class="ti ti-user-plus fs-sm me-1"></i> New
+                                        </button>
+                                        @endcan
+                                    </div>
                                     <select class="form-select" id="event-customer" name="customer_id" required="">
                                         <option value="">Select a customer</option>
                                         @foreach($customers ?? [] as $customer)
@@ -160,6 +167,37 @@
                                     </select>
                                     <div class="invalid-feedback">Please select a valid customer</div>
                                 </div>
+
+                                {{-- Quick-add customer inline panel --}}
+                                @can('create customers')
+                                <div id="quick-customer-panel" class="card border border-primary-subtle bg-primary-subtle bg-opacity-10 p-3 mb-2 rounded-3" style="display:none!important;">
+                                    <div class="d-flex justify-content-between align-items-center mb-2">
+                                        <span class="fw-semibold fs-sm text-primary"><i class="ti ti-user-plus me-1"></i>Quick Add Customer</span>
+                                        <button type="button" class="btn-close btn-close-sm" id="close-quick-customer" aria-label="Close"></button>
+                                    </div>
+                                    <div class="row g-2">
+                                        <div class="col-6">
+                                            <input type="text" class="form-control form-control-sm" id="qc-first-name" placeholder="First Name *" maxlength="100">
+                                        </div>
+                                        <div class="col-6">
+                                            <input type="text" class="form-control form-control-sm" id="qc-last-name" placeholder="Last Name *" maxlength="100">
+                                        </div>
+                                        <div class="col-6">
+                                            <input type="tel" class="form-control form-control-sm" id="qc-phone" placeholder="Phone *" maxlength="30">
+                                        </div>
+                                        <div class="col-6">
+                                            <input type="email" class="form-control form-control-sm" id="qc-email" placeholder="Email (optional)">
+                                        </div>
+                                    </div>
+                                    <div id="qc-error" class="text-danger fs-xs mt-1" style="display:none;"></div>
+                                    <div class="mt-2 d-flex gap-2">
+                                        <button type="button" class="btn btn-primary btn-sm" id="qc-save-btn">
+                                            <i class="ti ti-check me-1"></i>Save & Select
+                                        </button>
+                                        <button type="button" class="btn btn-light btn-sm" id="close-quick-customer-2">Cancel</button>
+                                    </div>
+                                </div>
+                                @endcan
                             </div>
                             <div class="col-12">
                                 <div class="mb-2">
@@ -232,5 +270,101 @@
             ];
         @endphp
         window.businessHours = @json($businessHours);
+        window.quickCustomerUrl = '{{ route('customers.quick-store') }}';
+        window.csrfToken = '{{ csrf_token() }}';
+    </script>
+    <script>
+    (function () {
+        const panel   = document.getElementById('quick-customer-panel');
+        const toggle  = document.getElementById('toggle-quick-customer');
+        const closeBtn  = document.getElementById('close-quick-customer');
+        const closeBtn2 = document.getElementById('close-quick-customer-2');
+        const saveBtn = document.getElementById('qc-save-btn');
+        const errEl   = document.getElementById('qc-error');
+
+        if (!panel || !toggle) return;
+
+        function showPanel() {
+            panel.style.removeProperty('display');
+            document.getElementById('qc-first-name').focus();
+        }
+        function hidePanel() {
+            panel.style.display = 'none';
+            ['qc-first-name','qc-last-name','qc-phone','qc-email'].forEach(id => {
+                const el = document.getElementById(id);
+                if (el) el.value = '';
+            });
+            errEl.style.display = 'none';
+        }
+
+        toggle.addEventListener('click', showPanel);
+        closeBtn?.addEventListener('click', hidePanel);
+        closeBtn2?.addEventListener('click', hidePanel);
+
+        saveBtn?.addEventListener('click', async function () {
+            const firstName = document.getElementById('qc-first-name').value.trim();
+            const lastName  = document.getElementById('qc-last-name').value.trim();
+            const phone     = document.getElementById('qc-phone').value.trim();
+            const email     = document.getElementById('qc-email').value.trim();
+
+            errEl.style.display = 'none';
+
+            if (!firstName || !lastName || !phone) {
+                errEl.textContent = 'First name, last name and phone are required.';
+                errEl.style.display = 'block';
+                return;
+            }
+
+            saveBtn.disabled = true;
+            saveBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span>Saving…';
+
+            try {
+                const resp = await fetch(window.quickCustomerUrl, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': window.csrfToken,
+                        'Accept': 'application/json',
+                    },
+                    body: JSON.stringify({ first_name: firstName, last_name: lastName, phone, email: email || undefined }),
+                });
+
+                const data = await resp.json();
+
+                if (!resp.ok || !data.success) {
+                    const msgs = data.errors ? Object.values(data.errors).flat().join(' ') : (data.message || 'Failed to save customer.');
+                    errEl.textContent = msgs;
+                    errEl.style.display = 'block';
+                    return;
+                }
+
+                // Add the new customer to the Choices.js dropdown and select it
+                const customerSelect = document.getElementById('event-customer');
+                const choicesInstance = customerSelect?._choices;
+
+                if (choicesInstance) {
+                    choicesInstance.setChoices([{ value: String(data.customer.id), label: data.customer.full_name, selected: true }], 'value', 'label', false);
+                } else {
+                    const opt = new Option(data.customer.full_name, data.customer.id, true, true);
+                    customerSelect.add(opt);
+                    customerSelect.value = data.customer.id;
+                    customerSelect.dispatchEvent(new Event('change'));
+                }
+
+                hidePanel();
+
+                // Show brief success toast
+                if (window.Swal) {
+                    Swal.fire({ icon: 'success', title: 'Customer added!', text: data.customer.full_name + ' has been created and selected.', timer: 2000, showConfirmButton: false, toast: true, position: 'top-end' });
+                }
+            } catch (e) {
+                errEl.textContent = 'Network error. Please try again.';
+                errEl.style.display = 'block';
+            } finally {
+                saveBtn.disabled = false;
+                saveBtn.innerHTML = '<i class="ti ti-check me-1"></i>Save & Select';
+            }
+        });
+    })();
     </script>
 @endsection
