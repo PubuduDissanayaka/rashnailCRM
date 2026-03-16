@@ -14,6 +14,7 @@ use App\Models\Supply;
 use App\Models\SupplyCategory;
 use App\Models\SupplyUsageLog;
 use App\Models\User;
+use App\Models\Setting;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
@@ -31,6 +32,7 @@ class ReportsController extends Controller
     {
         $this->authorize('manage system');
 
+        $currencySymbol = Setting::get('payment.currency_symbol', '$');
         $now          = now();
         $startOfMonth = $now->copy()->startOfMonth();
         $endOfMonth   = $now->copy()->endOfMonth();
@@ -69,6 +71,7 @@ class ReportsController extends Controller
             ->toArray();
 
         return view('reports.index', compact(
+            'currencySymbol',
             'monthRevenue', 'todayAppts', 'activeCustomers',
             'pendingExpenses', 'lowStockCount', 'totalStaff',
             'months', 'revenues', 'expensesArr', 'apptStatusToday'
@@ -80,6 +83,8 @@ class ReportsController extends Controller
     public function sales(Request $request): \Illuminate\View\View
     {
         $this->authorize('manage system');
+
+        $currencySymbol = Setting::get('payment.currency_symbol', '$');
 
         $startDate = $request->filled('start_date')
             ? Carbon::parse($request->input('start_date'))->startOfDay()
@@ -178,6 +183,7 @@ class ReportsController extends Controller
         $staffList = User::where('status', 'active')->orderBy('name')->get(['id', 'name']);
 
         return view('reports.sales', compact(
+            'currencySymbol',
             'startDate', 'endDate',
             'totalRevenue', 'completedSales', 'avgOrderValue',
             'totalRefunds', 'taxCollected', 'discountGiven',
@@ -263,10 +269,12 @@ class ReportsController extends Controller
             ->orderByDesc('total')
             ->get();
 
+        $currencySymbol = Setting::get('payment.currency_symbol', '$');
         $staffList   = User::where('status', 'active')->orderBy('name')->get(['id', 'name']);
         $serviceList = Service::where('is_active', true)->orderBy('name')->get(['id', 'name']);
 
         return view('reports.appointments', compact(
+            'currencySymbol',
             'startDate', 'endDate',
             'totalAppts', 'completionRate', 'cancellationRate', 'avgPerDay',
             'dailyTrend', 'statusDist', 'dowLabels', 'dowCounts',
@@ -279,6 +287,8 @@ class ReportsController extends Controller
     public function customers(Request $request): \Illuminate\View\View
     {
         $this->authorize('manage system');
+
+        $currencySymbol = Setting::get('payment.currency_symbol', '$');
 
         $startDate = $request->filled('start_date')
             ? Carbon::parse($request->input('start_date'))->startOfDay()
@@ -323,16 +333,13 @@ class ReportsController extends Controller
             ->pluck('count', 'status')
             ->toArray();
 
-        // Top Customers by Spend
-        $topCustomers = Customer::select('customers.*', DB::raw('COALESCE(SUM(sales.total_amount),0) as total_spent'))
-            ->leftJoin('sales', function ($j) {
-                $j->on('sales.customer_id', '=', 'customers.id')
-                  ->where('sales.status', 'completed')
-                  ->whereNull('sales.deleted_at');
-            })
-            ->groupBy('customers.id')
-            ->orderByDesc('total_spent')
-            ->limit(10)->get();
+        // Top Customers by Spend — use correlated subquery to avoid ONLY_FULL_GROUP_BY
+        $topCustomers = Customer::addSelect([
+            'total_spent' => Sale::selectRaw('COALESCE(SUM(total_amount), 0)')
+                ->whereColumn('customer_id', 'customers.id')
+                ->where('status', 'completed')
+                ->whereNull('deleted_at'),
+        ])->orderByDesc('total_spent')->limit(10)->get();
 
         // Recently Joined
         $recentCustomers = Customer::orderByDesc('created_at')->limit(10)->get();
@@ -346,6 +353,7 @@ class ReportsController extends Controller
             ->limit(20)->get();
 
         return view('reports.customers', compact(
+            'currencySymbol',
             'startDate', 'endDate',
             'totalCustomers', 'newThisMonth', 'activeRate', 'avgLTV',
             'acqMonths', 'acqCounts', 'genderBreakdown', 'statusBreakdown',
@@ -417,9 +425,11 @@ class ReportsController extends Controller
             ->orderByDesc('expense_date')
             ->limit(20)->get();
 
+        $currencySymbol = Setting::get('payment.currency_symbol', '$');
         $categories = ExpenseCategory::orderBy('name')->get(['id', 'name']);
 
         return view('reports.expenses', compact(
+            'currencySymbol',
             'startDate', 'endDate',
             'totalExpenses', 'paidExpenses', 'pendingApproval', 'thisMonth',
             'trendMonths', 'trendAmounts', 'byCategory', 'statusBreakdown',
@@ -479,9 +489,11 @@ class ReportsController extends Controller
             ->orderByDesc('used_at')
             ->limit(20)->get();
 
+        $currencySymbol = Setting::get('payment.currency_symbol', '$');
         $categories = SupplyCategory::active()->orderBy('name')->get(['id', 'name']);
 
         return view('reports.inventory', compact(
+            'currencySymbol',
             'totalSupplies', 'lowStockCount', 'outOfStockCount', 'totalStockValue',
             'supplies', 'stockByCategory', 'topUsed', 'stockValueByCategory',
             'lowStockItems', 'recentUsage', 'categories', 'stockStatus'
