@@ -29,6 +29,7 @@ trait ConfiguresEmailProvider
 
         // Configure based on provider type
         switch ($provider->provider) {
+            case 'cpanel':  // cPanel / Local Mail — identical to SMTP
             case 'smtp':
                 Config::set('mail.mailers.dynamic_smtp', [
                     'transport'    => 'smtp',

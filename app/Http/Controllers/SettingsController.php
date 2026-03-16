@@ -201,7 +201,7 @@ class SettingsController extends Controller
 
         // Validate basic fields
         $validated = $request->validate([
-            'provider' => 'required|in:smtp,mailgun,sendgrid,ses',
+            'provider' => 'required|in:smtp,cpanel,mailgun,sendgrid,ses',
             'name' => 'required|string|max:255',
             'priority' => 'nullable|integer|min:0',
             'is_active' => 'boolean',
@@ -254,7 +254,7 @@ class SettingsController extends Controller
 
         // Validate basic fields
         $validated = $request->validate([
-            'provider' => 'required|in:smtp,mailgun,sendgrid,ses',
+            'provider' => 'required|in:smtp,cpanel,mailgun,sendgrid,ses',
             'name' => 'required|string|max:255',
             'priority' => 'nullable|integer|min:0',
             'is_active' => 'boolean',
@@ -423,21 +423,24 @@ class SettingsController extends Controller
     {
         $passwordRule = $isUpdate ? 'nullable|string' : 'required|string';
 
+        $smtpRules = [
+            'config.host' => 'required|string|max:255',
+            'config.port' => 'required|integer|between:1,65535',
+            'config.username' => 'required|string|max:255',
+            'config.password' => $passwordRule,
+            'config.encryption' => 'required|in:tls,ssl,none',
+            'config.timeout' => 'nullable|integer|min:1|max:120',
+            'config.local_domain' => 'nullable|string|max:255',
+            'config.from_address' => 'required|email|max:255',
+            'config.from_name' => 'required|string|max:255',
+            'config.imap_host' => 'nullable|string|max:255',
+            'config.imap_port' => 'nullable|integer|between:1,65535',
+            'config.imap_encryption' => 'nullable|in:ssl,tls,none',
+        ];
+
         return match($provider) {
-            'smtp' => [
-                'config.host' => 'required|string|max:255',
-                'config.port' => 'required|integer|between:1,65535',
-                'config.username' => 'required|string|max:255',
-                'config.password' => $passwordRule,
-                'config.encryption' => 'required|in:tls,ssl,none',
-                'config.timeout' => 'nullable|integer|min:1|max:120',
-                'config.local_domain' => 'nullable|string|max:255',
-                'config.from_address' => 'required|email|max:255',
-                'config.from_name' => 'required|string|max:255',
-                'config.imap_host' => 'nullable|string|max:255',
-                'config.imap_port' => 'nullable|integer|between:1,65535',
-                'config.imap_encryption' => 'nullable|in:ssl,tls,none',
-            ],
+            'smtp' => $smtpRules,
+            'cpanel' => $smtpRules, // cPanel is SMTP — same fields, different defaults
             'mailgun' => [
                 'config.domain' => 'required|string|max:255',
                 'config.secret' => $passwordRule,

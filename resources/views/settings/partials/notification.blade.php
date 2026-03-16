@@ -197,7 +197,8 @@
                                     <label for="provider-type" class="form-label">Provider Type <span class="text-danger">*</span></label>
                                     <select class="form-select" id="provider-type" name="provider" required>
                                         <option value="">Select Provider...</option>
-                                        <option value="smtp">SMTP</option>
+                                        <option value="cpanel">cPanel / Local Mail (Recommended)</option>
+                                        <option value="smtp">Custom SMTP</option>
                                         <option value="mailgun">Mailgun</option>
                                         <option value="sendgrid">SendGrid</option>
                                         <option value="ses">Amazon SES</option>
@@ -213,8 +214,14 @@
                             </div>
                         </div>
 
-                        <!-- SMTP Configuration -->
+                        <!-- SMTP / cPanel Configuration (shared section) -->
                         <div id="smtp-config" class="provider-config d-none">
+                            <div id="cpanel-hint" class="alert alert-info py-2 small mb-3 d-none">
+                                <i class="ti ti-server me-1"></i>
+                                <strong>cPanel / Local Mail:</strong> Use your hosting control panel email credentials.
+                                Host is usually <code>mail.yourdomain.com</code>. Find details under
+                                <em>cPanel → Email Accounts → Connect Devices</em>.
+                            </div>
                             <h6 class="mb-2">Outgoing Mail (SMTP) Settings</h6>
                             <div class="row">
                                 <div class="col-md-6">

@@ -466,11 +466,30 @@ function initializeEmailProviders() {
             section.classList.add('d-none');
         });
 
-        // Show selected provider config
-        if (selectedProvider) {
-            const configSection = document.getElementById(`${selectedProvider}-config`);
+        // cPanel reuses the smtp-config section
+        const effectiveProvider = selectedProvider === 'cpanel' ? 'smtp' : selectedProvider;
+
+        if (effectiveProvider) {
+            const configSection = document.getElementById(`${effectiveProvider}-config`);
             if (configSection) {
                 configSection.classList.remove('d-none');
+            }
+        }
+
+        // Show/hide cPanel hint banner and pre-fill defaults when cPanel is freshly selected
+        const cpanelHint = document.getElementById('cpanel-hint');
+        if (cpanelHint) {
+            if (selectedProvider === 'cpanel') {
+                cpanelHint.classList.remove('d-none');
+                // Pre-fill cPanel defaults only when fields are empty
+                const hostEl = document.getElementById('smtp-host');
+                const portEl = document.getElementById('smtp-port');
+                const encEl  = document.getElementById('smtp-encryption');
+                if (hostEl && !hostEl.value) hostEl.placeholder = 'mail.yourdomain.com';
+                if (portEl && !portEl.value) portEl.value = '587';
+                if (encEl  && !encEl.value)  encEl.value  = 'tls';
+            } else {
+                cpanelHint.classList.add('d-none');
             }
         }
     }
@@ -791,7 +810,7 @@ function populateProviderForm(provider) {
     }
 
     // Provider-specific fields
-    switch (provider.provider) {
+    switch (provider.provider === 'cpanel' ? 'smtp' : provider.provider) {
         case 'smtp':
             if (config.host) document.getElementById('smtp-host').value = config.host;
             if (config.port) document.getElementById('smtp-port').value = config.port;
