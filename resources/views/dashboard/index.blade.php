@@ -6,6 +6,8 @@ use App\Models\Expense;
 use App\Models\Attendance;
 use App\Models\Supply;
 use App\Models\User;
+use App\Models\Setting;
+$currencySymbol = Setting::get('payment.currency_symbol', '$');
 
 // KPI Cards
 $todayAppointmentsCount = Appointment::whereDate('appointment_date', today())->count();
@@ -105,7 +107,7 @@ $recentSales = Sale::with(['customer', 'user'])
                             </span>
                         </div>
                         <div class="text-end">
-                            <h3 class="mb-1 fw-semibold">${{ number_format($monthlyRevenue, 2) }}</h3>
+                            <h3 class="mb-1 fw-semibold">{{ $currencySymbol }}{{ number_format($monthlyRevenue, 2) }}</h3>
                             <p class="mb-0 text-muted fs-sm">Monthly Revenue</p>
                             <span class="text-muted fs-xs">{{ now()->format('F Y') }}</span>
                         </div>
@@ -473,7 +475,7 @@ $recentSales = Sale::with(['customer', 'user'])
                                             @endif
                                         </td>
                                         <td>
-                                            <span class="fw-semibold">${{ number_format($sale->total_amount, 2) }}</span>
+                                            <span class="fw-semibold">{{ $currencySymbol }}{{ number_format($sale->total_amount, 2) }}</span>
                                         </td>
                                         <td>
                                             <span class="text-muted">

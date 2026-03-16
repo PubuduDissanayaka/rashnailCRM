@@ -442,16 +442,29 @@ class ExpenseController extends Controller
     {
         $this->authorize('expenses.view');
 
+        $currencySymbol = Setting::get('payment.currency_symbol', '$');
+
+        $paidThisMonthAmount = Expense::where('status', 'paid')
+            ->whereMonth('expense_date', now()->month)
+            ->whereYear('expense_date', now()->year)
+            ->sum('total_amount');
+        $pendingAmount   = Expense::pending()->sum('total_amount');
+        $approvedAmount  = Expense::approved()->sum('total_amount');
+        $totalPaidAmount = Expense::paid()->sum('total_amount');
+
         // Basic stats
         $stats = [
-            'paid_this_month' => Expense::where('status', 'paid')
+            'paid_this_month'  => Expense::where('status', 'paid')
                 ->whereMonth('expense_date', now()->month)
                 ->whereYear('expense_date', now()->year)
-                ->sum('total_amount'),
-            'total_pending' => Expense::pending()->count(),
-            'total_approved' => Expense::approved()->count(),
-            'total_paid' => Expense::paid()->count(),
-            'total_amount' => Expense::where('status', 'paid')->sum('total_amount'),
+                ->count(),
+            'paid_month_amount'  => $currencySymbol . number_format($paidThisMonthAmount, 2),
+            'total_pending'    => Expense::pending()->count(),
+            'pending_amount'   => $currencySymbol . number_format($pendingAmount, 2),
+            'total_approved'   => Expense::approved()->count(),
+            'approved_amount'  => $currencySymbol . number_format($approvedAmount, 2),
+            'total_paid'       => Expense::paid()->count(),
+            'paid_amount'      => $currencySymbol . number_format($totalPaidAmount, 2),
         ];
 
         // Recent expenses (last 10)
@@ -516,8 +529,6 @@ class ExpenseController extends Controller
                     'utilization' => min($utilization, 100),
                 ];
             });
-
-        $currencySymbol = Setting::get('payment.currency_symbol', '$');
 
         return view('expenses.dashboard', compact(
             'stats',

@@ -173,7 +173,7 @@
                                         <span class="text-danger">{{ $expense->due_date->format('d M, Y') }}</span>
                                         <small class="d-block text-muted">{{ $expense->due_date->diffForHumans() }}</small>
                                     </td>
-                                    <td>${{ number_format($expense->total_amount, 2) }}</td>
+                                    <td>{{ $currencySymbol }}{{ number_format($expense->total_amount, 2) }}</td>
                                     <td class="text-center">
                                         @include('expenses.partials.status-badge', ['status' => $expense->status])
                                     </td>
@@ -252,7 +252,7 @@
                                             <i class="ti ti-{{ $expense->category->icon ?? 'category' }} fs-xs"></i> {{ $expense->category->name ?? 'Uncategorized' }}
                                         </span>
                                     </td>
-                                    <td>${{ number_format($expense->total_amount, 2) }}</td>
+                                    <td>{{ $currencySymbol }}{{ number_format($expense->total_amount, 2) }}</td>
                                     <td>{{ $expense->expense_date->format('d M, Y') }}</td>
                                     <td>
                                         @include('expenses.partials.status-badge', ['status' => $expense->status])
@@ -294,9 +294,9 @@
 @section('scripts')
     @vite(['resources/js/pages/custom-table.js', 'node_modules/sweetalert2/dist/sweetalert2.min.js'])
     <script>
-        // Charts will be initialized by expenses-dashboard.js
-        document.addEventListener('DOMContentLoaded', function() {
-            // Initialize any dashboard-specific functionality
-        });
+        window.currencySymbol = @json($currencySymbol);
+        window.expenseMonthlyTrend = @json($monthlyTrend);
+        window.expenseCategoryBreakdown = @json($categoryBreakdown);
+        window.expenseBudgetUtilization = @json($budgetUtilization);
     </script>
 @endsection
