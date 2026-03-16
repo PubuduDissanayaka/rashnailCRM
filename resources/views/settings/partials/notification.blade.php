@@ -313,26 +313,27 @@
                         <!-- Mailgun Configuration -->
                         <div id="mailgun-config" class="provider-config d-none">
                             <h6 class="mb-2">Mailgun Settings</h6>
+                            <div class="alert alert-info py-2 small mb-3">
+                                <i class="ti ti-info-circle me-1"></i>
+                                Sends via <strong>Mailgun SMTP relay</strong> (smtp.mailgun.org).
+                                Enter your Mailgun API key as the password — it also works as the SMTP password.
+                            </div>
                             <div class="row">
                                 <div class="col-md-6">
                                     <div class="mb-3">
                                         <label for="mailgun-domain" class="form-label">Domain <span class="text-danger">*</span></label>
                                         <input type="text" class="form-control" id="mailgun-domain" name="config[domain]"
                                                placeholder="mg.yourdomain.com">
+                                        <div class="form-text">Your Mailgun sending domain</div>
                                     </div>
                                 </div>
                                 <div class="col-md-6">
                                     <div class="mb-3">
-                                        <label for="mailgun-secret" class="form-label">API Key <span class="text-danger">*</span></label>
+                                        <label for="mailgun-secret" class="form-label">API Key (SMTP Password) <span class="text-danger">*</span></label>
                                         <input type="password" class="form-control" id="mailgun-secret" name="config[secret]">
+                                        <div class="form-text">Your Mailgun API key</div>
                                     </div>
                                 </div>
-                            </div>
-                            <div class="mb-3">
-                                <label for="mailgun-endpoint" class="form-label">Endpoint (Optional)</label>
-                                <input type="url" class="form-control" id="mailgun-endpoint" name="config[endpoint]"
-                                       placeholder="https://api.mailgun.net">
-                                <small class="form-text text-muted">Leave blank for default US endpoint</small>
                             </div>
                         </div>
 
@@ -348,17 +349,24 @@
                         <!-- SES Configuration -->
                         <div id="ses-config" class="provider-config d-none">
                             <h6 class="mb-2">Amazon SES Settings</h6>
+                            <div class="alert alert-info py-2 small mb-3">
+                                <i class="ti ti-info-circle me-1"></i>
+                                Use your <strong>SES SMTP credentials</strong> (not your IAM credentials).
+                                Generate them in the AWS console under <em>SES → SMTP Settings → Create SMTP credentials</em>.
+                            </div>
                             <div class="row">
                                 <div class="col-md-4">
                                     <div class="mb-3">
-                                        <label for="ses-key" class="form-label">Access Key <span class="text-danger">*</span></label>
-                                        <input type="text" class="form-control" id="ses-key" name="config[key]">
+                                        <label for="ses-key" class="form-label">SMTP Username <span class="text-danger">*</span></label>
+                                        <input type="text" class="form-control" id="ses-key" name="config[key]" placeholder="AKIAIOSFODNN7EXAMPLE">
+                                        <div class="form-text">SES SMTP username (starts with AKIA…)</div>
                                     </div>
                                 </div>
                                 <div class="col-md-4">
                                     <div class="mb-3">
-                                        <label for="ses-secret" class="form-label">Secret Key <span class="text-danger">*</span></label>
+                                        <label for="ses-secret" class="form-label">SMTP Password <span class="text-danger">*</span></label>
                                         <input type="password" class="form-control" id="ses-secret" name="config[secret]">
+                                        <div class="form-text">SES SMTP password (not your IAM secret key)</div>
                                     </div>
                                 </div>
                                 <div class="col-md-4">

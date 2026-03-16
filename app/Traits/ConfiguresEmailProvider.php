@@ -20,55 +20,75 @@ trait ConfiguresEmailProvider
         $secret = $this->decryptConfigValue($config, 'secret');
         $apiKey = $this->decryptConfigValue($config, 'api_key');
 
+        // Purge any cached mailer instance before reconfiguring
+        try {
+            \Illuminate\Support\Facades\Mail::purge('dynamic_smtp');
+        } catch (\Exception $e) {
+            // Ignore — older Laravel versions may not support purge
+        }
+
         // Configure based on provider type
         switch ($provider->provider) {
             case 'smtp':
-                $smtpConfig = [
-                    'transport' => 'smtp',
-                    'host' => $config['host'] ?? config('mail.mailers.smtp.host'),
-                    'port' => $config['port'] ?? config('mail.mailers.smtp.port'),
-                    'encryption' => ($config['encryption'] ?? 'tls') === 'none' ? null : ($config['encryption'] ?? 'tls'),
-                    'username' => $config['username'] ?? config('mail.mailers.smtp.username'),
-                    'password' => $password ?: config('mail.mailers.smtp.password'),
-                    'timeout' => $config['timeout'] ?? 30,
-                    'local_domain' => $config['local_domain'] ?? env('MAIL_EHLO_DOMAIN'),
-                ];
-
-                // Purge existing instance to ensure new config is used
-                try {
-                    \Illuminate\Support\Facades\Mail::purge('dynamic_smtp');
-                } catch (\Exception $e) {
-                    // Ignore if mailer doesn't support purging or doesn't exist
-                }
-
-                Config::set('mail.mailers.dynamic_smtp', $smtpConfig);
-                Config::set('mail.from.address', $config['from_address'] ?? config('mail.from.address'));
-                Config::set('mail.from.name', $config['from_name'] ?? config('mail.from.name'));
+                Config::set('mail.mailers.dynamic_smtp', [
+                    'transport'    => 'smtp',
+                    'host'         => $config['host'] ?? config('mail.mailers.smtp.host'),
+                    'port'         => (int) ($config['port'] ?? config('mail.mailers.smtp.port', 587)),
+                    'encryption'   => ($config['encryption'] ?? 'tls') === 'none' ? null : ($config['encryption'] ?? 'tls'),
+                    'username'     => $config['username'] ?? config('mail.mailers.smtp.username'),
+                    'password'     => $password ?: config('mail.mailers.smtp.password'),
+                    'timeout'      => (int) ($config['timeout'] ?? 30),
+                    'local_domain' => $config['local_domain'] ?? null,
+                ]);
                 break;
 
             case 'mailgun':
+                // Mailgun SMTP relay: username = postmaster@{domain}, password = API key
+                Config::set('mail.mailers.dynamic_smtp', [
+                    'transport'  => 'smtp',
+                    'host'       => 'smtp.mailgun.org',
+                    'port'       => 587,
+                    'encryption' => 'tls',
+                    'username'   => 'postmaster@' . ($config['domain'] ?? ''),
+                    'password'   => $secret ?: '',
+                    'timeout'    => 30,
+                ]);
+                break;
+
             case 'sendgrid':
+                // SendGrid SMTP relay: username is always the literal string "apikey"
+                Config::set('mail.mailers.dynamic_smtp', [
+                    'transport'  => 'smtp',
+                    'host'       => 'smtp.sendgrid.net',
+                    'port'       => 587,
+                    'encryption' => 'tls',
+                    'username'   => 'apikey',
+                    'password'   => $apiKey ?: '',
+                    'timeout'    => 30,
+                ]);
+                break;
+
             case 'ses':
-                // For now, these fall back to SMTP logic or need specific driver config
-                // In a full implementation, you'd set the specific driver and its config
-                // But for this project, passing through SMTP is a safe fallback if drivers aren't installed
-                $smtpConfig = [
-                    'transport' => 'smtp',
-                    'host' => config('mail.mailers.smtp.host'), // Fallback
-                    'port' => config('mail.mailers.smtp.port'),
-                    'encryption' => config('mail.mailers.smtp.encryption'),
-                    'username' => config('mail.mailers.smtp.username'),
-                    'password' => config('mail.mailers.smtp.password'),
-                ];
-                
-                // If using specific drivers, configuring them here would be better
-                // e.g. Config::set('services.mailgun.domain', $config['domain']);
-                
-                Config::set('mail.mailers.dynamic_smtp', $smtpConfig);
-                Config::set('mail.from.address', $config['from_address'] ?? config('mail.from.address'));
-                Config::set('mail.from.name', $config['from_name'] ?? config('mail.from.name'));
+                // Amazon SES SMTP relay — username = IAM access key ID,
+                // password = SMTP credential (derived from IAM secret, NOT the raw secret).
+                // The aws/aws-sdk-php package is required for the native SES transport.
+                // Use SES SMTP endpoint directly; user must generate SES SMTP credentials
+                // in the AWS console (IAM → SES SMTP settings → Create SMTP credentials).
+                $region = $config['region'] ?? 'us-east-1';
+                Config::set('mail.mailers.dynamic_smtp', [
+                    'transport'  => 'smtp',
+                    'host'       => "email-smtp.{$region}.amazonaws.com",
+                    'port'       => 587,
+                    'encryption' => 'tls',
+                    'username'   => $config['key'] ?? '',
+                    'password'   => $secret ?: '',
+                    'timeout'    => 30,
+                ]);
                 break;
         }
+
+        Config::set('mail.from.address', $config['from_address'] ?? config('mail.from.address'));
+        Config::set('mail.from.name', $config['from_name'] ?? config('mail.from.name'));
     }
 
     /**

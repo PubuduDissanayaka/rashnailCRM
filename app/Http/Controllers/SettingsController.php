@@ -144,6 +144,8 @@ class SettingsController extends Controller
      */
     public function testEmail(Request $request)
     {
+        $this->authorize('manage system');
+
         $request->validate([
             'email' => 'required|email'
         ]);
