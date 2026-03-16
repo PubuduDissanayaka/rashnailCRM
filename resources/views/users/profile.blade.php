@@ -235,7 +235,6 @@
                                 
                                 <form method="POST" action="{{ route('profile.notifications.update') }}">
                                     @csrf
-                                    @method('PUT')
                                     
                                     <div class="mb-4">
                                         <h6 class="mb-3">Notification Channels</h6>
