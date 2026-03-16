@@ -197,21 +197,23 @@ class AppointmentCalendar {
         return endTimeOfDay <= closeTime;
     }
 
+    // Open the new-appointment modal without a pre-selected time (e.g. from toolbar button)
+    openNewEventModal() {
+        this.formEvent?.reset();
+        this.formEvent?.classList.remove('was-validated');
+        this.selectedEvent = null;
+        this.newEventData = null;
+        this.btnDeleteEvent.style.display = "none";
+        this.modalTitle.textContent = 'Create New Appointment';
+        document.getElementById('appointment-id').value = '';
+        this.setChoicesValue('event-service', '');
+        this.setChoicesValue('event-customer', '');
+        this.setChoicesValue('event-staff', '');
+        this.modal.show();
+    }
+
     onSelect(info) {
-        // Get selected service ID for the check
-        const serviceElement = document.getElementById('event-service');
-        const serviceId = info.service_id || (serviceElement ? serviceElement.value : null);
-
-        // Check if the clicked time is within business hours considering service duration
-        if (!this.isWithinBusinessHours(info.date, serviceId)) {
-            Swal.fire({
-                icon: 'warning',
-                title: 'Outside Business Hours',
-                text: 'Appointments can only be scheduled during business hours, and the service must finish before closing time.'
-            });
-            return;
-        }
-
+        // Pre-fill the date/time from the calendar slot the user clicked/dragged
         this.formEvent?.reset();
         this.formEvent?.classList.remove('was-validated');
         this.selectedEvent = null;
@@ -219,6 +221,14 @@ class AppointmentCalendar {
         this.btnDeleteEvent.style.display = "none";
         this.modalTitle.textContent = 'Create New Appointment';
         document.getElementById('appointment-id').value = '';
+
+        // Pre-fill the datetime field with the selected slot
+        const dateTimeField = document.getElementById('event-date-time');
+        if (dateTimeField && info.date) {
+            const pad = n => String(n).padStart(2, '0');
+            const d = info.date;
+            dateTimeField.value = `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+        }
 
         if (info.service_id) {
             this.setChoicesValue('event-service', info.service_id);
@@ -521,13 +531,11 @@ class AppointmentCalendar {
 
         self.calendarObj.render();
 
-        // On new event button click
+        // On new event button click — open the modal directly, no business-hours check here.
+        // The user picks their desired date/time inside the form; validation runs on submit.
         self.btnNewEvent.forEach(function (btn) {
             btn.addEventListener('click', function (e) {
-                self.onSelect({
-                    date: new Date(),
-                    allDay: true
-                });
+                self.openNewEventModal();
             });
         });
 
