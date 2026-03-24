@@ -69,45 +69,45 @@ class RoleController extends Controller
     {
         abort_unless(auth()->user()->can('manage system'), 403);
 
+        // ── Assign Users action ───────────────────────────────
+        if ($request->input('action') === 'assign_users') {
+            $userIds = $request->input('assign_users', []);
+
+            if (empty($userIds)) {
+                return redirect()->route('users.role-details', $role->name)
+                    ->with('error', 'No users selected.');
+            }
+
+            $assigned = 0;
+            foreach ($userIds as $userId) {
+                $user = User::find($userId);
+                if ($user) {
+                    $user->assignRole($role->name);
+                    // Keep legacy users.role column in sync
+                    $user->update(['role' => $role->name]);
+                    $assigned++;
+                }
+            }
+
+            return redirect()->route('users.role-details', $role->name)
+                ->with('success', $assigned . ' user(s) assigned to ' . $role->name . ' successfully.');
+        }
+
+        // ── Edit role name + permissions action ───────────────
         $request->validate([
             'name' => 'required|string|unique:roles,name,' . $role->id,
         ]);
 
-        $role->update(['name' => $request->name]);
-
-        // Determine the type of action
-        if ($request->input('action') === 'assign_users') {
-            // Only assign users to this role if specified
-            if ($request->has('assign_users')) {
-                foreach ($request->assign_users as $userId) {
-                    $user = User::find($userId);
-                    if ($user) {
-                        $user->assignRole($role->name);
-                    }
-                }
-            }
-        } else {
-            // Update role name and permissions (not user assignments)
-            // Sync permissions to the role
-            if ($request->has('permissions')) {
-                $role->syncPermissions($request->permissions);
-            } else {
-                // If no permissions sent, remove all (in case user unchecked all)
-                $role->syncPermissions([]);
-            }
-
-            // Assign users to this role if specified (for the main edit form)
-            if ($request->has('assign_users')) {
-                foreach ($request->assign_users as $userId) {
-                    $user = User::find($userId);
-                    if ($user) {
-                        $user->assignRole($role->name);
-                    }
-                }
-            }
+        // Only rename if not a protected role
+        if (!in_array($role->name, ['administrator', 'staff'])) {
+            $role->update(['name' => $request->name]);
         }
 
-        return redirect()->route('users.role-details', $role->name)->with('success', 'Role updated successfully.');
+        // Sync permissions
+        $role->syncPermissions($request->input('permissions', []));
+
+        return redirect()->route('users.role-details', $role->name)
+            ->with('success', 'Role updated successfully.');
     }
 
     public function destroy(Role $role)
