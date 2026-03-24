@@ -627,27 +627,15 @@
                         // Race between fetch and timeout
                         Promise.race([fetchPromise, timeoutPromise])
                         .then(response => {
-                            if (!response || !response.ok) {
-                                throw new Error(`HTTP error! status: ${response?.status || 'unknown'}`);
-                            }
-                            
-                            console.log('Clock-in response status:', response.status, response.statusText);
-                            
-                            // Check if response is JSON
-                            const contentType = response.headers.get('content-type');
-                            if (!contentType || !contentType.includes('application/json')) {
-                                throw new Error(`Expected JSON response but got ${contentType}`);
-                            }
-                            
+                            // Always parse JSON first so we can show the server's error message
                             return response.json().then(data => {
-                                // Add status to data for handling
-                                data.status = response.status;
+                                if (!response.ok) {
+                                    throw new Error(data.message || `Server error (${response.status})`);
+                                }
                                 return data;
                             });
                         })
                         .then(data => {
-                            console.log('Clock-in response data:', data);
-                            
                             if (data.success) {
                                 // Show success notification with enhanced visual feedback
                                 if (typeof Swal !== 'undefined') {
@@ -691,36 +679,20 @@
                         })
                         .catch(error => {
                             console.error('Clock-in error:', error);
-                            
-                            let errorMessage = 'An error occurred while processing your clock-in. Please try again.';
-                            if (error.message.includes('JSON')) {
-                                errorMessage = 'Server returned an invalid response. Please check your network connection.';
-                            } else if (error.message.includes('timeout')) {
-                                errorMessage = 'Request timeout. Please check your network connection and try again.';
-                            } else if (error.message.includes('HTTP error')) {
-                                errorMessage = `Network error: ${error.message}. Please try again or contact support.`;
-                            }
-                            
+                            const errorMessage = error.message.includes('timeout')
+                                ? 'Request timed out. Please check your connection and try again.'
+                                : (error.message || 'An error occurred while processing your clock-in.');
+
                             if (typeof Swal !== 'undefined') {
                                 Swal.fire({
                                     icon: 'error',
-                                    title: '❌ Clock-in Failed!',
+                                    title: 'Clock-in Failed',
                                     text: errorMessage,
-                                    showConfirmButton: true,
-                                    confirmButtonText: 'Retry',
-                                    background: '#fdf0f0',
-                                    iconColor: '#dc3545',
-                                    allowOutsideClick: false
-                                }).then((result) => {
-                                    if (result.isConfirmed) {
-                                        // Retry the clock-in action
-                                        clockInBtn.click();
-                                    }
+                                    confirmButtonText: 'OK',
+                                    confirmButtonColor: '#dc3545'
                                 });
                             } else {
-                                if (confirm('❌ Clock-in Failed! ' + errorMessage + '\n\nWould you like to try again?')) {
-                                    clockInBtn.click();
-                                }
+                                alert('Clock-in Failed: ' + errorMessage);
                             }
                         })
                         .finally(() => {
@@ -906,21 +878,11 @@
                         // Race between fetch and timeout
                         Promise.race([fetchPromise, timeoutPromise])
                         .then(response => {
-                            if (!response || !response.ok) {
-                                throw new Error(`HTTP error! status: ${response?.status || 'unknown'}`);
-                            }
-                            
-                            console.log('Clock-out response status:', response.status, response.statusText);
-                            
-                            // Check if response is JSON
-                            const contentType = response.headers.get('content-type');
-                            if (!contentType || !contentType.includes('application/json')) {
-                                throw new Error(`Expected JSON response but got ${contentType}`);
-                            }
-                            
+                            // Always parse JSON first so we can show the server's error message
                             return response.json().then(data => {
-                                // Add status to data for handling
-                                data.status = response.status;
+                                if (!response.ok) {
+                                    throw new Error(data.message || `Server error (${response.status})`);
+                                }
                                 return data;
                             });
                         })
@@ -972,36 +934,20 @@
                         })
                         .catch(error => {
                             console.error('Clock-out error:', error);
-                            
-                            let errorMessage = 'An error occurred while processing your clock-out. Please try again.';
-                            if (error.message.includes('JSON')) {
-                                errorMessage = 'Server returned an invalid response. Please check your network connection.';
-                            } else if (error.message.includes('timeout')) {
-                                errorMessage = 'Request timeout. Please check your network connection and try again.';
-                            } else if (error.message.includes('HTTP error')) {
-                                errorMessage = `Network error: ${error.message}. Please try again or contact support.`;
-                            }
-                            
+                            const errorMessage = error.message.includes('timeout')
+                                ? 'Request timed out. Please check your connection and try again.'
+                                : (error.message || 'An error occurred while processing your clock-out.');
+
                             if (typeof Swal !== 'undefined') {
                                 Swal.fire({
                                     icon: 'error',
-                                    title: '❌ Clock-out Failed!',
+                                    title: 'Clock-out Failed',
                                     text: errorMessage,
-                                    showConfirmButton: true,
-                                    confirmButtonText: 'Retry',
-                                    background: '#fdf0f0',
-                                    iconColor: '#dc3545',
-                                    allowOutsideClick: false
-                                }).then((result) => {
-                                    if (result.isConfirmed) {
-                                        // Retry the clock-out action
-                                        clockOutBtn.click();
-                                    }
+                                    confirmButtonText: 'OK',
+                                    confirmButtonColor: '#dc3545'
                                 });
                             } else {
-                                if (confirm('❌ Clock-out Failed! ' + errorMessage + '\n\nWould you like to try again?')) {
-                                    clockOutBtn.click();
-                                }
+                                alert('Clock-out Failed: ' + errorMessage);
                             }
                         })
                         .finally(() => {
@@ -1030,113 +976,6 @@
                         performClockOut();
                     }
 
-                    // Race between fetch and timeout
-                    Promise.race([fetchPromise, timeoutPromise])
-                    .then(response => {
-                        if (!response || !response.ok) {
-                            throw new Error(`HTTP error! status: ${response?.status || 'unknown'}`);
-                        }
-                        
-                        console.log('Clock-out response status:', response.status, response.statusText);
-                        
-                        // Check if response is JSON
-                        const contentType = response.headers.get('content-type');
-                        if (!contentType || !contentType.includes('application/json')) {
-                            throw new Error(`Expected JSON response but got ${contentType}`);
-                        }
-                        
-                        return response.json().then(data => {
-                            // Add status to data for handling
-                            data.status = response.status;
-                            return data;
-                        });
-                    })
-                    .then(data => {
-                        console.log('Clock-out response data:', data);
-                        
-                        if (data.success) {
-                            // Show success notification with enhanced visual feedback
-                            const successMessage = `${data.message}\nTotal hours worked: ${data.hours_worked || 0} hours`;
-                            
-                            if (typeof Swal !== 'undefined') {
-                                Swal.fire({
-                                    icon: 'success',
-                                    title: '✅ Clocked Out Successfully!',
-                                    text: successMessage,
-                                    showConfirmButton: false,
-                                    timer: 2500,
-                                    background: '#f0f9f0',
-                                    iconColor: '#28a745',
-                                    timerProgressBar: true,
-                                    didClose: () => {
-                                        location.reload();
-                                    }
-                                });
-                            } else {
-                                // Fallback to alert if SweetAlert2 not available
-                                alert('✅ Clocked Out Successfully! ' + successMessage);
-                                location.reload();
-                            }
-                        } else {
-                            // Show error notification with detailed information
-                            const errorMessage = data.message || 'Clock-out failed without specific error message';
-                            console.error('Clock-out failed:', errorMessage);
-                            
-                            if (typeof Swal !== 'undefined') {
-                                Swal.fire({
-                                    icon: 'error',
-                                    title: '❌ Clock-out Failed!',
-                                    text: errorMessage,
-                                    showConfirmButton: true,
-                                    confirmButtonText: 'Try Again',
-                                    background: '#fdf0f0',
-                                    iconColor: '#dc3545'
-                                });
-                            } else {
-                                alert('❌ Clock-out Failed! ' + errorMessage);
-                            }
-                        }
-                    })
-                    .catch(error => {
-                        console.error('Clock-out error:', error);
-                        
-                        let errorMessage = 'An error occurred while processing your clock-out. Please try again.';
-                        if (error.message.includes('JSON')) {
-                            errorMessage = 'Server returned an invalid response. Please check your network connection.';
-                        } else if (error.message.includes('timeout')) {
-                            errorMessage = 'Request timeout. Please check your network connection and try again.';
-                        } else if (error.message.includes('HTTP error')) {
-                            errorMessage = `Network error: ${error.message}. Please try again or contact support.`;
-                        }
-                        
-                        if (typeof Swal !== 'undefined') {
-                            Swal.fire({
-                                icon: 'error',
-                                title: '❌ Clock-out Failed!',
-                                text: errorMessage,
-                                showConfirmButton: true,
-                                confirmButtonText: 'Retry',
-                                background: '#fdf0f0',
-                                iconColor: '#dc3545',
-                                allowOutsideClick: false
-                            }).then((result) => {
-                                if (result.isConfirmed) {
-                                    // Retry the clock-out action
-                                    clockOutBtn.click();
-                                }
-                            });
-                        } else {
-                            if (confirm('❌ Clock-out Failed! ' + errorMessage + '\n\nWould you like to try again?')) {
-                                clockOutBtn.click();
-                            }
-                        }
-                    })
-                    .finally(() => {
-                        // Restore button state
-                        clockOutBtn.disabled = false;
-                        clockOutBtn.className = originalClass;
-                        clockOutBtn.innerHTML = originalHTML;
-                    });
                 });
             }
         });
