@@ -114,6 +114,87 @@
                         </div>
                     </div>
 
+                    <!-- Live Clock Widget -->
+                    <div class="card bg-dark text-white mb-4" id="live-clock-widget" style="border-radius:12px; overflow:hidden;">
+                        <div class="card-body py-3 px-4">
+                            <div class="d-flex align-items-center justify-content-between flex-wrap gap-3">
+                                <div class="d-flex align-items-center gap-3">
+                                    <div class="avatar-md bg-white bg-opacity-10 rounded-circle d-flex align-items-center justify-content-center">
+                                        <i class="ti ti-clock fs-2 text-white"></i>
+                                    </div>
+                                    <div>
+                                        <div id="live-clock-time" class="fw-bold lh-1" style="font-size:2.2rem; letter-spacing:2px; font-variant-numeric:tabular-nums;">
+                                            --:--:--
+                                        </div>
+                                        <div id="live-clock-date" class="text-white-50 small mt-1">Loading...</div>
+                                    </div>
+                                </div>
+                                <div class="text-end">
+                                    <div class="text-white-50 small text-uppercase tracking-wide mb-1">Your Status Today</div>
+                                    @if(!$hasClockedInToday)
+                                        <span class="badge bg-secondary px-3 py-2 fs-6">
+                                            <i class="ti ti-clock-off me-1"></i> Not Clocked In
+                                        </span>
+                                    @elseif(!$hasClockedOutToday)
+                                        <span class="badge bg-success px-3 py-2 fs-6">
+                                            <i class="ti ti-clock-check me-1"></i> Clocked In
+                                        </span>
+                                        <div class="text-white-50 small mt-1">
+                                            Since {{ optional($attendances->where('user_id', auth()->id())->first())->check_in?->format('h:i A') ?? '' }}
+                                            &mdash; <span id="live-elapsed">calculating...</span>
+                                        </div>
+                                    @else
+                                        <span class="badge bg-primary px-3 py-2 fs-6">
+                                            <i class="ti ti-check me-1"></i> Completed for today
+                                        </span>
+                                    @endif
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    @php
+                        $myTodayRecord = $attendances->where('user_id', auth()->id())->first();
+                        $checkInTs = $myTodayRecord?->check_in?->timestamp;
+                    @endphp
+                    <script>
+                        (function () {
+                            const timeEl   = document.getElementById('live-clock-time');
+                            const dateEl   = document.getElementById('live-clock-date');
+                            const elapsedEl = document.getElementById('live-elapsed');
+                            const checkInTs = {{ $checkInTs ?? 'null' }};
+
+                            const dayNames  = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+                            const monthNames = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+
+                            function pad(n) { return String(n).padStart(2, '0'); }
+
+                            function tick() {
+                                const now = new Date();
+                                const h = now.getHours();
+                                const m = now.getMinutes();
+                                const s = now.getSeconds();
+                                const ampm = h >= 12 ? 'PM' : 'AM';
+                                const h12 = h % 12 || 12;
+
+                                timeEl.textContent = pad(h12) + ':' + pad(m) + ':' + pad(s) + ' ' + ampm;
+                                dateEl.textContent = dayNames[now.getDay()] + ', ' + monthNames[now.getMonth()] + ' ' + now.getDate() + ' ' + now.getFullYear();
+
+                                if (elapsedEl && checkInTs) {
+                                    const secs = Math.floor(now.getTime() / 1000) - checkInTs;
+                                    if (secs >= 0) {
+                                        const hh = Math.floor(secs / 3600);
+                                        const mm = Math.floor((secs % 3600) / 60);
+                                        const ss = secs % 60;
+                                        elapsedEl.textContent = pad(hh) + 'h ' + pad(mm) + 'm ' + pad(ss) + 's elapsed';
+                                    }
+                                }
+                            }
+
+                            tick();
+                            setInterval(tick, 1000);
+                        })();
+                    </script>
+
                     <!-- Attendance Stats -->
                     <div class="row mb-4">
                         <div class="col-md-3">
