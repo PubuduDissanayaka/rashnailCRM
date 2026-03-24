@@ -268,24 +268,20 @@
             btn.disabled = true;
             btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span> Saving...';
 
-            // Ensure unchecked toggles send 0
-            ['enforce_clock_in_window','enforce_clock_out_window'].forEach(id => {
+            const fd = new FormData(form);
+            fd.append('_method', 'PUT');
+
+            // Ensure unchecked toggles send 0 (checkboxes omit from FormData when unchecked)
+            ['enforce_clock_in_window', 'enforce_clock_out_window'].forEach(id => {
                 const cb = document.getElementById(id);
                 if (cb && !cb.checked) {
-                    let hidden = form.querySelector(`input[type=hidden][name="settings[attendance.${id.replace('enforce_', '')}]"]`);
-                    if (!hidden) {
-                        hidden = document.createElement('input');
-                        hidden.type = 'hidden';
-                        hidden.name = `settings[attendance.${id}]`;
-                        hidden.value = '0';
-                        form.appendChild(hidden);
-                    }
+                    fd.set(`settings[attendance.${id}]`, '0');
                 }
             });
 
             fetch('/settings', {
                 method: 'POST',
-                body: new FormData(form),
+                body: fd,
                 headers: {
                     'X-CSRF-TOKEN': document.querySelector('meta[name=csrf-token]').content,
                     'X-Requested-With': 'XMLHttpRequest',
