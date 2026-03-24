@@ -96,7 +96,7 @@
                                 @forelse($role->permissions->take(8) as $permission)
                                 <li class="d-flex align-items-center mb-2">
                                     <span class="ti ti-check fs-lg text-success me-2"></span>
-                                    <span class="text-capitalize">{{ str_replace('_', ' ', $permission->name) }}</span>
+                                    <span class="text-capitalize">{{ ucwords(str_replace(['.', '_'], ' ', $permission->name)) }}</span>
                                 </li>
                                 @empty
                                 <li class="text-muted">No permissions assigned</li>
@@ -226,7 +226,7 @@
 
     <!-- Edit Role Modal -->
     <div aria-hidden="true" aria-labelledby="editRoleModalLabel" class="modal fade" id="editRoleModal" tabindex="-1">
-        <div class="modal-dialog modal-lg">
+        <div class="modal-dialog modal-xl">
             <div class="modal-content">
                 <div class="modal-header">
                     <h5 class="modal-title" id="editRoleModalLabel">Edit Role: {{ $role->name }}</h5>
@@ -247,21 +247,100 @@
                             </div>
                             <div class="col-12">
                                 <label class="form-label">Permissions</label>
-                                <div class="row">
-                                    @foreach($allPermissions->chunk(ceil($allPermissions->count() / 3)) as $permissionChunk)
-                                    <div class="col-md-4">
-                                        @foreach($permissionChunk as $permission)
-                                        <div class="form-check mb-2">
-                                            <input class="form-check-input" type="checkbox" name="permissions[]"
-                                                value="{{ $permission->name }}" id="perm_{{ $permission->id }}"
-                                                {{ $role->permissions->contains($permission->id) ? 'checked' : '' }}>
-                                            <label class="form-check-label text-capitalize" for="perm_{{ $permission->id }}">
-                                                {{ str_replace('_', ' ', $permission->name) }}
-                                            </label>
+                                @php
+                                $permGroups = [
+                                    'Customers'          => ['view customers','create customers','edit customers','delete customers'],
+                                    'Appointments'       => ['view appointments','create appointments','edit appointments','delete appointments','manage all appointments'],
+                                    'Services'           => ['view services','create services','edit services','delete services','view service packages','create service packages','edit service packages','delete service packages'],
+                                    'Transactions & POS' => ['process transactions','view transactions','delete transactions','view pos','create pos transactions','manage pos'],
+                                    'Users'              => ['view users','create users','edit users','delete users'],
+                                    'Attendance'         => ['view attendances','edit attendances','manage attendances','view work schedules','manage work schedules','view work hour reports','export work hour reports'],
+                                    'Leave Management'   => ['view leave requests','create leave requests','approve leave requests','view leave balances','manage leave balances'],
+                                    'Coupons'            => ['view coupons','create coupons','edit coupons','delete coupons','manage coupon batches'],
+                                    'Inventory'          => ['inventory.view','inventory.manage','inventory.supplies.create','inventory.supplies.edit','inventory.supplies.delete','inventory.supplies.adjust','inventory.usage.create','inventory.purchase.create','inventory.purchase.approve','inventory.purchase.receive','inventory.reports.view','inventory.alerts.manage'],
+                                    'Expenses'           => ['expenses.view','expenses.create','expenses.edit','expenses.delete','expenses.approve','expenses.manage'],
+                                    'Reports & System'   => ['view reports','export reports','manage system'],
+                                ];
+                                $rolePermNames = $role->permissions->pluck('name')->toArray();
+                                $allPermNames  = $allPermissions->pluck('name')->toArray();
+                                @endphp
+                                <div class="accordion accordion-flush" id="permAccordion">
+                                    @foreach($permGroups as $groupLabel => $groupPerms)
+                                    @php
+                                        $available = array_filter($groupPerms, fn($p) => in_array($p, $allPermNames));
+                                        if (empty($available)) continue;
+                                        $checkedCount = count(array_intersect($available, $rolePermNames));
+                                        $groupSlug = Str::slug($groupLabel);
+                                    @endphp
+                                    <div class="accordion-item border rounded mb-2">
+                                        <h2 class="accordion-header" id="heading-{{ $groupSlug }}">
+                                            <button class="accordion-button py-2 collapsed" type="button"
+                                                data-bs-toggle="collapse" data-bs-target="#collapse-{{ $groupSlug }}"
+                                                aria-expanded="false" aria-controls="collapse-{{ $groupSlug }}">
+                                                <span class="fw-medium">{{ $groupLabel }}</span>
+                                                <span class="badge bg-primary-subtle text-primary ms-2">{{ $checkedCount }}/{{ count($available) }}</span>
+                                            </button>
+                                        </h2>
+                                        <div id="collapse-{{ $groupSlug }}" class="accordion-collapse collapse"
+                                            aria-labelledby="heading-{{ $groupSlug }}" data-bs-parent="#permAccordion">
+                                            <div class="accordion-body pt-2 pb-3">
+                                                <div class="row g-1">
+                                                    @foreach($available as $permName)
+                                                    @php $perm = $allPermissions->firstWhere('name', $permName); @endphp
+                                                    @if($perm)
+                                                    <div class="col-md-6 col-lg-4">
+                                                        <div class="form-check mb-1">
+                                                            <input class="form-check-input" type="checkbox" name="permissions[]"
+                                                                value="{{ $perm->name }}" id="perm_{{ $perm->id }}"
+                                                                {{ in_array($perm->name, $rolePermNames) ? 'checked' : '' }}>
+                                                            <label class="form-check-label small" for="perm_{{ $perm->id }}">
+                                                                {{ ucwords(str_replace(['.', '_'], ' ', $perm->name)) }}
+                                                            </label>
+                                                        </div>
+                                                    </div>
+                                                    @endif
+                                                    @endforeach
+                                                </div>
+                                            </div>
                                         </div>
-                                        @endforeach
                                     </div>
                                     @endforeach
+                                    {{-- Any permissions not in any group --}}
+                                    @php
+                                        $grouped = array_merge(...array_values($permGroups));
+                                        $ungrouped = $allPermissions->filter(fn($p) => !in_array($p->name, $grouped));
+                                    @endphp
+                                    @if($ungrouped->isNotEmpty())
+                                    <div class="accordion-item border rounded mb-2">
+                                        <h2 class="accordion-header" id="heading-other">
+                                            <button class="accordion-button py-2 collapsed" type="button"
+                                                data-bs-toggle="collapse" data-bs-target="#collapse-other"
+                                                aria-expanded="false" aria-controls="collapse-other">
+                                                <span class="fw-medium">Other</span>
+                                                <span class="badge bg-secondary-subtle text-secondary ms-2">{{ $ungrouped->whereIn('name', $rolePermNames)->count() }}/{{ $ungrouped->count() }}</span>
+                                            </button>
+                                        </h2>
+                                        <div id="collapse-other" class="accordion-collapse collapse"
+                                            aria-labelledby="heading-other" data-bs-parent="#permAccordion">
+                                            <div class="accordion-body pt-2 pb-3">
+                                                <div class="row g-1">
+                                                    @foreach($ungrouped as $perm)
+                                                    <div class="col-md-6 col-lg-4">
+                                                        <div class="form-check mb-1">
+                                                            <input class="form-check-input" type="checkbox" name="permissions[]"
+                                                                value="{{ $perm->name }}" id="perm_{{ $perm->id }}"
+                                                                {{ in_array($perm->name, $rolePermNames) ? 'checked' : '' }}>
+                                                            <label class="form-check-label small" for="perm_{{ $perm->id }}">
+                                                                {{ ucwords(str_replace(['.', '_'], ' ', $perm->name)) }}
+                                                            </label>
+                                                        </div>
+                                                    </div>
+                                                    @endforeach
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    @endif
                                 </div>
                             </div>
                         </div>
