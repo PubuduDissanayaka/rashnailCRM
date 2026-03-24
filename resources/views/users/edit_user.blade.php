@@ -80,8 +80,9 @@
                                     <label for="role" class="form-label">Role</label>
                                     <select class="form-control" id="role" name="role" data-choices data-trigger required>
                                         <option value="">Select Role</option>
+                                        @php $currentRole = $user->getRoleNames()->first() ?? $user->role; @endphp
                                         @foreach($roles as $role)
-                                            <option value="{{ $role }}" {{ old('role', $user->role) === $role ? 'selected' : '' }}>{{ ucfirst($role) }}</option>
+                                            <option value="{{ $role }}" {{ old('role', $currentRole) === $role ? 'selected' : '' }}>{{ ucfirst($role) }}</option>
                                         @endforeach
                                     </select>
                                     @error('role')

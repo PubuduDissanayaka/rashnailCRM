@@ -110,8 +110,17 @@
                                 </td>
                                 <td><span data-sort="sort-email">{{ $user->email }}</span></td>
                                 <td>
-                                    <span data-sort="{{ ucfirst($user->role) }}" class="badge bg-{{ $user->role === 'administrator' ? 'primary' : 'secondary' }}-subtle text-{{ $user->role === 'administrator' ? 'primary' : 'secondary' }}">
-                                        {{ ucfirst($user->role) }}
+                                    @php
+                                        $userRole = $user->getRoleNames()->first() ?? '—';
+                                        $roleColor = match(strtolower($userRole)) {
+                                            'administrator' => 'primary',
+                                            'manager'       => 'info',
+                                            'staff'         => 'secondary',
+                                            default         => 'dark',
+                                        };
+                                    @endphp
+                                    <span data-sort="{{ ucfirst($userRole) }}" class="badge bg-{{ $roleColor }}-subtle text-{{ $roleColor }}">
+                                        {{ ucfirst($userRole) }}
                                     </span>
                                 </td>
                                 <td>

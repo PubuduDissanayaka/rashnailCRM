@@ -17,7 +17,7 @@ class UserController extends Controller
         // Check if user has permission to view users
         $this->authorize('view users');
 
-        $users = User::all();
+        $users = User::with('roles')->get();
         $roles = \Spatie\Permission\Models\Role::orderBy('name')->pluck('name');
 
         return view('users.index', compact('users', 'roles'));
@@ -102,6 +102,7 @@ class UserController extends Controller
             abort(403, 'You are not authorized to edit other users.');
         }
 
+        $user->loadMissing('roles');
         $roles = \Spatie\Permission\Models\Role::orderBy('name')->pluck('name');
 
         return view('users.edit_user', compact('user', 'roles'));
