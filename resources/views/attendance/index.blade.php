@@ -180,6 +180,7 @@
 
                     <!-- Attendance Filters -->
                     <div class="row mb-3">
+                        @if($canViewAll ?? false)
                         <div class="col-md-4">
                             <label class="form-label">Filter by Staff</label>
                             <select class="form-select" id="staff-filter">
@@ -189,6 +190,7 @@
                                 @endforeach
                             </select>
                         </div>
+                        @endif
                         <div class="col-md-4">
                             <label class="form-label">Filter by Status</label>
                             <select class="form-select" id="status-filter">

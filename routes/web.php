@@ -224,12 +224,12 @@ Route::middleware(['auth'])->group(function () {
         Route::delete('/customers/{customer}', [CustomerController::class, 'destroy'])->name('customers.destroy');
     });
 
+    // Attendance index — all authenticated users can access (staff see own records, admins see all)
+    Route::get('/attendance', function() { return redirect()->route('attendance.index'); });
+    Route::get('/attendance/index', [AttendanceController::class, 'index'])->name('attendance.index');
+
     // Attendance management routes - restricted to users with 'view attendances' permission
     Route::middleware(['can:view attendances'])->group(function () {
-        Route::get('/attendance', function() {
-            return redirect()->route('attendance.index');
-        });
-        Route::get('/attendance/index', [AttendanceController::class, 'index'])->name('attendance.index');
         Route::get('/attendance/report', [AttendanceController::class, 'report'])->name('attendance.report');
         Route::get('/attendance/staff', [AttendanceController::class, 'staff'])->name('attendance.staff');
         // Dashboard

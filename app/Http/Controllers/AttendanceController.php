@@ -27,20 +27,21 @@ class AttendanceController extends Controller
      */
     public function index(Request $request)
     {
-        $this->authorize('view attendances');
+        $canViewAll = auth()->user()->can('view attendances');
 
         // Get filter parameters
-        $date = $request->input('date', today()->format('Y-m-d'));
-        $userId = $request->input('user_id');
+        $date   = $request->input('date', today()->format('Y-m-d'));
         $status = $request->input('status');
+        $userId = $canViewAll ? $request->input('user_id') : auth()->id();
 
-        // Build query
+        // Build query — staff only see their own records
         $query = Attendance::with('user')
             ->whereDate('date', $date)
             ->orderBy('check_in', 'desc');
 
-        // Apply filters
-        if ($userId) {
+        if (!$canViewAll) {
+            $query->where('user_id', auth()->id());
+        } elseif ($userId) {
             $query->where('user_id', $userId);
         }
 
@@ -50,39 +51,34 @@ class AttendanceController extends Controller
 
         $attendances = $query->paginate(20);
 
-        // Get staff members for filter
-        $staffMembers = User::whereHas('roles', function ($q) {
-            $q->whereIn('name', ['staff', 'administrator']);
-        })->get();
+        // Staff list for the filter dropdown (admins only)
+        $staffMembers = $canViewAll
+            ? User::whereHas('roles')->orderBy('name')->get()
+            : collect();
 
-        // Get today's date for the view
         $today = today();
 
-        // Calculate today's attendance stats for dashboard
+        // Stats: admins see all staff, staff see only themselves
+        $statsBase = Attendance::whereDate('date', $today);
+        if (!$canViewAll) {
+            $statsBase = $statsBase->where('user_id', auth()->id());
+        }
         $todayStats = [
-            'present' => Attendance::whereDate('date', $today)
-                                  ->where('status', 'present')
-                                  ->count(),
-            'late' => Attendance::whereDate('date', $today)
-                               ->where('status', 'late')
-                               ->count(),
-            'absent' => Attendance::whereDate('date', $today)
-                                 ->where('status', 'absent')
-                                 ->count(),
-            'on_leave' => Attendance::whereDate('date', $today)
-                                   ->where('status', 'leave')
-                                   ->count(),
+            'present'  => (clone $statsBase)->where('status', 'present')->count(),
+            'late'     => (clone $statsBase)->where('status', 'late')->count(),
+            'absent'   => (clone $statsBase)->where('status', 'absent')->count(),
+            'on_leave' => (clone $statsBase)->where('status', 'leave')->count(),
         ];
 
-        // Check if user has clocked in/out today
-        $todayAttendance = Attendance::where('user_id', auth()->id())
-            ->whereDate('date', today())
-            ->first();
-
-        $hasClockedInToday = $todayAttendance && $todayAttendance->check_in;
+        // Check if logged-in user has clocked in/out today
+        $todayAttendance  = Attendance::where('user_id', auth()->id())->whereDate('date', today())->first();
+        $hasClockedInToday  = $todayAttendance && $todayAttendance->check_in;
         $hasClockedOutToday = $todayAttendance && $todayAttendance->check_out;
 
-        return view('attendance.index', compact('attendances', 'staffMembers', 'date', 'userId', 'status', 'today', 'todayStats', 'hasClockedInToday', 'hasClockedOutToday'));
+        return view('attendance.index', compact(
+            'attendances', 'staffMembers', 'date', 'userId', 'status',
+            'today', 'todayStats', 'hasClockedInToday', 'hasClockedOutToday', 'canViewAll'
+        ));
     }
 
     /**
