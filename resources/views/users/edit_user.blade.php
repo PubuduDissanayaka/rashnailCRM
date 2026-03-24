@@ -80,8 +80,9 @@
                                     <label for="role" class="form-label">Role</label>
                                     <select class="form-control" id="role" name="role" data-choices data-trigger required>
                                         <option value="">Select Role</option>
-                                        <option value="administrator" {{ old('role', $user->role) === 'administrator' ? 'selected' : '' }}>Administrator</option>
-                                        <option value="staff" {{ old('role', $user->role) === 'staff' ? 'selected' : '' }}>Staff</option>
+                                        @foreach($roles as $role)
+                                            <option value="{{ $role }}" {{ old('role', $user->role) === $role ? 'selected' : '' }}>{{ ucfirst($role) }}</option>
+                                        @endforeach
                                     </select>
                                     @error('role')
                                         <span class="text-danger" role="alert">

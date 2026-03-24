@@ -43,7 +43,9 @@ class UserController extends Controller
     {
         $this->authorize('create users');
 
-        return view('users.create');
+        $roles = \Spatie\Permission\Models\Role::orderBy('name')->pluck('name');
+
+        return view('users.create', compact('roles'));
     }
 
     /**
@@ -57,7 +59,7 @@ class UserController extends Controller
             'name' => 'required|string|max:255',
             'email' => 'required|email|unique:users',
             'password' => 'required|string|min:8|confirmed',
-            'role' => 'required|in:administrator,staff',
+            'role' => ['required', \Illuminate\Validation\Rule::in(\Spatie\Permission\Models\Role::pluck('name'))],
             'status' => 'nullable|in:active,inactive,suspended',
             'avatar' => 'nullable|image|mimes:jpeg,png,jpg,gif,webp|max:2048',
         ]);
@@ -100,7 +102,9 @@ class UserController extends Controller
             abort(403, 'You are not authorized to edit other users.');
         }
 
-        return view('users.edit_user', compact('user'));
+        $roles = \Spatie\Permission\Models\Role::orderBy('name')->pluck('name');
+
+        return view('users.edit_user', compact('user', 'roles'));
     }
 
     /**
@@ -116,7 +120,7 @@ class UserController extends Controller
         $request->validate([
             'name' => 'required|string|max:255',
             'email' => 'required|email|unique:users,email,' . $user->id,
-            'role' => 'required|in:administrator,staff',
+            'role' => ['required', \Illuminate\Validation\Rule::in(\Spatie\Permission\Models\Role::pluck('name'))],
             'status' => 'required|in:active,inactive,suspended',
             'phone' => 'nullable|string|max:20',
             'password' => 'nullable|string|min:8|confirmed',
