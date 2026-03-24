@@ -217,29 +217,54 @@ function doReject(id, reason) {
 let breakTimerInterval = null;
 let breakStartTime = null;
 
+const breakTypeLabels = { lunch: 'Lunch Break', coffee: 'Coffee Break', personal: 'Personal Break', other: 'Break' };
+
 window.startBreak = function (breakType = 'lunch') {
-    apiFetch('/api/attendance/break/start', 'POST', { break_type: breakType }).then(res => {
-        if (res.success) {
-            toast('success', '☕ Break Started', `Break started at ${res.start_time}`);
-            breakStartTime = new Date();
-            startBreakTimer();
-            updateBreakUI(true);
-        } else {
-            toast('error', 'Break Failed', res.message);
-        }
-    }).catch(() => toast('error', 'Network Error', 'Could not start break.'));
+    // Disable the dropdown to prevent double-click
+    const startBtn = document.getElementById('start-break-btn');
+    if (startBtn) startBtn.disabled = true;
+
+    apiFetch('/api/attendance/break/start', 'POST', { break_type: breakType })
+        .then(res => {
+            if (res.success) {
+                const label = breakTypeLabels[breakType] || 'Break';
+                // Use actual server start_time so timer is accurate
+                const serverStart = res.break?.start_time ? new Date(res.break.start_time) : new Date();
+                breakStartTime = serverStart;
+                startBreakTimer();
+                updateBreakUI(true, breakType);
+                toast('success', `${label} Started`, `Started at ${res.start_time}`);
+            } else {
+                if (startBtn) startBtn.disabled = false;
+                toast('error', 'Cannot Start Break', res.message || 'Please try again.');
+            }
+        })
+        .catch(err => {
+            if (startBtn) startBtn.disabled = false;
+            toast('error', 'Network Error', 'Could not start break. Check your connection.');
+        });
 };
 
 window.endBreak = function () {
-    apiFetch('/api/attendance/break/end', 'POST').then(res => {
-        if (res.success) {
-            toast('success', '🔄 Break Ended', 'Welcome back!');
-            stopBreakTimer();
-            updateBreakUI(false);
-        } else {
-            toast('error', 'Break Failed', res.message);
-        }
-    }).catch(() => toast('error', 'Network Error', 'Could not end break.'));
+    const endBtn = document.getElementById('end-break-btn');
+    if (endBtn) { endBtn.disabled = true; endBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span>Ending...'; }
+
+    apiFetch('/api/attendance/break/end', 'POST')
+        .then(res => {
+            if (res.success) {
+                stopBreakTimer();
+                updateBreakUI(false);
+                const mins = res.duration_minutes ?? 0;
+                toast('success', 'Break Ended', `Welcome back! Break duration: ${mins} minute${mins !== 1 ? 's' : ''}.`);
+            } else {
+                if (endBtn) { endBtn.disabled = false; endBtn.innerHTML = '<i class="ti ti-play me-1"></i>End Break'; }
+                toast('error', 'Cannot End Break', res.message || 'Please try again.');
+            }
+        })
+        .catch(() => {
+            if (endBtn) { endBtn.disabled = false; endBtn.innerHTML = '<i class="ti ti-play me-1"></i>End Break'; }
+            toast('error', 'Network Error', 'Could not end break. Check your connection.');
+        });
 };
 
 function startBreakTimer() {
@@ -262,13 +287,16 @@ function stopBreakTimer() {
     if (el) el.textContent = '00:00';
 }
 
-function updateBreakUI(onBreak) {
-    const startBtn = document.getElementById('start-break-btn');
-    const endBtn = document.getElementById('end-break-btn');
+function updateBreakUI(onBreak, breakType = null) {
+    const startBtn  = document.getElementById('start-break-btn');
+    const endBtn    = document.getElementById('end-break-btn');
     const timerWrap = document.getElementById('break-timer-wrap');
-    if (startBtn) startBtn.style.display = onBreak ? 'none' : '';
-    if (endBtn) endBtn.style.display = onBreak ? '' : 'none';
+    const typeLabel = document.getElementById('break-type-label');
+
+    if (startBtn)  { startBtn.style.display = onBreak ? 'none' : ''; startBtn.disabled = false; }
+    if (endBtn)    { endBtn.style.display = onBreak ? '' : 'none'; endBtn.disabled = false; endBtn.innerHTML = '<i class="ti ti-play me-1"></i>End Break'; }
     if (timerWrap) timerWrap.style.display = onBreak ? '' : 'none';
+    if (typeLabel) typeLabel.textContent = onBreak && breakType ? `(${breakTypeLabels[breakType] || breakType})` : '';
 }
 
 /* ─── Bulk Approve ──────────────────────────────────────── */
@@ -301,14 +329,15 @@ window.bulkApprove = function () {
 /* ─── Initialise on DOMContentLoaded ───────────────────── */
 document.addEventListener('DOMContentLoaded', function () {
 
-    // Check if on break at page load
+    // Check if on break at page load — restore timer and UI state
     fetch('/api/attendance/break/status', {
         headers: { 'X-CSRF-TOKEN': csrf(), 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest' }
     }).then(r => r.json()).then(res => {
-        if (res.on_break && res.break) {
-            breakStartTime = new Date(res.break.start_time);
+        if (res.has_active_break && res.active_break) {
+            // Use the server's start_time for accurate elapsed calculation
+            breakStartTime = new Date(res.active_break.start_time);
             startBreakTimer();
-            updateBreakUI(true);
+            updateBreakUI(true, res.break_type);
         }
     }).catch(() => { });
 

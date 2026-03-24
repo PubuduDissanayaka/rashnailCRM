@@ -293,29 +293,49 @@
 
                     {{-- Break Panel (only shown if clocked in and not yet clocked out) --}}
                     @if($hasClockedInToday && !$hasClockedOutToday)
-                    <div class="alert alert-info d-flex align-items-center gap-3 mb-3" id="break-panel">
-                        <i class="ti ti-coffee fs-4"></i>
-                        <div class="flex-grow-1">
-                            <strong>Break Management</strong>
-                            <span id="break-timer-wrap" style="display:none;" class="ms-3">
-                                <i class="ti ti-stopwatch me-1"></i>
-                                <span id="break-timer" class="fw-bold font-monospace">00:00</span>
-                            </span>
-                        </div>
-                        <div class="d-flex gap-2">
-                            <div class="dropdown">
-                                <button class="btn btn-sm btn-warning" id="start-break-btn" data-bs-toggle="dropdown">
-                                    <i class="ti ti-pause me-1"></i>Start Break
-                                </button>
-                                <ul class="dropdown-menu">
-                                    <li><a class="dropdown-item" href="#" onclick="startBreak('lunch')"><i class="ti ti-salad me-2"></i>Lunch Break</a></li>
-                                    <li><a class="dropdown-item" href="#" onclick="startBreak('coffee')"><i class="ti ti-coffee me-2"></i>Coffee Break</a></li>
-                                    <li><a class="dropdown-item" href="#" onclick="startBreak('personal')"><i class="ti ti-user me-2"></i>Personal Break</a></li>
-                                </ul>
+                    <div class="card border-0 bg-info-subtle mb-3" id="break-panel">
+                        <div class="card-body py-2 px-3 d-flex align-items-center gap-3 flex-wrap">
+                            <i class="ti ti-coffee fs-4 text-info"></i>
+                            <div class="flex-grow-1">
+                                <strong class="text-info">Break Management</strong>
+                                <span id="break-type-label" class="text-muted small ms-1"></span>
+                                <span id="break-timer-wrap" style="display:none;" class="ms-2 badge bg-warning text-dark fs-6 font-monospace">
+                                    <i class="ti ti-stopwatch me-1"></i><span id="break-timer">00:00</span>
+                                </span>
                             </div>
-                            <button class="btn btn-sm btn-success" id="end-break-btn" style="display:none;" onclick="endBreak()">
-                                <i class="ti ti-play me-1"></i>End Break
-                            </button>
+                            <div class="d-flex gap-2 align-items-center">
+                                <div class="dropdown">
+                                    <button class="btn btn-warning btn-sm" id="start-break-btn"
+                                            data-bs-toggle="dropdown" aria-expanded="false">
+                                        <i class="ti ti-pause me-1"></i>Start Break
+                                    </button>
+                                    <ul class="dropdown-menu shadow-sm">
+                                        <li>
+                                            <a class="dropdown-item" href="#" onclick="event.preventDefault(); startBreak('lunch')">
+                                                <i class="ti ti-salad me-2 text-success"></i>Lunch Break
+                                            </a>
+                                        </li>
+                                        <li>
+                                            <a class="dropdown-item" href="#" onclick="event.preventDefault(); startBreak('coffee')">
+                                                <i class="ti ti-coffee me-2 text-warning"></i>Coffee Break
+                                            </a>
+                                        </li>
+                                        <li>
+                                            <a class="dropdown-item" href="#" onclick="event.preventDefault(); startBreak('personal')">
+                                                <i class="ti ti-user me-2 text-info"></i>Personal Break
+                                            </a>
+                                        </li>
+                                        <li>
+                                            <a class="dropdown-item" href="#" onclick="event.preventDefault(); startBreak('other')">
+                                                <i class="ti ti-dots me-2 text-muted"></i>Other
+                                            </a>
+                                        </li>
+                                    </ul>
+                                </div>
+                                <button class="btn btn-success btn-sm" id="end-break-btn" style="display:none;" onclick="endBreak()">
+                                    <i class="ti ti-play me-1"></i>End Break
+                                </button>
+                            </div>
                         </div>
                     </div>
                     @endif
