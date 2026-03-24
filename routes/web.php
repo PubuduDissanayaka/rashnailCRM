@@ -138,8 +138,8 @@ Route::middleware(['auth'])->group(function () {
             ->name('settings.email-providers.toggle');
     });
 
-    // POS routes - Admin only (MUST be before catch-all routes)
-    Route::middleware(['auth', 'can:manage system'])->group(function () {
+    // POS routes — accessible to anyone with 'view pos' permission
+    Route::middleware(['auth', 'can:view pos'])->group(function () {
         Route::get('/pos', [PosController::class, 'index'])
             ->name('pos.index');
 
@@ -147,6 +147,7 @@ Route::middleware(['auth'])->group(function () {
             ->name('pos.transactions');
 
         Route::post('/pos/sale', [PosController::class, 'store'])
+            ->middleware('can:create pos transactions')
             ->name('pos.store');
 
         Route::get('/pos/search', [PosController::class, 'searchItems'])
@@ -165,31 +166,32 @@ Route::middleware(['auth'])->group(function () {
             ->name('pos.receipt');
     });
 
-    // Coupon management routes - Admin only (MUST be before catch-all routes)
-    Route::middleware(['auth', 'can:manage system'])->group(function () {
+    // Coupon management routes — gated by granular coupon permissions
+    Route::middleware(['auth', 'can:view coupons'])->group(function () {
         Route::get('/coupons', [CouponController::class, 'index'])->name('coupons.index');
-        Route::get('/coupons/create', [CouponController::class, 'create'])->name('coupons.create');
-        Route::post('/coupons', [CouponController::class, 'store'])->name('coupons.store');
-        
-        // Bulk coupon generation
-        Route::get('/coupons/bulk/create', [CouponController::class, 'createBulk'])->name('coupons.bulk.create');
-        Route::post('/coupons/bulk/generate', [CouponController::class, 'generateBulk'])->name('coupons.bulk.generate');
         Route::get('/coupons/{coupon}', [CouponController::class, 'show'])->name('coupons.show');
-        Route::get('/coupons/{coupon}/edit', [CouponController::class, 'edit'])->name('coupons.edit');
-        Route::put('/coupons/{coupon}', [CouponController::class, 'update'])->name('coupons.update');
-        Route::delete('/coupons/{coupon}', [CouponController::class, 'destroy'])->name('coupons.destroy');
-        
-        // Customer groups management
-        Route::get('/customer-groups', [CouponController::class, 'customerGroups'])->name('customer-groups.index');
-        Route::get('/customer-groups/create', [CouponController::class, 'createCustomerGroup'])->name('customer-groups.create');
-        Route::post('/customer-groups', [CouponController::class, 'storeCustomerGroup'])->name('customer-groups.store');
-        Route::get('/customer-groups/{group}/edit', [CouponController::class, 'editCustomerGroup'])->name('customer-groups.edit');
-        Route::put('/customer-groups/{group}', [CouponController::class, 'updateCustomerGroup'])->name('customer-groups.update');
-        Route::delete('/customer-groups/{group}', [CouponController::class, 'destroyCustomerGroup'])->name('customer-groups.destroy');
-        
-        // POS coupon validation endpoint
-        Route::post('/api/coupons/validate', [CouponController::class, 'validateCoupon'])->name('coupons.validate');
-        Route::get('/api/coupons/report', [CouponController::class, 'report'])->name('coupons.report');
+
+        Route::get('/coupons/create', [CouponController::class, 'create'])->middleware('can:create coupons')->name('coupons.create');
+        Route::post('/coupons', [CouponController::class, 'store'])->middleware('can:create coupons')->name('coupons.store');
+
+        Route::get('/coupons/{coupon}/edit', [CouponController::class, 'edit'])->middleware('can:edit coupons')->name('coupons.edit');
+        Route::put('/coupons/{coupon}', [CouponController::class, 'update'])->middleware('can:edit coupons')->name('coupons.update');
+
+        Route::delete('/coupons/{coupon}', [CouponController::class, 'destroy'])->middleware('can:delete coupons')->name('coupons.destroy');
+
+        // Bulk coupon generation
+        Route::get('/coupons/bulk/create', [CouponController::class, 'createBulk'])->middleware('can:manage coupon batches')->name('coupons.bulk.create');
+        Route::post('/coupons/bulk/generate', [CouponController::class, 'generateBulk'])->middleware('can:manage coupon batches')->name('coupons.bulk.generate');
+
+        // Customer groups management (admin-level)
+        Route::middleware(['can:manage system'])->group(function () {
+            Route::get('/customer-groups', [CouponController::class, 'customerGroups'])->name('customer-groups.index');
+            Route::get('/customer-groups/create', [CouponController::class, 'createCustomerGroup'])->name('customer-groups.create');
+            Route::post('/customer-groups', [CouponController::class, 'storeCustomerGroup'])->name('customer-groups.store');
+            Route::get('/customer-groups/{group}/edit', [CouponController::class, 'editCustomerGroup'])->name('customer-groups.edit');
+            Route::put('/customer-groups/{group}', [CouponController::class, 'updateCustomerGroup'])->name('customer-groups.update');
+            Route::delete('/customer-groups/{group}', [CouponController::class, 'destroyCustomerGroup'])->name('customer-groups.destroy');
+        });
 
         // Coupon reports
         Route::get('/reports/coupons', [CouponReportController::class, 'index'])->name('reports.coupons.index');
@@ -198,6 +200,12 @@ Route::middleware(['auth'])->group(function () {
         Route::get('/api/reports/coupons/usage-by-period', [CouponReportController::class, 'usageByPeriod'])->name('reports.coupons.usage-by-period');
         Route::get('/api/reports/coupons/top-coupons', [CouponReportController::class, 'topCoupons'])->name('reports.coupons.top-coupons');
         Route::get('/reports/coupons/export/{type}', [CouponReportController::class, 'export'])->name('reports.coupons.export');
+    });
+
+    // POS coupon validation — any authenticated user with POS access
+    Route::middleware(['auth', 'can:view pos'])->group(function () {
+        Route::post('/api/coupons/validate', [CouponController::class, 'validateCoupon'])->name('coupons.validate');
+        Route::get('/api/coupons/report', [CouponController::class, 'report'])->name('coupons.report');
     });
 
     // Service packages routes - restricted to users with appropriate permissions
@@ -484,15 +492,17 @@ Route::middleware(['auth'])->group(function () {
         return response()->json([], 404);
     })->where('path', '.*');
 
-    // Report Hub + Sub-Reports — Admin only (MUST be before catch-all routes)
-    Route::middleware(['auth', 'can:manage system'])->group(function () {
+    // Report Hub + Sub-Reports — requires 'view reports' permission
+    Route::middleware(['auth', 'can:view reports'])->group(function () {
         Route::get('/reports',                   [ReportsController::class, 'index'])       ->name('reports.index');
         Route::get('/reports/sales',             [ReportsController::class, 'sales'])       ->name('reports.sales');
         Route::get('/reports/appointments',      [ReportsController::class, 'appointments'])->name('reports.appointments');
         Route::get('/reports/customers',         [ReportsController::class, 'customers'])   ->name('reports.customers');
         Route::get('/reports/expenses',          [ReportsController::class, 'expenses'])    ->name('reports.expenses');
         Route::get('/reports/inventory',         [ReportsController::class, 'inventory'])   ->name('reports.inventory');
-        Route::get('/reports/{type}/export',     [ReportsController::class, 'export'])      ->name('reports.export');
+        Route::get('/reports/{type}/export',     [ReportsController::class, 'export'])
+            ->middleware('can:export reports')
+            ->name('reports.export');
     });
 
     // Search route
