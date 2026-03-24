@@ -18,10 +18,10 @@
                     </button>
                 </div>
             </div>
-            <div class="row" id="rolesContainer">
+            <div class="row g-3" id="rolesContainer">
                 @foreach ($roles as $role)
-                <div class="col-md-6 col-lg-3 role-card" data-name="{{ strtolower($role->name) }}">
-                    <div class="card">
+                <div class="col-md-6 col-lg-3 d-flex role-card" data-name="{{ strtolower($role->name) }}">
+                    <div class="card w-100">
                         <div class="position-absolute top-0 end-0" style="width: 180px;">
                             <svg fill="none" height="560" style="opacity: 0.075; width: 100%; height: auto;"
                                 viewbox="0 0 600 560" width="600" xmlns="http://www.w3.org/2000/svg">
@@ -142,16 +142,45 @@
                                     </div>
                                 </div>
                             </div>
-                            <ul class="list-unstyled mb-3">
-                                @forelse($role->permissions as $permission)
-                                <li class="d-flex align-items-center mb-2">
-                                    <span class="ti ti-check fs-lg text-success me-2"></span> {{ ucfirst(str_replace('_', ' ', $permission->name)) }}
+                            @php
+                                $perms    = $role->permissions;
+                                $showMax  = 6;
+                                $total    = $perms->count();
+                                $visible  = $perms->take($showMax);
+                                $hidden   = $perms->skip($showMax);
+                            @endphp
+                            <ul class="list-unstyled mb-2 flex-grow-1">
+                                @forelse($visible as $permission)
+                                <li class="d-flex align-items-center mb-1">
+                                    <span class="ti ti-check fs-base text-success me-2 flex-shrink-0"></span>
+                                    <span class="small">{{ ucwords(str_replace(['.','_'], ' ', $permission->name)) }}</span>
                                 </li>
                                 @empty
-                                <li class="d-flex align-items-center mb-2">
-                                    <span class="ti ti-circle-dot fs-lg text-warning me-2"></span> No permissions assigned
+                                <li class="d-flex align-items-center mb-1">
+                                    <span class="ti ti-circle-dot fs-base text-warning me-2"></span>
+                                    <span class="small text-muted">No permissions assigned</span>
                                 </li>
                                 @endforelse
+
+                                @if($hidden->isNotEmpty())
+                                <li id="extra-perms-{{ $role->id }}" style="display:none;">
+                                    @foreach($hidden as $permission)
+                                    <div class="d-flex align-items-center mb-1">
+                                        <span class="ti ti-check fs-base text-success me-2 flex-shrink-0"></span>
+                                        <span class="small">{{ ucwords(str_replace(['.','_'], ' ', $permission->name)) }}</span>
+                                    </div>
+                                    @endforeach
+                                </li>
+                                <li class="mt-1">
+                                    <button type="button"
+                                        class="btn btn-link btn-sm p-0 text-primary text-decoration-none"
+                                        onclick="togglePerms({{ $role->id }}, {{ $hidden->count() }})"
+                                        id="toggle-btn-{{ $role->id }}">
+                                        <i class="ti ti-chevron-down me-1" id="toggle-icon-{{ $role->id }}"></i>
+                                        <span id="toggle-label-{{ $role->id }}">+{{ $hidden->count() }} more permissions</span>
+                                    </button>
+                                </li>
+                                @endif
                             </ul>
                             <p class="mb-2 text-muted">Total {{ $role->users->count() }} users</p>
                             <div class="avatar-group avatar-group-sm mb-3">
@@ -255,6 +284,16 @@
 
 @section('scripts')
     <script>
+        function togglePerms(roleId, hiddenCount) {
+            const extra  = document.getElementById('extra-perms-' + roleId);
+            const label  = document.getElementById('toggle-label-' + roleId);
+            const icon   = document.getElementById('toggle-icon-' + roleId);
+            const isOpen = extra.style.display !== 'none';
+            extra.style.display = isOpen ? 'none' : 'block';
+            label.textContent   = isOpen ? '+' + hiddenCount + ' more permissions' : 'Show less';
+            icon.className      = isOpen ? 'ti ti-chevron-down me-1' : 'ti ti-chevron-up me-1';
+        }
+
         function editRole(roleId, roleName) {
             // Set the action URL for the form
             document.getElementById('editRoleForm').action = '/users/roles/' + roleId;
