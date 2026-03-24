@@ -36,6 +36,11 @@
                                 <i class="ti ti-credit-card me-1"></i> Payment & Billing
                             </a>
                         </li>
+                        <li class="nav-item">
+                            <a class="nav-link" data-bs-toggle="tab" href="#attendance-tab">
+                                <i class="ti ti-clock-check me-1"></i> Attendance
+                            </a>
+                        </li>
                     </ul>
 
                     <!-- Tab Content -->
@@ -44,6 +49,7 @@
                         @include('settings.partials.appointment')
                         @include('settings.partials.notification')
                         @include('settings.partials.payment')
+                        @include('settings.partials.attendance')
                     </div>
                 </div>
             </div>

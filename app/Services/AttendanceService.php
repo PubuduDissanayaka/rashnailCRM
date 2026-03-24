@@ -53,6 +53,19 @@ class AttendanceService
             }
 
             $checkInTime = now();
+
+            // Enforce clock-in window if enabled
+            if (\App\Models\Setting::get('attendance.enforce_clock_in_window', '1') == '1') {
+                $earliest = \App\Models\Setting::get('attendance.clock_in_earliest', '07:00');
+                $latest   = \App\Models\Setting::get('attendance.clock_in_latest',   '12:00');
+                $nowTime  = $checkInTime->format('H:i');
+                if ($nowTime < $earliest) {
+                    throw new \Exception("Clock-in is not allowed before {$earliest}. Please wait until the clock-in window opens.");
+                }
+                if ($nowTime > $latest) {
+                    throw new \Exception("Clock-in window has closed at {$latest}. Please contact your manager to record attendance manually.");
+                }
+            }
             
             // Determine business hours type
             $businessHoursType = $this->businessHoursService->getBusinessDayType($checkInTime);
@@ -138,6 +151,19 @@ class AttendanceService
                 ->firstOrFail();
 
             $checkOutTime = now();
+
+            // Enforce clock-out window if enabled
+            if (\App\Models\Setting::get('attendance.enforce_clock_out_window', '0') == '1') {
+                $earliest = \App\Models\Setting::get('attendance.clock_out_earliest', '11:00');
+                $latest   = \App\Models\Setting::get('attendance.clock_out_latest',   '23:00');
+                $nowTime  = $checkOutTime->format('H:i');
+                if ($nowTime < $earliest) {
+                    throw new \Exception("Clock-out is not allowed before {$earliest}.");
+                }
+                if ($nowTime > $latest) {
+                    throw new \Exception("Clock-out window has closed at {$latest}. Please contact your manager.");
+                }
+            }
 
             // Calculate hours worked (excluding breaks)
             $totalMinutes = $attendance->check_in->diffInMinutes($checkOutTime);

@@ -32,13 +32,14 @@ class SettingsController extends Controller
         $appointment = Setting::getGroup('appointment');
         $notification = Setting::getGroup('notification');
         $payment = Setting::getGroup('payment');
+        $attendance = Setting::getGroup('attendance');
 
         // Get email providers
         $emailProviders = NotificationProvider::where('channel', 'email')
             ->orderBy('priority')
             ->get();
 
-        return view('settings.index', compact('business', 'appointment', 'notification', 'payment', 'emailProviders'));
+        return view('settings.index', compact('business', 'appointment', 'notification', 'payment', 'attendance', 'emailProviders'));
     }
 
     /**
@@ -49,7 +50,7 @@ class SettingsController extends Controller
         $this->authorize('manage system');
 
         $validated = $request->validate([
-            'group' => 'required|in:business,appointment,notification,payment',
+            'group' => 'required|in:business,appointment,notification,payment,attendance',
             'settings' => 'nullable|array',
             'business_hours' => 'nullable|array',
             'payment_methods' => 'nullable|array',
