@@ -18,8 +18,9 @@ class UserController extends Controller
         $this->authorize('view users');
 
         $users = User::all();
+        $roles = \Spatie\Permission\Models\Role::orderBy('name')->pluck('name');
 
-        return view('users.index', compact('users'));
+        return view('users.index', compact('users', 'roles'));
     }
 
     /**

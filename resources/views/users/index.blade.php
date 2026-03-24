@@ -39,8 +39,9 @@
                         <div class="app-search">
                             <select class="form-select form-control my-1 my-md-0" data-table-filter="role">
                                 <option value="All">Role</option>
-                                <option value="Administrator">Administrator</option>
-                                <option value="Staff">Staff</option>
+                                @foreach($roles as $role)
+                                    <option value="{{ ucfirst($role) }}">{{ ucfirst($role) }}</option>
+                                @endforeach
                             </select>
                             <i class="app-search-icon text-muted" data-lucide="user"></i>
                         </div>
