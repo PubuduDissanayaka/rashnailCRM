@@ -82,8 +82,7 @@ class RoleController extends Controller
             foreach ($userIds as $userId) {
                 $user = User::find($userId);
                 if ($user) {
-                    $user->assignRole($role->name);
-                    // Keep legacy users.role column in sync
+                    $user->syncRoles([$role->name]); // replaces any existing role
                     $user->update(['role' => $role->name]);
                     $assigned++;
                 }

@@ -86,8 +86,8 @@ class UserController extends Controller
 
         $user = User::create($userData);
 
-        // Assign the role using Spatie permissions
-        $user->assignRole($request->role);
+        // Assign the role using Spatie permissions (syncRoles ensures only one role)
+        $user->syncRoles([$request->role]);
 
         return redirect()->route('users.index')->with('success', 'User created successfully.');
     }

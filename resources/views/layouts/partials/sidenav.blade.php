@@ -149,7 +149,7 @@
             <li class="side-nav-title">Sales & Finance</li>
 
             {{-- Point of Sale --}}
-            @can('manage system')
+            @can('view pos')
             <li class="side-nav-item">
                 <a aria-controls="sidebarPOS" aria-expanded="false" class="side-nav-link"
                     data-bs-toggle="collapse" href="#sidebarPOS">
