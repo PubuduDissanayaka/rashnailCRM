@@ -56,14 +56,17 @@ class AttendanceService
 
             // Enforce clock-in window if enabled
             if (\App\Models\Setting::get('attendance.enforce_clock_in_window', '1') == '1') {
-                $earliest = \App\Models\Setting::get('attendance.clock_in_earliest', '07:00');
-                $latest   = \App\Models\Setting::get('attendance.clock_in_latest',   '12:00');
-                $nowTime  = $checkInTime->format('H:i');
+                $earliest   = \App\Models\Setting::get('attendance.clock_in_earliest', '07:00');
+                $latest     = \App\Models\Setting::get('attendance.clock_in_latest',   '12:00');
+                $nowTime    = $checkInTime->format('H:i');
+                $earliestFmt = \Carbon\Carbon::createFromFormat('H:i', $earliest)->format('g:i A');
+                $latestFmt   = \Carbon\Carbon::createFromFormat('H:i', $latest)->format('g:i A');
+                $currentFmt  = $checkInTime->format('g:i A');
                 if ($nowTime < $earliest) {
-                    throw new \Exception("Clock-in is not allowed before {$earliest}. Please wait until the clock-in window opens.");
+                    throw new \Exception("Too early to clock in. Clock-in opens at {$earliestFmt}. Your current time is {$currentFmt}.");
                 }
                 if ($nowTime > $latest) {
-                    throw new \Exception("Clock-in window has closed at {$latest}. Please contact your manager to record attendance manually.");
+                    throw new \Exception("Clock-in is now closed. The clock-in window was {$earliestFmt} – {$latestFmt}. Please ask your manager to add your attendance manually.");
                 }
             }
             
@@ -154,14 +157,17 @@ class AttendanceService
 
             // Enforce clock-out window if enabled
             if (\App\Models\Setting::get('attendance.enforce_clock_out_window', '0') == '1') {
-                $earliest = \App\Models\Setting::get('attendance.clock_out_earliest', '11:00');
-                $latest   = \App\Models\Setting::get('attendance.clock_out_latest',   '23:00');
-                $nowTime  = $checkOutTime->format('H:i');
+                $earliest    = \App\Models\Setting::get('attendance.clock_out_earliest', '11:00');
+                $latest      = \App\Models\Setting::get('attendance.clock_out_latest',   '23:00');
+                $nowTime     = $checkOutTime->format('H:i');
+                $earliestFmt = \Carbon\Carbon::createFromFormat('H:i', $earliest)->format('g:i A');
+                $latestFmt   = \Carbon\Carbon::createFromFormat('H:i', $latest)->format('g:i A');
+                $currentFmt  = $checkOutTime->format('g:i A');
                 if ($nowTime < $earliest) {
-                    throw new \Exception("Clock-out is not allowed before {$earliest}.");
+                    throw new \Exception("Too early to clock out. Clock-out opens at {$earliestFmt}. Your current time is {$currentFmt}.");
                 }
                 if ($nowTime > $latest) {
-                    throw new \Exception("Clock-out window has closed at {$latest}. Please contact your manager.");
+                    throw new \Exception("Clock-out window has closed. The allowed window was {$earliestFmt} – {$latestFmt}. Please ask your manager to update your attendance.");
                 }
             }
 
