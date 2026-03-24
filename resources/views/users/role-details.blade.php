@@ -253,7 +253,7 @@
                                         @foreach($permissionChunk as $permission)
                                         <div class="form-check mb-2">
                                             <input class="form-check-input" type="checkbox" name="permissions[]"
-                                                value="{{ $permission->id }}" id="perm_{{ $permission->id }}"
+                                                value="{{ $permission->name }}" id="perm_{{ $permission->id }}"
                                                 {{ $role->permissions->contains($permission->id) ? 'checked' : '' }}>
                                             <label class="form-check-label text-capitalize" for="perm_{{ $permission->id }}">
                                                 {{ str_replace('_', ' ', $permission->name) }}
