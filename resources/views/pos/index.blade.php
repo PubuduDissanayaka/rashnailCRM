@@ -210,6 +210,71 @@
             position: relative;
             overflow: hidden;
         }
+
+        /* ─── Payment Modal Responsive ─── */
+        @media (max-width: 991.98px) {
+            #paymentModal .modal-dialog {
+                max-width: 95vw;
+                margin: 0.5rem auto;
+            }
+            #paymentModal .modal-body {
+                padding: 0.75rem;
+            }
+            .enterprise-keypad {
+                max-width: 100%;
+                padding: 10px;
+            }
+            .keypad-grid {
+                gap: 8px;
+            }
+            .keypad-btn-enterprise {
+                padding: 14px 6px;
+                font-size: 1.2rem;
+            }
+        }
+
+        @media (max-width: 767.98px) {
+            #paymentModal .modal-dialog {
+                max-width: 100%;
+                margin: 0;
+                min-height: 100vh;
+            }
+            #paymentModal .modal-content {
+                border-radius: 0;
+                min-height: 100vh;
+            }
+            #paymentModal .modal-body {
+                padding: 0.5rem;
+                overflow-y: auto;
+                max-height: calc(100vh - 130px);
+            }
+            .enterprise-keypad {
+                max-width: 320px;
+                padding: 8px;
+            }
+            .keypad-grid {
+                gap: 6px;
+            }
+            .keypad-btn-enterprise {
+                padding: 12px 4px;
+                font-size: 1.1rem;
+                border-radius: 8px;
+            }
+            /* Stack amount + change side by side on mobile */
+            #paymentModal .input-group-lg .form-control {
+                font-size: 1.25rem !important;
+            }
+        }
+
+        @media (max-width: 575.98px) {
+            .keypad-btn-enterprise {
+                padding: 10px 2px;
+                font-size: 1rem;
+            }
+            .keypad-grid {
+                gap: 4px;
+            }
+        }
     </style>
 @endsection
 
@@ -509,7 +574,7 @@
 
     <!-- Payment Modal - Enterprise Edition -->
     <div class="modal fade" id="paymentModal" tabindex="-1" data-bs-backdrop="static" data-bs-keyboard="false">
-        <div class="modal-dialog modal-xl modal-dialog-centered modal-dialog-scrollable">
+        <div class="modal-dialog modal-xl modal-dialog-centered modal-dialog-scrollable modal-fullscreen-lg-down">
             <div class="modal-content">
                 <div class="modal-header bg-primary text-white">
                     <h5 class="modal-title">
@@ -650,9 +715,9 @@
                                     </label>
                                     <div class="input-group input-group-lg">
                                         <span class="input-group-text">{{ $currencySymbol }}</span>
-                                        <input type="number" class="form-control text-end fs-4 fw-bold"
-                                               id="amount-received-display" placeholder="0.00" min="0" step="0.01"
-                                               inputmode="decimal">
+                                        <input type="text" class="form-control text-end fs-4 fw-bold"
+                                               id="amount-received-display" placeholder="0.00"
+                                               inputmode="decimal" autocomplete="off">
                                     </div>
                                     <div class="invalid-feedback" id="amount-error"></div>
                                 </div>

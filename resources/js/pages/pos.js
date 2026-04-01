@@ -975,9 +975,9 @@ document.addEventListener('DOMContentLoaded', function () {
         const changeDisplay = document.getElementById('change-display');
 
         if (amountReceivedDisplay) {
-            // Only update the field value when it's not focused (keyboard typing)
+            // Only set value when NOT focused (numpad/quick-amount clicks)
             if (document.activeElement !== amountReceivedDisplay) {
-                amountReceivedDisplay.value = paymentState.amountReceived || '';
+                amountReceivedDisplay.value = paymentState.amountReceivedString || '';
             }
 
             // Visual feedback
@@ -989,8 +989,11 @@ document.addEventListener('DOMContentLoaded', function () {
             }
         }
 
+        // Always update change display
         if (changeDisplay) {
             changeDisplay.textContent = `${currencySymbol}${formatCurrency(change.toFixed(2))}`;
+            // Highlight change when positive
+            changeDisplay.closest('.alert, .card, div')?.classList.toggle('text-success', change > 0);
         }
     }
 
@@ -1294,12 +1297,26 @@ document.addEventListener('DOMContentLoaded', function () {
      */
     const amountInput = document.getElementById('amount-received-display');
     if (amountInput) {
-        amountInput.addEventListener('input', function () {
-            const val = this.value.replace(/[^0-9.]/g, '');
-            paymentState.amountReceivedString = val;
-            paymentState.amountReceived = parseFloat(val) || 0;
-            updatePaymentDisplay();
+        // Allow only digits and one decimal point
+        amountInput.addEventListener('keydown', function (e) {
+            const allowed = ['Backspace','Delete','Tab','ArrowLeft','ArrowRight','Home','End'];
+            if (allowed.includes(e.key)) return;
+            if ((e.ctrlKey || e.metaKey) && ['a','c','v','x'].includes(e.key.toLowerCase())) return;
+            if (e.key === '.' && !this.value.includes('.')) return;
+            if (e.key >= '0' && e.key <= '9') return;
+            e.preventDefault();
         });
+
+        function syncFromInput() {
+            const raw = amountInput.value.replace(/[^0-9.]/g, '');
+            paymentState.amountReceivedString = raw;
+            paymentState.amountReceived = parseFloat(raw) || 0;
+            updatePaymentDisplay();
+        }
+
+        amountInput.addEventListener('input', syncFromInput);
+        amountInput.addEventListener('keyup', syncFromInput);
+        amountInput.addEventListener('paste', function () { setTimeout(syncFromInput, 0); });
     }
 
     /**
