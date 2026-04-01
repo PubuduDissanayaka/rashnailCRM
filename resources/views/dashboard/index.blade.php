@@ -74,7 +74,7 @@ $recentSales = Sale::with(['customer', 'user'])
 @section('content')
     @include('layouts.partials/page-title', ['title' => 'Dashboard'])
 
-    {{-- KPI Stat Cards --}}
+    {{-- KPI Stat Cards — visible to all --}}
     <div class="row row-cols-xxl-4 row-cols-md-2 row-cols-1 g-3 mb-3">
         {{-- Today's Appointments --}}
         <div class="col">
@@ -96,6 +96,7 @@ $recentSales = Sale::with(['customer', 'user'])
             </div>
         </div>
 
+        @can('manage system')
         {{-- Monthly Revenue --}}
         <div class="col">
             <div class="card h-100">
@@ -155,9 +156,11 @@ $recentSales = Sale::with(['customer', 'user'])
                 </div>
             </div>
         </div>
+        @endcan
     </div><!-- end row -->
 
-    {{-- Charts Row --}}
+    @can('manage system')
+    {{-- Charts Row — admin only --}}
     <div class="row g-3 mb-3">
         {{-- Monthly Revenue Chart --}}
         <div class="col-xl-8">
@@ -200,6 +203,7 @@ $recentSales = Sale::with(['customer', 'user'])
             </div>
         </div>
     </div><!-- end row -->
+    @endcan
 
     {{-- Today's Appointments Table --}}
     <div class="row g-3 mb-3">
@@ -319,9 +323,10 @@ $recentSales = Sale::with(['customer', 'user'])
         </div>
     </div><!-- end row -->
 
-    {{-- Staff Attendance + Low Stock --}}
+    {{-- Staff Attendance (admin) + Low Stock (all) --}}
     <div class="row g-3 mb-3">
-        {{-- Staff Attendance --}}
+        @can('manage system')
+        {{-- Staff Attendance — admin only --}}
         <div class="col-xl-6">
             <div class="card h-100">
                 <div class="card-header d-flex justify-content-between align-items-center border-dashed">
@@ -382,9 +387,10 @@ $recentSales = Sale::with(['customer', 'user'])
                 </div>
             </div>
         </div>
+        @endcan
 
-        {{-- Low Stock Alerts --}}
-        <div class="col-xl-6">
+        {{-- Low Stock Alerts — visible to all --}}
+        <div class="col-xl-{{ auth()->user()->can('manage system') ? '6' : '12' }}">
             <div class="card h-100">
                 <div class="card-header d-flex justify-content-between align-items-center border-dashed">
                     <div>
@@ -432,7 +438,8 @@ $recentSales = Sale::with(['customer', 'user'])
         </div>
     </div><!-- end row -->
 
-    {{-- Recent Sales --}}
+    @can('manage system')
+    {{-- Recent Sales — admin only --}}
     <div class="row g-3">
         <div class="col-12">
             <div class="card">
@@ -509,6 +516,7 @@ $recentSales = Sale::with(['customer', 'user'])
             </div>
         </div>
     </div><!-- end row -->
+    @endcan
 
 @endsection
 

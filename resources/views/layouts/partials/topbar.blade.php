@@ -142,13 +142,15 @@
                 <i class="app-search-icon text-muted" data-lucide="search"></i>
             </div>
             <!-- POS Terminal Shortcut -->
-            @can('manage system')
+            @can('view pos')
             <div class="topbar-item d-none d-sm-flex">
                 <a href="{{ route('pos.index') }}" class="topbar-link btn btn-primary btn-sm px-3 fw-semibold" title="Open POS Terminal">
                     <i class="ti ti-device-desktop me-1 fs-16 align-middle"></i>
                     <span class="d-none d-md-inline">POS</span>
                 </a>
             </div>
+            @endcan
+            @can('view coupons')
             <div class="topbar-item d-none d-sm-flex">
                 <a href="{{ route('coupons.create') }}" class="topbar-link btn btn-success btn-sm px-3 fw-semibold" title="Create Coupon">
                     <i class="ti ti-ticket me-1 fs-16 align-middle"></i>

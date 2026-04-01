@@ -211,7 +211,7 @@
             @endcan
 
             {{-- Coupons --}}
-            @can('manage system')
+            @can('view coupons')
             <li class="side-nav-item">
                 <a aria-controls="sidebarCoupons" aria-expanded="false" class="side-nav-link"
                     data-bs-toggle="collapse" href="#sidebarCoupons">
@@ -255,8 +255,7 @@
             {{-- ===== OPERATIONS ===== --}}
             <li class="side-nav-title">Operations</li>
 
-            {{-- Attendance --}}
-            @can('view attendances')
+            {{-- Attendance — visible to all (everyone clocks in) --}}
             <li class="side-nav-item">
                 <a aria-controls="sidebarAttendance" aria-expanded="false" class="side-nav-link"
                     data-bs-toggle="collapse" href="#sidebarAttendance">
@@ -271,6 +270,7 @@
                                 <span class="menu-text">Daily Attendance</span>
                             </a>
                         </li>
+                        @can('view attendances')
                         <li class="side-nav-item">
                             <a class="side-nav-link" href="{{ route('attendance.report') }}">
                                 <span class="menu-text">Attendance Reports</span>
@@ -281,10 +281,10 @@
                                 <span class="menu-text">Staff Attendance</span>
                             </a>
                         </li>
+                        @endcan
                     </ul>
                 </div>
             </li>
-            @endcan
 
             {{-- Inventory --}}
             @can('inventory.view')
@@ -323,7 +323,7 @@
             @endcan
 
             {{-- Reports --}}
-            @can('manage system')
+            @can('view reports')
             <li class="side-nav-item">
                 <a aria-controls="sidebarReports" aria-expanded="false" class="side-nav-link"
                     data-bs-toggle="collapse" href="#sidebarReports">
@@ -417,16 +417,19 @@
                 </a>
                 <div class="collapse" id="sidebarUsers">
                     <ul class="sub-menu">
+                        @can('view users')
                         <li class="side-nav-item">
                             <a class="side-nav-link" href="{{ route('users.index') }}">
                                 <span class="menu-text">All Staff</span>
                             </a>
                         </li>
+                        @endcan
                         <li class="side-nav-item">
                             <a class="side-nav-link" href="{{ route('profile.show') }}">
                                 <span class="menu-text">My Profile</span>
                             </a>
                         </li>
+                        @can('manage system')
                         <li class="side-nav-item">
                             <a class="side-nav-link" href="{{ route('users.roles') }}">
                                 <span class="menu-text">Roles</span>
@@ -437,6 +440,7 @@
                                 <span class="menu-text">Permissions</span>
                             </a>
                         </li>
+                        @endcan
                     </ul>
                 </div>
             </li>

@@ -378,13 +378,21 @@
                             @endphp
 
                             @if($availableUsers->count() > 0)
+                            <div class="alert alert-info py-2 px-3 mb-2 fs-sm">
+                                <i class="ti ti-info-circle me-1"></i> Each user can only have one role. Assigning here will replace their current role.
+                            </div>
                             <div style="max-height: 300px; overflow-y: auto; border: 1px solid #dee2e6; border-radius: 4px; padding: 10px;">
                                 @foreach($availableUsers as $availableUser)
                                 <div class="form-check mb-2">
                                     <input class="form-check-input" type="checkbox" name="assign_users[]"
                                         value="{{ $availableUser->id }}" id="user_{{ $availableUser->id }}">
                                     <label class="form-check-label d-flex align-items-center" for="user_{{ $availableUser->id }}">
-                                        <span class="ms-2">{{ $availableUser->name }} ({{ $availableUser->email }})</span>
+                                        <span class="ms-2">
+                                            {{ $availableUser->name }} ({{ $availableUser->email }})
+                                            @if($availableUser->getRoleNames()->isNotEmpty())
+                                                <span class="badge bg-secondary-subtle text-secondary ms-1">{{ $availableUser->getRoleNames()->first() }}</span>
+                                            @endif
+                                        </span>
                                     </label>
                                 </div>
                                 @endforeach

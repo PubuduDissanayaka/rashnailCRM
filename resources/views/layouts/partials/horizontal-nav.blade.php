@@ -10,7 +10,7 @@
                             <span class="menu-text">Dashboard</span>
                         </a>
                     </li>
-                    @can('manage system')
+                    @can('view coupons')
                     <li class="nav-item dropdown">
                         <a aria-expanded="false" aria-haspopup="true" class="nav-link dropdown-toggle drop-arrow-none"
                             data-bs-toggle="dropdown" href="#" id="topnav-coupons" role="button">
