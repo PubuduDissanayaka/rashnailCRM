@@ -968,8 +968,10 @@ document.addEventListener('DOMContentLoaded', function () {
      */
     function updatePaymentDisplay() {
         const currencySymbol = window.posSettings?.currencySymbol || '$';
-        const total = parseFloat(document.getElementById('modal-total')?.textContent.replace(currencySymbol, '').replace(/,/g, '') || 0);
-        const change = Math.max(0, paymentState.amountReceived - total);
+        const modalTotalEl = document.getElementById('modal-total');
+        const total = parseFloat(modalTotalEl?.dataset?.total || modalTotalEl?.textContent.replace(currencySymbol, '').replace(/,/g, '') || 0);
+        const received = paymentState.amountReceived;
+        const change = Math.max(0, received - total);
 
         const amountReceivedDisplay = document.getElementById('amount-received-display');
         const changeDisplay = document.getElementById('change-display');
@@ -981,7 +983,7 @@ document.addEventListener('DOMContentLoaded', function () {
             }
 
             // Visual feedback
-            if (paymentState.amountReceived >= total && paymentState.amountReceived > 0) {
+            if (received >= total && received > 0) {
                 amountReceivedDisplay.classList.remove('is-invalid');
                 amountReceivedDisplay.classList.add('is-valid');
             } else {
@@ -991,9 +993,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
         // Always update change display
         if (changeDisplay) {
-            changeDisplay.textContent = `${currencySymbol}${formatCurrency(change.toFixed(2))}`;
-            // Highlight change when positive
-            changeDisplay.closest('.alert, .card, div')?.classList.toggle('text-success', change > 0);
+            changeDisplay.textContent = `${currencySymbol}${change.toFixed(2)}`;
         }
     }
 
@@ -1020,7 +1020,8 @@ document.addEventListener('DOMContentLoaded', function () {
      */
     function validatePayment() {
         const currencySymbol = window.posSettings?.currencySymbol || '$';
-        const total = parseFloat(document.getElementById('modal-total')?.textContent.replace(currencySymbol, '').replace(/,/g, '') || 0);
+        const modalTotalEl = document.getElementById('modal-total');
+        const total = parseFloat(modalTotalEl?.dataset?.total || modalTotalEl?.textContent.replace(currencySymbol, '').replace(/,/g, '') || 0);
         const amount = paymentState.amountReceived;
 
         // Check minimum amount
@@ -1197,7 +1198,12 @@ document.addEventListener('DOMContentLoaded', function () {
             if (modalSubtotal) modalSubtotal.textContent = cartSubtotalEl.textContent;
             if (modalDiscount) modalDiscount.textContent = cartDiscountEl.textContent;
             if (modalTax) modalTax.textContent = cartTaxEl.textContent;
-            if (modalTotal) modalTotal.textContent = cartTotalEl.textContent;
+            if (modalTotal) {
+                modalTotal.textContent = cartTotalEl.textContent;
+                // Store raw numeric total for reliable parsing
+                const rawTotal = parseFloat(cartTotalEl.textContent.replace(currencySymbol, '').replace(/,/g, '')) || 0;
+                modalTotal.dataset.total = rawTotal;
+            }
 
             // Reset payment state
             paymentState.amountReceived = 0;
@@ -1390,11 +1396,9 @@ document.addEventListener('DOMContentLoaded', function () {
     }
 
     /**
-     * Confirm payment button
+     * Confirm payment handler (shared by step 1 and step 2 buttons)
      */
-    const confirmPaymentBtn = document.getElementById('confirm-payment-btn');
-    if (confirmPaymentBtn) {
-        confirmPaymentBtn.addEventListener('click', async function () {
+    async function handleConfirmPayment(triggerBtn) {
             const customerId = customerSelect ? customerSelect.value : null;
             const staffId = document.getElementById('staff-select')?.value || null;
             const notes = document.getElementById('sale-notes')?.value || null;
@@ -1431,8 +1435,8 @@ document.addEventListener('DOMContentLoaded', function () {
             };
 
             // Disable button during processing
-            confirmPaymentBtn.disabled = true;
-            confirmPaymentBtn.innerHTML = '<i class="ti ti-loader-2 animate-spin me-2"></i>Processing...';
+            triggerBtn.disabled = true;
+            triggerBtn.innerHTML = '<i class="ti ti-loader-2 animate-spin me-2"></i>Processing...';
 
             try {
                 const response = await fetch('/pos/sale', {
@@ -1505,11 +1509,18 @@ document.addEventListener('DOMContentLoaded', function () {
                 }
             } finally {
                 // Re-enable button
-                confirmPaymentBtn.disabled = false;
-                confirmPaymentBtn.innerHTML = '<i class="ti ti-check me-1"></i> Confirm & Complete';
+                triggerBtn.disabled = false;
+                triggerBtn.innerHTML = '<i class="ti ti-check me-1"></i> Confirm & Complete';
             }
-        });
     }
+
+    // Bind confirm to both step-1 and step-2 buttons
+    document.querySelectorAll('#confirm-payment-btn, #confirm-payment-btn-step2').forEach(btn => {
+        btn.addEventListener('click', function () {
+            if (!validatePayment()) return;
+            handleConfirmPayment(this);
+        });
+    });
 
     /**
      * Clear cart button

@@ -74,206 +74,65 @@
             top: 20px;
         }
 
-        /* Enhanced Enterprise Keypad Styles */
+        /* ─── Enterprise Keypad ─── */
         .enterprise-keypad {
-            max-width: 400px;
+            max-width: 340px;
             margin: 0 auto;
-            padding: 15px;
+            padding: 10px;
             background: linear-gradient(145deg, #f8f9fa, #e9ecef);
-            border-radius: 16px;
-            box-shadow:
-                inset 0 1px 0 rgba(255,255,255,0.6),
-                0 10px 20px rgba(0,0,0,0.1);
+            border-radius: 12px;
         }
-
         .keypad-grid {
             display: grid;
             grid-template-columns: repeat(4, 1fr);
-            gap: 12px;
-            width: 100%;
+            gap: 8px;
         }
-
         .keypad-btn-enterprise {
             position: relative;
             overflow: hidden;
             border: none;
-            border-radius: 12px;
-            padding: 20px 10px;
-            font-size: 1.5rem;
+            border-radius: 10px;
+            padding: 14px 8px;
+            font-size: 1.25rem;
             font-weight: 600;
             color: #495057;
             background: white;
-            box-shadow:
-                0 4px 6px rgba(0,0,0,0.1),
-                0 1px 3px rgba(0,0,0,0.08);
+            box-shadow: 0 2px 4px rgba(0,0,0,0.08);
             cursor: pointer;
-            transition: all 0.2s ease;
+            transition: all 0.15s ease;
             outline: none;
         }
+        .keypad-btn-enterprise:hover { background: #e9ecef; transform: translateY(-1px); }
+        .keypad-btn-enterprise:active { transform: translateY(0); box-shadow: 0 1px 2px rgba(0,0,0,0.06); }
+        .keypad-btn-action { background: #e7f1ff; color: #339af0; }
+        .keypad-btn-action:hover { background: #d0ebff; }
+        .keypad-btn-action-danger { background: #ffe3e3; color: #ff6b6b; }
+        .keypad-btn-action-danger:hover { background: #ffc9c9; }
+        .keypad-btn-exact-amount { background: linear-gradient(135deg, #40c057, #2b8a3e); color: white; }
+        .keypad-btn-exact-amount:hover { background: linear-gradient(135deg, #37b34a, #277a37); }
+        .keypad-btn-zero { grid-column: span 2; }
+        @keyframes keypad-press { 0% { transform: scale(1); } 50% { transform: scale(0.95); } 100% { transform: scale(1); } }
+        .keypad-btn-pressed { animation: keypad-press 0.15s ease; }
 
-        .keypad-btn-enterprise:hover {
-            background: #e9ecef;
-            transform: translateY(-2px);
-            box-shadow:
-                0 6px 12px rgba(0,0,0,0.15),
-                0 2px 4px rgba(0,0,0,0.1);
+        /* ─── Amount received highlight ─── */
+        #amount-received-display:focus {
+            border-color: var(--ins-primary);
+            box-shadow: 0 0 0 0.2rem rgba(62, 96, 213, 0.15);
         }
-
-        .keypad-btn-enterprise:active {
-            transform: translateY(0);
-            box-shadow:
-                0 2px 4px rgba(0,0,0,0.1),
-                0 1px 2px rgba(0,0,0,0.06);
-        }
-
-        .keypad-btn-enterprise:focus {
-            box-shadow:
-                0 0 0 3px rgba(59, 125, 211, 0.25),
-                0 4px 6px rgba(0,0,0,0.1);
-        }
-
-        /* Ripple effect for button press */
-        .keypad-btn-ripple-effect {
-            position: absolute;
-            width: 10px;
-            height: 10px;
-            border-radius: 50%;
-            background: rgba(0,0,0,0.2);
-            transform: scale(0);
-            animation: ripple 0.6s linear;
-            pointer-events: none;
-        }
-
-        .keypad-btn-enterprise {
-            position: relative;
-            overflow: visible;
-        }
-
-        @keyframes ripple {
-            to {
-                transform: scale(4);
-                opacity: 0;
-            }
-        }
-
-        /* Button variations */
-        .keypad-btn-action {
-            background: #e7f1ff;
-            color: #339af0;
-        }
-
-        .keypad-btn-action:hover {
-            background: #d0ebff;
-        }
-
-        .keypad-btn-action-danger {
-            background: #ffe3e3;
-            color: #ff6b6b;
-        }
-
-        .keypad-btn-action-danger:hover {
-            background: #ffc9c9;
-        }
-
-        .keypad-btn-exact-amount {
-            background: linear-gradient(135deg, #40c057, #2b8a3e);
-            color: white;
-        }
-
-        .keypad-btn-exact-amount:hover {
-            background: linear-gradient(135deg, #37b34a, #277a37);
-        }
-
-        /* Ensure exact button has same sizing as others */
-        .keypad-btn-exact-amount .keypad-btn-number {
-            font-size: 1.3rem; /* Better font size for shorter OK text */
-        }
-
-        /* Special-sized buttons */
-        .keypad-btn-zero {
-            grid-column: span 2;
-        }
-
-        /* Animation for button press */
-        @keyframes keypad-press {
-            0% { transform: scale(1); }
-            50% { transform: scale(0.95); }
-            100% { transform: scale(1); }
-        }
-
-        .keypad-btn-pressed {
-            animation: keypad-press 0.2s ease;
-        }
-
-        /* Make sure buttons have proper stacking context for ripple effect */
-        .keypad-btn-enterprise {
-            position: relative;
-            overflow: hidden;
+        #amount-received-display.is-valid {
+            border-color: #40c057;
+            background-color: #f0fdf4;
         }
 
         /* ─── Payment Modal Responsive ─── */
-        @media (max-width: 991.98px) {
-            #paymentModal .modal-dialog {
-                max-width: 95vw;
-                margin: 0.5rem auto;
-            }
-            #paymentModal .modal-body {
-                padding: 0.75rem;
-            }
-            .enterprise-keypad {
-                max-width: 100%;
-                padding: 10px;
-            }
-            .keypad-grid {
-                gap: 8px;
-            }
-            .keypad-btn-enterprise {
-                padding: 14px 6px;
-                font-size: 1.2rem;
-            }
-        }
-
         @media (max-width: 767.98px) {
-            #paymentModal .modal-dialog {
-                max-width: 100%;
-                margin: 0;
-                min-height: 100vh;
-            }
-            #paymentModal .modal-content {
-                border-radius: 0;
-                min-height: 100vh;
-            }
-            #paymentModal .modal-body {
-                padding: 0.5rem;
-                overflow-y: auto;
-                max-height: calc(100vh - 130px);
-            }
-            .enterprise-keypad {
-                max-width: 320px;
-                padding: 8px;
-            }
-            .keypad-grid {
-                gap: 6px;
-            }
-            .keypad-btn-enterprise {
-                padding: 12px 4px;
-                font-size: 1.1rem;
-                border-radius: 8px;
-            }
-            /* Stack amount + change side by side on mobile */
-            #paymentModal .input-group-lg .form-control {
-                font-size: 1.25rem !important;
-            }
+            .enterprise-keypad { max-width: 100%; padding: 6px; }
+            .keypad-grid { gap: 5px; }
+            .keypad-btn-enterprise { padding: 12px 4px; font-size: 1.1rem; border-radius: 8px; }
         }
-
         @media (max-width: 575.98px) {
-            .keypad-btn-enterprise {
-                padding: 10px 2px;
-                font-size: 1rem;
-            }
-            .keypad-grid {
-                gap: 4px;
-            }
+            .keypad-btn-enterprise { padding: 10px 2px; font-size: 1rem; }
+            .keypad-grid { gap: 4px; }
         }
     </style>
 @endsection
@@ -572,247 +431,174 @@
         </div>
     </div>
 
-    <!-- Payment Modal - Enterprise Edition -->
+    <!-- Payment Modal -->
     <div class="modal fade" id="paymentModal" tabindex="-1" data-bs-backdrop="static" data-bs-keyboard="false">
-        <div class="modal-dialog modal-xl modal-dialog-centered modal-dialog-scrollable modal-fullscreen-lg-down">
+        <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable modal-fullscreen-md-down">
             <div class="modal-content">
-                <div class="modal-header bg-primary text-white">
-                    <h5 class="modal-title">
-                        <i class="ti ti-credit-card me-2"></i>
+                <div class="modal-header bg-primary text-white py-2">
+                    <h5 class="modal-title fs-6">
+                        <i class="ti ti-credit-card me-1"></i>
                         <span id="modal-step-title">Complete Payment</span>
                     </h5>
                     <button type="button" class="btn-close btn-close-white" id="payment-modal-close"></button>
                 </div>
 
-                <div class="modal-body">
+                <div class="modal-body p-2 p-md-3">
                     <!-- Step 1: Payment Entry -->
                     <div id="payment-step-1" class="payment-step">
-                        <div class="row">
-                            <!-- Left: Payment Details -->
-                            <div class="col-lg-5">
-                                <!-- Order Summary Card -->
-                                <div class="card bg-light mb-3">
-                                    <div class="card-body">
-                                        <h6 class="card-title mb-3">Order Summary</h6>
-                                        <div class="d-flex justify-content-between mb-2">
-                                            <span class="text-muted">Subtotal:</span>
-                                            <span id="modal-subtotal" class="fw-semibold">$0.00</span>
-                                        </div>
-                                        <div class="d-flex justify-content-between mb-2">
-                                            <span class="text-muted">Discount:</span>
-                                            <span id="modal-discount" class="fw-semibold text-success">-$0.00</span>
-                                        </div>
-                                        <div class="d-flex justify-content-between mb-2">
-                                            <span class="text-muted">Tax:</span>
-                                            <span id="modal-tax" class="fw-semibold">$0.00</span>
-                                        </div>
-                                        <div class="border-top mt-2 pt-2">
-                                            <div class="d-flex justify-content-between fs-4 fw-bold text-primary">
-                                                <span>Total:</span>
-                                                <span id="modal-total">$0.00</span>
+
+                        {{-- ── Total + Amount + Change: always visible at top ── --}}
+                        <div class="rounded-3 bg-light p-3 mb-3">
+                            <div class="row align-items-center g-2 text-center">
+                                <div class="col-4">
+                                    <small class="text-muted d-block">Total Due</small>
+                                    <span class="fs-4 fw-bold text-primary" id="modal-total">{{ $currencySymbol }}0.00</span>
+                                </div>
+                                <div class="col-4">
+                                    <small class="text-muted d-block">Received</small>
+                                    <div class="input-group input-group-sm">
+                                        <span class="input-group-text px-1 fw-bold">{{ $currencySymbol }}</span>
+                                        <input type="text" class="form-control text-center fw-bold fs-5 py-1"
+                                               id="amount-received-display" placeholder="0.00"
+                                               inputmode="decimal" autocomplete="off">
+                                    </div>
+                                </div>
+                                <div class="col-4">
+                                    <small class="text-muted d-block">Change</small>
+                                    <span class="fs-4 fw-bold text-success" id="change-display">{{ $currencySymbol }}0.00</span>
+                                </div>
+                            </div>
+                            <div class="invalid-feedback d-block text-center" id="amount-error"></div>
+                        </div>
+
+                        <div class="row g-2">
+                            {{-- ── Left Column: Keypad + Quick amounts ── --}}
+                            <div class="col-md-6 order-md-2">
+                                {{-- Quick Amounts --}}
+                                <div class="mb-2">
+                                    <div class="d-flex flex-wrap gap-1" id="quick-amounts-container">
+                                        <!-- Dynamically generated -->
+                                    </div>
+                                </div>
+
+                                {{-- Numeric Keypad --}}
+                                <div class="enterprise-keypad">
+                                    <div class="keypad-grid">
+                                        <button class="keypad-btn-enterprise" data-key="7"><span class="keypad-btn-number">7</span></button>
+                                        <button class="keypad-btn-enterprise" data-key="8"><span class="keypad-btn-number">8</span></button>
+                                        <button class="keypad-btn-enterprise" data-key="9"><span class="keypad-btn-number">9</span></button>
+                                        <button class="keypad-btn-enterprise keypad-btn-action" data-key="backspace"><i class="ti ti-backspace fs-18"></i></button>
+                                        <button class="keypad-btn-enterprise" data-key="4"><span class="keypad-btn-number">4</span></button>
+                                        <button class="keypad-btn-enterprise" data-key="5"><span class="keypad-btn-number">5</span></button>
+                                        <button class="keypad-btn-enterprise" data-key="6"><span class="keypad-btn-number">6</span></button>
+                                        <button class="keypad-btn-enterprise keypad-btn-action-danger" data-key="clear"><i class="ti ti-trash fs-18"></i></button>
+                                        <button class="keypad-btn-enterprise" data-key="1"><span class="keypad-btn-number">1</span></button>
+                                        <button class="keypad-btn-enterprise" data-key="2"><span class="keypad-btn-number">2</span></button>
+                                        <button class="keypad-btn-enterprise" data-key="3"><span class="keypad-btn-number">3</span></button>
+                                        <button class="keypad-btn-enterprise keypad-btn-exact-amount" id="exact-amount-btn"><span class="keypad-btn-number">OK</span></button>
+                                        <button class="keypad-btn-enterprise keypad-btn-zero" data-key="0"><span class="keypad-btn-number">0</span></button>
+                                        <button class="keypad-btn-enterprise keypad-btn-period" data-key="."><span class="keypad-btn-number">.</span></button>
+                                    </div>
+                                </div>
+                            </div>
+
+                            {{-- ── Right Column: Order summary + Payment method ── --}}
+                            <div class="col-md-6 order-md-1">
+                                {{-- Order Summary (collapsible) --}}
+                                <div class="card mb-2">
+                                    <div class="card-body py-2 px-3">
+                                        <a class="d-flex justify-content-between align-items-center text-body text-decoration-none"
+                                           data-bs-toggle="collapse" href="#orderSummaryCollapse" role="button" aria-expanded="false">
+                                            <span class="fw-semibold fs-sm"><i class="ti ti-receipt me-1"></i> Order Summary</span>
+                                            <i class="ti ti-chevron-down"></i>
+                                        </a>
+                                        <div class="collapse" id="orderSummaryCollapse">
+                                            <div class="pt-2">
+                                                <div class="d-flex justify-content-between mb-1">
+                                                    <span class="text-muted fs-sm">Subtotal:</span>
+                                                    <span id="modal-subtotal" class="fw-semibold fs-sm">{{ $currencySymbol }}0.00</span>
+                                                </div>
+                                                <div class="d-flex justify-content-between mb-1">
+                                                    <span class="text-muted fs-sm">Discount:</span>
+                                                    <span id="modal-discount" class="fw-semibold text-danger fs-sm">-{{ $currencySymbol }}0.00</span>
+                                                </div>
+                                                <div class="d-flex justify-content-between">
+                                                    <span class="text-muted fs-sm">Tax:</span>
+                                                    <span id="modal-tax" class="fw-semibold fs-sm">{{ $currencySymbol }}0.00</span>
+                                                </div>
                                             </div>
                                         </div>
                                     </div>
                                 </div>
 
-                                <!-- Payment Method Selection -->
-                                <div class="mb-3">
-                                    <label class="form-label fw-semibold">Payment Method</label>
-                                    <div class="row g-2" id="payment-methods-container">
+                                {{-- Payment Method --}}
+                                <div class="mb-2">
+                                    <label class="form-label fw-semibold fs-sm mb-1">Payment Method</label>
+                                    <div class="d-flex flex-wrap gap-1" id="payment-methods-container">
                                         @foreach($paymentMethods as $index => $method)
-                                        <div class="col-6">
                                             <input type="radio" class="btn-check" name="payment-method"
                                                    id="pm-{{ $method }}" value="{{ $method }}"
                                                    {{ $index === 0 ? 'checked' : '' }}>
-                                            <label class="btn btn-outline-primary w-100 text-start payment-method-card"
+                                            <label class="btn btn-outline-primary btn-sm payment-method-card"
                                                    for="pm-{{ $method }}">
                                                 @if($method === 'cash')
-                                                    <i class="ti ti-cash fs-22 d-block mb-1"></i>Cash
+                                                    <i class="ti ti-cash me-1"></i>Cash
                                                 @elseif($method === 'card')
-                                                    <i class="ti ti-credit-card fs-22 d-block mb-1"></i>Card
+                                                    <i class="ti ti-credit-card me-1"></i>Card
                                                 @elseif($method === 'check')
-                                                    <i class="ti ti-file-check fs-22 d-block mb-1"></i>Check
+                                                    <i class="ti ti-file-check me-1"></i>Check
                                                 @elseif($method === 'mobile')
-                                                    <i class="ti ti-device-mobile fs-22 d-block mb-1"></i>Mobile
+                                                    <i class="ti ti-device-mobile me-1"></i>Mobile
                                                 @elseif($method === 'bank_transfer')
-                                                    <i class="ti ti-building-bank fs-22 d-block mb-1"></i>Bank Transfer
+                                                    <i class="ti ti-building-bank me-1"></i>Bank
                                                 @elseif($method === 'store_credit')
-                                                    <i class="ti ti-gift-card fs-22 d-block mb-1"></i>Store Credit
+                                                    <i class="ti ti-gift-card me-1"></i>Credit
                                                 @else
-                                                    <i class="ti ti-wallet fs-22 d-block mb-1"></i>{{ ucfirst($method) }}
+                                                    <i class="ti ti-wallet me-1"></i>{{ ucfirst($method) }}
                                                 @endif
                                             </label>
-                                        </div>
                                         @endforeach
                                     </div>
                                 </div>
 
-                                <!-- Payment Method Specific Fields -->
+                                {{-- Payment Method Specific Fields --}}
                                 <div id="payment-method-fields">
-                                    <!-- Card Fields -->
                                     <div class="payment-fields" data-method="card" style="display: none;">
-                                        <div class="mb-3">
-                                            <label class="form-label">Authorization Code / Last 4 Digits</label>
-                                            <input type="text" class="form-control" id="card-reference"
-                                                   placeholder="1234" maxlength="20">
-                                            <small class="text-muted">Required for card payments</small>
+                                        <div class="mb-2">
+                                            <input type="text" class="form-control form-control-sm" id="card-reference"
+                                                   placeholder="Auth code / last 4 digits" maxlength="20">
                                         </div>
                                     </div>
-
-                                    <!-- Check Fields -->
                                     <div class="payment-fields" data-method="check" style="display: none;">
-                                        <div class="mb-3">
-                                            <label class="form-label">Check Number</label>
-                                            <input type="text" class="form-control" id="check-reference"
-                                                   placeholder="Check #" maxlength="20">
-                                            <small class="text-muted">Required for check payments</small>
+                                        <div class="mb-2">
+                                            <input type="text" class="form-control form-control-sm" id="check-reference"
+                                                   placeholder="Check number" maxlength="20">
                                         </div>
                                     </div>
-
-                                    <!-- Bank Transfer Fields -->
                                     <div class="payment-fields" data-method="bank_transfer" style="display: none;">
-                                        <div class="mb-3">
-                                            <label class="form-label">Transfer Reference Number</label>
-                                            <input type="text" class="form-control" id="bank-reference"
-                                                   placeholder="REF123456" maxlength="50">
-                                            <small class="text-muted">Required for bank transfers</small>
+                                        <div class="mb-2">
+                                            <input type="text" class="form-control form-control-sm" id="bank-reference"
+                                                   placeholder="Transfer reference" maxlength="50">
                                         </div>
                                     </div>
-
-                                    <!-- Mobile Payment Fields -->
                                     <div class="payment-fields" data-method="mobile" style="display: none;">
-                                        <div class="mb-3">
-                                            <label class="form-label">Transaction ID</label>
-                                            <input type="text" class="form-control" id="mobile-reference"
-                                                   placeholder="TXN123456" maxlength="50">
-                                            <small class="text-muted">Required for mobile payments</small>
+                                        <div class="mb-2">
+                                            <input type="text" class="form-control form-control-sm" id="mobile-reference"
+                                                   placeholder="Transaction ID" maxlength="50">
                                         </div>
                                     </div>
-
-                                    <!-- Store Credit Fields -->
                                     <div class="payment-fields" data-method="store_credit" style="display: none;">
-                                        <div class="mb-3">
-                                            <label class="form-label">Voucher / Credit Number</label>
-                                            <input type="text" class="form-control" id="credit-reference"
-                                                   placeholder="CREDIT123" maxlength="30">
-                                            <small class="text-muted">Optional reference</small>
+                                        <div class="mb-2">
+                                            <input type="text" class="form-control form-control-sm" id="credit-reference"
+                                                   placeholder="Voucher / credit number" maxlength="30">
                                         </div>
                                     </div>
                                 </div>
 
-                                <!-- Payment Notes -->
-                                <div class="mb-3">
-                                    <label class="form-label">Payment Notes (Optional)</label>
-                                    <textarea class="form-control" id="payment-notes" rows="2"
-                                              placeholder="Add payment notes..." maxlength="500"></textarea>
-                                </div>
-
-                                <!-- Amount Received -->
-                                <div class="mb-3">
-                                    <label for="amount-received-display" class="form-label fw-semibold">
-                                        Amount Received
-                                        <span class="text-danger">*</span>
-                                    </label>
-                                    <div class="input-group input-group-lg">
-                                        <span class="input-group-text">{{ $currencySymbol }}</span>
-                                        <input type="text" class="form-control text-end fs-4 fw-bold"
-                                               id="amount-received-display" placeholder="0.00"
-                                               inputmode="decimal" autocomplete="off">
-                                    </div>
-                                    <div class="invalid-feedback" id="amount-error"></div>
-                                </div>
-
-                                <!-- Change -->
-                                <div class="card border-success border-2">
-                                    <div class="card-body bg-success-subtle">
-                                        <div class="d-flex justify-content-between align-items-center">
-                                            <span class="fw-bold fs-5">Change:</span>
-                                            <span class="fs-4 fw-bold text-success" id="change-display">$0.00</span>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <!-- Right: Numeric Keypad -->
-                            <div class="col-lg-7">
-                                <!-- Quick Amounts -->
-                                <div class="mb-3">
-                                    <label class="form-label fw-semibold">Quick Amounts</label>
-                                    <div class="row g-2" id="quick-amounts-container">
-                                        <!-- Dynamically generated -->
-                                    </div>
-                                </div>
-
-                                <!-- Numeric Keypad -->
-                                <div class="mb-3">
-                                    <label class="form-label fw-semibold">Enter Amount</label>
-                                    <div class="enterprise-keypad">
-                                        <div class="keypad-grid">
-                                            <!-- Row 1 -->
-                                            <button class="keypad-btn-enterprise" data-key="7">
-                                                <span class="keypad-btn-number">7</span>
-                                                <span class="keypad-btn-ripple-effect"></span>
-                                            </button>
-                                            <button class="keypad-btn-enterprise" data-key="8">
-                                                <span class="keypad-btn-number">8</span>
-                                                <span class="keypad-btn-ripple-effect"></span>
-                                            </button>
-                                            <button class="keypad-btn-enterprise" data-key="9">
-                                                <span class="keypad-btn-number">9</span>
-                                                <span class="keypad-btn-ripple-effect"></span>
-                                            </button>
-                                            <button class="keypad-btn-enterprise keypad-btn-action" data-key="backspace">
-                                                <i class="ti ti-backspace fs-20"></i>
-                                                <span class="keypad-btn-ripple-effect"></span>
-                                            </button>
-
-                                            <!-- Row 2 -->
-                                            <button class="keypad-btn-enterprise" data-key="4">
-                                                <span class="keypad-btn-number">4</span>
-                                                <span class="keypad-btn-ripple-effect"></span>
-                                            </button>
-                                            <button class="keypad-btn-enterprise" data-key="5">
-                                                <span class="keypad-btn-number">5</span>
-                                                <span class="keypad-btn-ripple-effect"></span>
-                                            </button>
-                                            <button class="keypad-btn-enterprise" data-key="6">
-                                                <span class="keypad-btn-number">6</span>
-                                                <span class="keypad-btn-ripple-effect"></span>
-                                            </button>
-                                            <button class="keypad-btn-enterprise keypad-btn-action-danger" data-key="clear">
-                                                <i class="ti ti-trash fs-20"></i>
-                                                <span class="keypad-btn-ripple-effect"></span>
-                                            </button>
-
-                                            <!-- Row 3 -->
-                                            <button class="keypad-btn-enterprise" data-key="1">
-                                                <span class="keypad-btn-number">1</span>
-                                                <span class="keypad-btn-ripple-effect"></span>
-                                            </button>
-                                            <button class="keypad-btn-enterprise" data-key="2">
-                                                <span class="keypad-btn-number">2</span>
-                                                <span class="keypad-btn-ripple-effect"></span>
-                                            </button>
-                                            <button class="keypad-btn-enterprise" data-key="3">
-                                                <span class="keypad-btn-number">3</span>
-                                                <span class="keypad-btn-ripple-effect"></span>
-                                            </button>
-                                            <button class="keypad-btn-enterprise keypad-btn-exact-amount" id="exact-amount-btn">
-                                                <span class="keypad-btn-number">OK</span>
-                                                <span class="keypad-btn-ripple-effect"></span>
-                                            </button>
-
-                                            <!-- Row 4 -->
-                                            <button class="keypad-btn-enterprise keypad-btn-zero" data-key="0">
-                                                <span class="keypad-btn-number">0</span>
-                                                <span class="keypad-btn-ripple-effect"></span>
-                                            </button>
-                                            <button class="keypad-btn-enterprise keypad-btn-period" data-key=".">
-                                                <span class="keypad-btn-number">.</span>
-                                                <span class="keypad-btn-ripple-effect"></span>
-                                            </button>
-                                        </div>
-                                    </div>
+                                {{-- Notes --}}
+                                <div class="mb-2">
+                                    <textarea class="form-control form-control-sm" id="payment-notes" rows="2"
+                                              placeholder="Payment notes (optional)..." maxlength="500"></textarea>
                                 </div>
                             </div>
                         </div>
@@ -825,11 +611,7 @@
                                 <div class="card">
                                     <div class="card-body">
                                         <h5 class="card-title text-center mb-4">Receipt Preview</h5>
-
-                                        <!-- Receipt Preview Content -->
-                                        <div id="receipt-preview-content" class="receipt-preview">
-                                            <!-- Dynamically generated receipt content -->
-                                        </div>
+                                        <div id="receipt-preview-content" class="receipt-preview"></div>
                                     </div>
                                 </div>
                             </div>
@@ -837,23 +619,28 @@
                     </div>
                 </div>
 
-                <div class="modal-footer">
+                <div class="modal-footer py-2">
                     <!-- Step 1 Footer -->
-                    <div id="step-1-footer" class="w-100 d-flex justify-content-between">
-                        <button type="button" class="btn btn-light" id="cancel-payment-btn">
+                    <div id="step-1-footer" class="w-100 d-flex justify-content-between gap-2">
+                        <button type="button" class="btn btn-light btn-sm" id="cancel-payment-btn">
                             <i class="ti ti-x me-1"></i> Cancel
                         </button>
-                        <button type="button" class="btn btn-primary btn-lg" id="preview-payment-btn">
-                            <i class="ti ti-eye me-1"></i> Preview Receipt
-                        </button>
+                        <div class="d-flex gap-2">
+                            <button type="button" class="btn btn-outline-primary btn-sm" id="preview-payment-btn">
+                                <i class="ti ti-eye me-1"></i> Preview
+                            </button>
+                            <button type="button" class="btn btn-success" id="confirm-payment-btn">
+                                <i class="ti ti-check me-1"></i> Confirm & Complete
+                            </button>
+                        </div>
                     </div>
 
                     <!-- Step 2 Footer -->
                     <div id="step-2-footer" class="w-100 d-flex justify-content-between" style="display: none;">
-                        <button type="button" class="btn btn-light" id="back-to-payment-btn">
+                        <button type="button" class="btn btn-light btn-sm" id="back-to-payment-btn">
                             <i class="ti ti-arrow-left me-1"></i> Edit Payment
                         </button>
-                        <button type="button" class="btn btn-success btn-lg" id="confirm-payment-btn">
+                        <button type="button" class="btn btn-success" id="confirm-payment-btn-step2">
                             <i class="ti ti-check me-1"></i> Confirm & Complete
                         </button>
                     </div>
