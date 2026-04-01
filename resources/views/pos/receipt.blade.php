@@ -80,11 +80,25 @@
             margin-bottom: var(--spacing-md);
         }
 
+        .business-logo {
+            max-width: 120px;
+            max-height: 50px;
+            margin: 0 auto var(--spacing-sm);
+            display: block;
+        }
+
         .business-name {
             font-size: var(--font-xxl);
             font-weight: 700;
-            margin: 0 0 4px 0;
+            margin: 0 0 2px 0;
             color: var(--color-text);
+        }
+
+        .business-tagline {
+            font-size: var(--font-sm);
+            color: var(--color-muted);
+            margin: 0 0 4px 0;
+            font-style: italic;
         }
 
         .business-contact {
@@ -430,8 +444,19 @@
                 margin-bottom: 6px;
             }
 
+            .business-logo {
+                max-width: 80px;
+                max-height: 35px;
+                margin-bottom: 4px;
+            }
+
             .business-name {
                 font-size: 14px;
+                margin-bottom: 1px;
+            }
+
+            .business-tagline {
+                font-size: 7px;
                 margin-bottom: 2px;
             }
 
@@ -521,7 +546,13 @@
 
             <!-- Header: Business Info (Compact) -->
             <header class="receipt-header">
+                @if($businessLogo)
+                    <img src="{{ Storage::url($businessLogo) }}" alt="{{ $businessName }}" class="business-logo">
+                @endif
                 <h1 class="business-name">{{ $businessName }}</h1>
+                @if($businessTagline)
+                    <p class="business-tagline">{{ $businessTagline }}</p>
+                @endif
                 <p class="business-contact">
                     @if($businessAddress){{ $businessAddress }}@endif
                     @if($businessAddress && $businessPhone) • @endif

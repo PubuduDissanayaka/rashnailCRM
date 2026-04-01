@@ -1109,9 +1109,14 @@ document.addEventListener('DOMContentLoaded', function () {
             </div>
         `).join('');
 
+        const businessLogo = window.posSettings?.businessLogo || null;
+        const businessTagline = window.posSettings?.businessTagline || '';
+
         return `
             <div class="receipt-header text-center mb-3">
-                <h4 class="fw-bold">${businessName}</h4>
+                ${businessLogo ? `<img src="${businessLogo}" alt="${businessName}" style="max-width:120px;max-height:50px;margin:0 auto 8px;display:block;">` : ''}
+                <h4 class="fw-bold mb-0">${businessName}</h4>
+                ${businessTagline ? `<p class="small text-muted fst-italic mb-0">${businessTagline}</p>` : ''}
                 <p class="small text-muted mb-0">${new Date().toLocaleString()}</p>
             </div>
             <hr>

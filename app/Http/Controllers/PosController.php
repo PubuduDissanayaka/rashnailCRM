@@ -13,6 +13,7 @@ use App\Models\User;
 use App\Services\CouponService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Storage;
 
 class PosController extends Controller
 {
@@ -53,6 +54,8 @@ class PosController extends Controller
             'currencyCode' => Setting::get('payment.currency_code', 'USD'),
             'taxRate' => Setting::get('payment.tax_rate', 0),
             'businessName' => Setting::get('business.name', 'Business'),
+            'businessTagline' => Setting::get('business.tagline', ''),
+            'businessLogo' => Setting::get('business.logo') ? Storage::url(Setting::get('business.logo')) : null,
             'businessAddress' => Setting::get('business.address', ''),
             'quickAmountsMode' => Setting::get('payment.pos.quick_amounts_mode', 'smart'),
             'quickAmountsFixed' => Setting::get('payment.pos.quick_amounts_fixed', [20, 50, 100]),
@@ -637,6 +640,8 @@ class PosController extends Controller
         $businessAddress = Setting::get('business.address', '');
         $businessPhone = Setting::get('business.phone', '');
         $businessEmail = Setting::get('business.email', '');
+        $businessTagline = Setting::get('business.tagline', '');
+        $businessLogo = Setting::get('business.logo');
         $currencySymbol = Setting::get('payment.currency_symbol', '$');
 
         // Format phone for WhatsApp
@@ -651,6 +656,8 @@ class PosController extends Controller
             'businessAddress',
             'businessPhone',
             'businessEmail',
+            'businessTagline',
+            'businessLogo',
             'currencySymbol',
             'whatsappPhone'
         ));

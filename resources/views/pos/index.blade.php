@@ -638,7 +638,7 @@
                     </div>
 
                     <!-- Step 2 Footer -->
-                    <div id="step-2-footer" class="w-100 d-flex justify-content-between" style="display: none;">
+                    <div id="step-2-footer" class="w-100 justify-content-between" style="display: none;">
                         <button type="button" class="btn btn-light btn-sm" id="back-to-payment-btn">
                             <i class="ti ti-arrow-left me-1"></i> Edit Payment
                         </button>
