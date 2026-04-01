@@ -49,7 +49,7 @@
                                 type="search" />
                             <i class="app-search-icon text-muted" data-lucide="search"></i>
                         </div>
-                        @can('manage system')
+                        @can('create coupons')
                         <a href="{{ route('coupons.create') }}" class="btn btn-primary">
                             <i class="ti ti-plus me-1"></i> Create Coupon
                         </a>
@@ -164,7 +164,7 @@
                                         <a class="btn btn-light btn-icon btn-sm rounded-circle" href="{{ route('coupons.show', $coupon) }}" title="View Details">
                                             <i class="ti ti-eye fs-lg"></i>
                                         </a>
-                                        @can('manage system')
+                                        @can('edit coupons')
                                         <a class="btn btn-light btn-icon btn-sm rounded-circle" href="{{ route('coupons.edit', $coupon) }}" title="Edit Coupon">
                                             <i class="ti ti-edit fs-lg"></i>
                                         </a>

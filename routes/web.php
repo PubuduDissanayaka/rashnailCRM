@@ -183,8 +183,8 @@ Route::middleware(['auth'])->group(function () {
         Route::get('/coupons/bulk/create', [CouponController::class, 'createBulk'])->middleware('can:manage coupon batches')->name('coupons.bulk.create');
         Route::post('/coupons/bulk/generate', [CouponController::class, 'generateBulk'])->middleware('can:manage coupon batches')->name('coupons.bulk.generate');
 
-        // Customer groups management (admin-level)
-        Route::middleware(['can:manage system'])->group(function () {
+        // Customer groups management
+        Route::middleware(['can:manage coupon batches'])->group(function () {
             Route::get('/customer-groups', [CouponController::class, 'customerGroups'])->name('customer-groups.index');
             Route::get('/customer-groups/create', [CouponController::class, 'createCustomerGroup'])->name('customer-groups.create');
             Route::post('/customer-groups', [CouponController::class, 'storeCustomerGroup'])->name('customer-groups.store');

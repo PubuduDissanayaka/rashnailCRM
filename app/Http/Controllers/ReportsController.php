@@ -30,7 +30,7 @@ class ReportsController extends Controller
 
     public function index(): \Illuminate\View\View
     {
-        $this->authorize('manage system');
+        $this->authorize('view reports');
 
         $currencySymbol = Setting::get('payment.currency_symbol', '$');
         $now          = now();
@@ -82,7 +82,7 @@ class ReportsController extends Controller
 
     public function sales(Request $request): \Illuminate\View\View
     {
-        $this->authorize('manage system');
+        $this->authorize('view reports');
 
         $currencySymbol = Setting::get('payment.currency_symbol', '$');
 
@@ -197,7 +197,7 @@ class ReportsController extends Controller
 
     public function appointments(Request $request): \Illuminate\View\View
     {
-        $this->authorize('manage system');
+        $this->authorize('view reports');
 
         $startDate = $request->filled('start_date')
             ? Carbon::parse($request->input('start_date'))->startOfDay()
@@ -286,7 +286,7 @@ class ReportsController extends Controller
 
     public function customers(Request $request): \Illuminate\View\View
     {
-        $this->authorize('manage system');
+        $this->authorize('view reports');
 
         $currencySymbol = Setting::get('payment.currency_symbol', '$');
 
@@ -365,7 +365,7 @@ class ReportsController extends Controller
 
     public function expenses(Request $request): \Illuminate\View\View
     {
-        $this->authorize('manage system');
+        $this->authorize('view reports');
 
         $startDate = $request->filled('start_date')
             ? Carbon::parse($request->input('start_date'))
@@ -441,7 +441,7 @@ class ReportsController extends Controller
 
     public function inventory(Request $request): \Illuminate\View\View
     {
-        $this->authorize('manage system');
+        $this->authorize('view reports');
 
         $totalSupplies   = Supply::active()->count();
         $lowStockCount   = Supply::active()->lowStock()->count();
@@ -504,7 +504,7 @@ class ReportsController extends Controller
 
     public function export(Request $request, string $type): \Symfony\Component\HttpFoundation\Response
     {
-        $this->authorize('manage system');
+        $this->authorize('export reports');
 
         $startDate = $request->filled('start_date')
             ? Carbon::parse($request->input('start_date'))->startOfDay()

@@ -72,7 +72,7 @@ class CouponReportController extends Controller
      */
     public function redemptionAnalytics(Request $request): JsonResponse
     {
-        $this->authorize('manage system');
+        $this->authorize('view reports');
 
         $filters = FilterCriteria::fromRequest($request->all());
         $data = $this->reportService->getRedemptionAnalytics($filters);
@@ -91,7 +91,7 @@ class CouponReportController extends Controller
      */
     public function performanceByType(Request $request): JsonResponse
     {
-        $this->authorize('manage system');
+        $this->authorize('view reports');
 
         $filters = FilterCriteria::fromRequest($request->all());
         $data = $this->reportService->getPerformanceByType($filters);
@@ -110,7 +110,7 @@ class CouponReportController extends Controller
      */
     public function usageByPeriod(Request $request): JsonResponse
     {
-        $this->authorize('manage system');
+        $this->authorize('view reports');
 
         $filters = FilterCriteria::fromRequest($request->all());
         $period = $request->input('period', 'day');
@@ -130,7 +130,7 @@ class CouponReportController extends Controller
      */
     public function topCoupons(Request $request): JsonResponse
     {
-        $this->authorize('manage system');
+        $this->authorize('view reports');
 
         $filters = FilterCriteria::fromRequest($request->all());
         $limit = $request->input('limit', 10);

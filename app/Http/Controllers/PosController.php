@@ -21,7 +21,7 @@ class PosController extends Controller
      */
     public function index()
     {
-        $this->authorize('manage system');
+        $this->authorize('view pos');
 
         $customers = Customer::orderBy('first_name')->get();
         $services = Service::where('is_active', true)->get();
@@ -85,7 +85,7 @@ class PosController extends Controller
      */
     public function store(Request $request)
     {
-        $this->authorize('manage system');
+        $this->authorize('create pos transactions');
 
         // Get available payment methods from settings
         $availableMethods = Setting::get('payment.methods', ['cash', 'card']) ?? ['cash', 'card'];
@@ -442,7 +442,7 @@ class PosController extends Controller
      */
     public function searchItems(Request $request)
     {
-        $this->authorize('manage system');
+        $this->authorize('view pos');
 
         $query = $request->input('q');
         
@@ -627,7 +627,7 @@ class PosController extends Controller
      */
     public function showReceipt(Sale $sale)
     {
-        $this->authorize('manage system');
+        $this->authorize('view pos');
 
         // Eager load relationships
         $sale->load(['customer', 'user', 'items.sellable', 'payments']);
@@ -717,7 +717,7 @@ class PosController extends Controller
      */
     public function transactions()
     {
-        $this->authorize('manage system');
+        $this->authorize('view pos');
 
         // Return all sales - let custom-table.js handle filtering/pagination
         $sales = Sale::with(['customer', 'user', 'items'])

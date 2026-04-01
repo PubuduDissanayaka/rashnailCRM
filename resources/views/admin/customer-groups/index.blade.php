@@ -49,7 +49,7 @@
                                 type="search" />
                             <i class="app-search-icon text-muted" data-lucide="search"></i>
                         </div>
-                        @can('manage system')
+                        @can('manage coupon batches')
                         <a href="{{ route('customer-groups.create') }}" class="btn btn-primary">
                             <i class="ti ti-plus me-1"></i> Create Group
                         </a>
@@ -90,7 +90,7 @@
                                                 <a href="{{ route('customer-groups.edit', $group) }}" class="btn btn-sm btn-outline-primary">
                                                     <i class="ti ti-edit"></i> Edit
                                                 </a>
-                                                @can('manage system')
+                                                @can('manage coupon batches')
                                                 <form id="delete-form-{{ $group->id }}" action="{{ route('customer-groups.destroy', $group) }}" method="POST" class="d-inline">
                                                     @csrf
                                                     @method('DELETE')
@@ -106,7 +106,7 @@
                                     <tr>
                                         <td colspan="6" class="text-center py-4 text-muted">
                                             <i class="ti ti-users-off me-1"></i> No customer groups found.
-                                            @can('manage system')
+                                            @can('manage coupon batches')
                                             <a href="{{ route('customer-groups.create') }}" class="ms-1">Create one</a>
                                             @endcan
                                         </td>

@@ -23,7 +23,7 @@
                         <a href="{{ route('coupons.index') }}" class="btn btn-secondary">
                             <i class="ti ti-arrow-left me-1"></i> Back
                         </a>
-                        @can('manage system')
+                        @can('edit coupons')
                         <a href="{{ route('coupons.edit', $coupon) }}" class="btn btn-primary">
                             <i class="ti ti-edit me-1"></i> Edit
                         </a>

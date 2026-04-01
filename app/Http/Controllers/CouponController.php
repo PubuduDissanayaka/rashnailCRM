@@ -359,7 +359,7 @@ class CouponController extends Controller
      */
     public function customerGroups()
     {
-        $this->authorize('manage system');
+        $this->authorize('manage coupon batches');
 
         $groups = CustomerGroup::withCount('customers')->get();
         return view('admin.customer-groups.index', compact('groups'));
@@ -370,7 +370,7 @@ class CouponController extends Controller
      */
     public function createCustomerGroup()
     {
-        $this->authorize('manage system');
+        $this->authorize('manage coupon batches');
 
         return view('admin.customer-groups.create');
     }
@@ -380,7 +380,7 @@ class CouponController extends Controller
      */
     public function storeCustomerGroup(Request $request)
     {
-        $this->authorize('manage system');
+        $this->authorize('manage coupon batches');
 
         $request->validate([
             'name' => 'required|string|max:255|unique:customer_groups,name',
@@ -400,7 +400,7 @@ class CouponController extends Controller
      */
     public function editCustomerGroup(CustomerGroup $group)
     {
-        $this->authorize('manage system');
+        $this->authorize('manage coupon batches');
 
         return view('admin.customer-groups.edit', compact('group'));
     }
@@ -410,7 +410,7 @@ class CouponController extends Controller
      */
     public function updateCustomerGroup(Request $request, CustomerGroup $group)
     {
-        $this->authorize('manage system');
+        $this->authorize('manage coupon batches');
 
         $request->validate([
             'name' => 'required|string|max:255|unique:customer_groups,name,' . $group->id,
@@ -430,7 +430,7 @@ class CouponController extends Controller
      */
     public function destroyCustomerGroup(CustomerGroup $group)
     {
-        $this->authorize('manage system');
+        $this->authorize('manage coupon batches');
 
         // Check if group is used in any coupons
         if ($group->coupons()->exists()) {
