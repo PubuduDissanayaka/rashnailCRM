@@ -1299,29 +1299,44 @@ document.addEventListener('DOMContentLoaded', function () {
     });
 
     /**
-     * Keyboard input on amount-received field
+     * Keyboard input on amount-received field — auto-format with commas
      */
     const amountInput = document.getElementById('amount-received-display');
     if (amountInput) {
-        // Allow only digits and one decimal point
-        amountInput.addEventListener('keydown', function (e) {
-            const allowed = ['Backspace','Delete','Tab','ArrowLeft','ArrowRight','Home','End'];
-            if (allowed.includes(e.key)) return;
-            if ((e.ctrlKey || e.metaKey) && ['a','c','v','x'].includes(e.key.toLowerCase())) return;
-            if (e.key === '.' && !this.value.includes('.')) return;
-            if (e.key >= '0' && e.key <= '9') return;
-            e.preventDefault();
-        });
+        function formatWithCommas(numStr) {
+            if (!numStr) return '';
+            const parts = numStr.split('.');
+            parts[0] = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+            return parts.join('.');
+        }
 
         function syncFromInput() {
-            const raw = amountInput.value.replace(/[^0-9.]/g, '');
+            // Strip everything except digits and dot
+            let raw = amountInput.value.replace(/[^0-9.]/g, '');
+            // Only allow one decimal point
+            const dotIdx = raw.indexOf('.');
+            if (dotIdx !== -1) {
+                raw = raw.slice(0, dotIdx + 1) + raw.slice(dotIdx + 1).replace(/\./g, '');
+                // Max 2 decimal places
+                const decimals = raw.slice(dotIdx + 1);
+                if (decimals.length > 2) raw = raw.slice(0, dotIdx + 3);
+            }
+
             paymentState.amountReceivedString = raw;
             paymentState.amountReceived = parseFloat(raw) || 0;
+
+            // Auto-format display with commas (preserve cursor)
+            const cursorPos = amountInput.selectionStart;
+            const oldLen = amountInput.value.length;
+            amountInput.value = formatWithCommas(raw);
+            const newLen = amountInput.value.length;
+            const newPos = Math.max(0, cursorPos + (newLen - oldLen));
+            amountInput.setSelectionRange(newPos, newPos);
+
             updatePaymentDisplay();
         }
 
         amountInput.addEventListener('input', syncFromInput);
-        amountInput.addEventListener('keyup', syncFromInput);
         amountInput.addEventListener('paste', function () { setTimeout(syncFromInput, 0); });
     }
 
