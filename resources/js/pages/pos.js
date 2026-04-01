@@ -1350,6 +1350,15 @@ document.addEventListener('DOMContentLoaded', function () {
 
         amountInput.addEventListener('input', syncFromInput);
         amountInput.addEventListener('paste', function () { setTimeout(syncFromInput, 0); });
+
+        // Enter key: confirm the typed amount and blur the field
+        amountInput.addEventListener('keydown', function (e) {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                syncFromInput();          // ensure state is up-to-date
+                amountInput.blur();        // close mobile keyboard
+            }
+        });
     }
 
     /**
