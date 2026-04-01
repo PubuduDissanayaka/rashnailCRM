@@ -122,6 +122,8 @@
         #amount-received-display.is-valid {
             border-color: #40c057;
             background-color: #f0fdf4;
+            background-image: none !important;
+            padding-right: 0.75rem !important;
         }
 
         /* ─── Payment Modal Responsive ─── */

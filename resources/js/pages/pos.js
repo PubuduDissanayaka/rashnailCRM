@@ -891,8 +891,7 @@ document.addEventListener('DOMContentLoaded', function () {
             btn.addEventListener('click', function () {
                 const amount = parseFloat(this.dataset.amount);
                 paymentState.amountReceivedString = amount.toFixed(2);
-                paymentState.amountReceived = amount;
-                updatePaymentDisplay();
+                syncDisplayFromState();
                 animateButton(this);
             });
         });
@@ -935,6 +934,29 @@ document.addEventListener('DOMContentLoaded', function () {
     }
 
     /**
+     * Format a numeric string with thousand-separator commas
+     */
+    function formatWithCommas(numStr) {
+        if (!numStr) return '';
+        const parts = numStr.split('.');
+        parts[0] = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+        return parts.join('.');
+    }
+
+    /**
+     * Canonical way to push state → display. Every code path that changes
+     * paymentState.amountReceivedString MUST call this afterward.
+     */
+    function syncDisplayFromState() {
+        const amountInput = document.getElementById('amount-received-display');
+        if (amountInput) {
+            amountInput.value = formatWithCommas(paymentState.amountReceivedString);
+        }
+        paymentState.amountReceived = parseFloat(paymentState.amountReceivedString) || 0;
+        updatePaymentDisplay();
+    }
+
+    /**
      * Handle keypad input
      */
     function handleKeypadInput(key) {
@@ -954,17 +976,14 @@ document.addEventListener('DOMContentLoaded', function () {
                 const parts = paymentState.amountReceivedString.split('.');
                 if (parts[1]?.length >= 2) return;
             }
-
             paymentState.amountReceivedString += key;
         }
 
-        // Update numeric value
-        paymentState.amountReceived = parseFloat(paymentState.amountReceivedString) || 0;
-        updatePaymentDisplay();
+        syncDisplayFromState();
     }
 
     /**
-     * Update payment display
+     * Update change display + visual feedback (reads from paymentState only)
      */
     function updatePaymentDisplay() {
         const currencySymbol = window.posSettings?.currencySymbol || '$';
@@ -977,23 +996,19 @@ document.addEventListener('DOMContentLoaded', function () {
         const changeDisplay = document.getElementById('change-display');
 
         if (amountReceivedDisplay) {
-            // Only set value when NOT focused (numpad/quick-amount clicks)
-            if (document.activeElement !== amountReceivedDisplay) {
-                amountReceivedDisplay.value = paymentState.amountReceivedString || '';
-            }
-
-            // Visual feedback
-            if (received >= total && received > 0) {
+            // Visual feedback — only valid when actually sufficient
+            if (received > 0 && received >= total) {
                 amountReceivedDisplay.classList.remove('is-invalid');
                 amountReceivedDisplay.classList.add('is-valid');
             } else {
                 amountReceivedDisplay.classList.remove('is-valid');
+                amountReceivedDisplay.classList.remove('is-invalid');
             }
         }
 
         // Always update change display
         if (changeDisplay) {
-            changeDisplay.textContent = `${currencySymbol}${change.toFixed(2)}`;
+            changeDisplay.textContent = `${currencySymbol}${formatWithCommas(change.toFixed(2))}`;
         }
     }
 
@@ -1206,21 +1221,19 @@ document.addEventListener('DOMContentLoaded', function () {
             }
 
             // Reset payment state
-            paymentState.amountReceived = 0;
             paymentState.amountReceivedString = '';
             paymentState.currentStep = 1;
             paymentState.paymentMethod = 'cash';
             paymentState.paymentReference = '';
             paymentState.paymentNotes = '';
 
-            // Reset display
-            updatePaymentDisplay();
+            // Reset display — single source of truth
+            syncDisplayFromState();
             goToStep(1);
 
             // Generate quick amounts
-            const currencySymbol = window.posSettings?.currencySymbol || '$';
-            const total = parseFloat(modalTotal?.textContent.replace(currencySymbol, '').replace(/,/g, '') || 0);
-            generateQuickAmountButtons(total);
+            const rawTotal = parseFloat(modalTotal?.dataset?.total || 0);
+            generateQuickAmountButtons(rawTotal);
 
             // Reset payment method to first option
             const firstPaymentMethod = document.querySelector('[name="payment-method"]');
@@ -1303,13 +1316,6 @@ document.addEventListener('DOMContentLoaded', function () {
      */
     const amountInput = document.getElementById('amount-received-display');
     if (amountInput) {
-        function formatWithCommas(numStr) {
-            if (!numStr) return '';
-            const parts = numStr.split('.');
-            parts[0] = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, ',');
-            return parts.join('.');
-        }
-
         function syncFromInput() {
             // Strip everything except digits and dot
             let raw = amountInput.value.replace(/[^0-9.]/g, '');
@@ -1322,10 +1328,11 @@ document.addEventListener('DOMContentLoaded', function () {
                 if (decimals.length > 2) raw = raw.slice(0, dotIdx + 3);
             }
 
+            // Update state from keyboard input
             paymentState.amountReceivedString = raw;
             paymentState.amountReceived = parseFloat(raw) || 0;
 
-            // Auto-format display with commas (preserve cursor)
+            // Auto-format display with commas (preserve cursor position)
             const cursorPos = amountInput.selectionStart;
             const oldLen = amountInput.value.length;
             amountInput.value = formatWithCommas(raw);
@@ -1347,10 +1354,10 @@ document.addEventListener('DOMContentLoaded', function () {
     if (exactAmountBtn) {
         exactAmountBtn.addEventListener('click', function (event) {
             const currencySymbol = window.posSettings?.currencySymbol || '$';
-            const total = parseFloat(document.getElementById('modal-total')?.textContent.replace(currencySymbol, '').replace(/,/g, '') || 0);
+            const modalTotalEl = document.getElementById('modal-total');
+            const total = parseFloat(modalTotalEl?.dataset?.total || modalTotalEl?.textContent.replace(currencySymbol, '').replace(/,/g, '') || 0);
             paymentState.amountReceivedString = total.toFixed(2);
-            paymentState.amountReceived = total;
-            updatePaymentDisplay();
+            syncDisplayFromState();
             animateButton(this, event);
         });
     }
