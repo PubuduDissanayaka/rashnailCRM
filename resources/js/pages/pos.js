@@ -975,7 +975,10 @@ document.addEventListener('DOMContentLoaded', function () {
         const changeDisplay = document.getElementById('change-display');
 
         if (amountReceivedDisplay) {
-            amountReceivedDisplay.value = formatCurrency(paymentState.amountReceivedString);
+            // Only update the field value when it's not focused (keyboard typing)
+            if (document.activeElement !== amountReceivedDisplay) {
+                amountReceivedDisplay.value = paymentState.amountReceived || '';
+            }
 
             // Visual feedback
             if (paymentState.amountReceived >= total && paymentState.amountReceived > 0) {
@@ -1285,6 +1288,19 @@ document.addEventListener('DOMContentLoaded', function () {
             }
         });
     });
+
+    /**
+     * Keyboard input on amount-received field
+     */
+    const amountInput = document.getElementById('amount-received-display');
+    if (amountInput) {
+        amountInput.addEventListener('input', function () {
+            const val = this.value.replace(/[^0-9.]/g, '');
+            paymentState.amountReceivedString = val;
+            paymentState.amountReceived = parseFloat(val) || 0;
+            updatePaymentDisplay();
+        });
+    }
 
     /**
      * Exact amount button

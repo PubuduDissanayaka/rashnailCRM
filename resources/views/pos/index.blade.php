@@ -650,8 +650,9 @@
                                     </label>
                                     <div class="input-group input-group-lg">
                                         <span class="input-group-text">{{ $currencySymbol }}</span>
-                                        <input type="text" class="form-control text-end fs-4 fw-bold"
-                                               id="amount-received-display" placeholder="0.00" readonly>
+                                        <input type="number" class="form-control text-end fs-4 fw-bold"
+                                               id="amount-received-display" placeholder="0.00" min="0" step="0.01"
+                                               inputmode="decimal">
                                     </div>
                                     <div class="invalid-feedback" id="amount-error"></div>
                                 </div>
