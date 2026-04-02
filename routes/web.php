@@ -164,6 +164,8 @@ Route::middleware(['auth'])->group(function () {
 
         Route::get('/pos/receipt/{sale}', [PosController::class, 'showReceipt'])
             ->name('pos.receipt');
+        Route::get('/pos/receipt/{sale}/download', [PosController::class, 'downloadReceipt'])
+            ->name('pos.receipt.download');
     });
 
     // Coupon management routes — gated by granular coupon permissions

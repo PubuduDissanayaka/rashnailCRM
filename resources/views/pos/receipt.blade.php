@@ -673,6 +673,15 @@
                     <span>Print Receipt</span>
                 </button>
 
+                <!-- Download PDF Button -->
+                <a
+                    href="{{ route('pos.receipt.download', $sale) }}"
+                    class="action-btn btn-success"
+                    aria-label="Download PDF receipt">
+                    <i class="ti ti-download"></i>
+                    <span>Download PDF</span>
+                </a>
+
                 <!-- WhatsApp Button (Conditional) -->
                 @if($sale->customer && $sale->customer->phone)
                 <button

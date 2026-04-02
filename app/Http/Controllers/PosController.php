@@ -664,6 +664,39 @@ class PosController extends Controller
     }
 
     /**
+     * Download receipt as PDF (generated on-the-fly, not saved)
+     */
+    public function downloadReceipt(Sale $sale)
+    {
+        $this->authorize('view pos');
+
+        $sale->load(['customer', 'user', 'items.sellable', 'payments']);
+
+        $businessName = Setting::get('business.name', config('app.name'));
+        $businessAddress = Setting::get('business.address', '');
+        $businessPhone = Setting::get('business.phone', '');
+        $businessEmail = Setting::get('business.email', '');
+        $businessTagline = Setting::get('business.tagline', '');
+        $businessLogo = Setting::get('business.logo');
+        $currencySymbol = Setting::get('payment.currency_symbol', '$');
+
+        $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView('pos.receipt-pdf', compact(
+            'sale',
+            'businessName',
+            'businessAddress',
+            'businessPhone',
+            'businessEmail',
+            'businessTagline',
+            'businessLogo',
+            'currencySymbol'
+        ))->setPaper([0, 0, 226.77, 841.89], 'portrait'); // 80mm width, flexible height
+
+        $filename = "receipt-{$sale->sale_number}.pdf";
+
+        return $pdf->download($filename);
+    }
+
+    /**
      * Format phone number for WhatsApp (international format without +)
      *
      * @param string|null $phone
