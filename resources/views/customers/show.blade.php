@@ -138,13 +138,17 @@
                                     <span class="text-capitalize">{{ $customer->date_of_birth ? $customer->date_of_birth->format('M d, Y') : 'N/A' }}</span>
                                 </li>
                                 <li class="d-flex align-items-center mb-2">
+                                    <span class="ti ti-calendar-plus fs-lg text-primary me-2"></span>
+                                    <span>Joined: {{ $customer->joined_date ? $customer->joined_date->format('M d, Y') : $customer->created_at->format('M d, Y') }}</span>
+                                </li>
+                                <li class="d-flex align-items-center mb-2">
                                     <span class="ti ti-gender-bigender fs-lg text-primary me-2"></span>
                                     <span class="text-capitalize">{{ $customer->gender ?? 'N/A' }}</span>
                                 </li>
                             </ul>
-                            
+
                             <div class="d-flex justify-content-between align-items-center">
-                                <span class="text-muted fs-xs"><i class="ti ti-clock me-1"></i>Joined {{ $customer->created_at->diffForHumans() }}</span>
+                                <span class="text-muted fs-xs"><i class="ti ti-clock me-1"></i>Joined {{ ($customer->joined_date ?? $customer->created_at)->diffForHumans() }}</span>
                             </div>
                         </div>
                     </div>

@@ -714,6 +714,15 @@
                                 <option value="prefer_not_to_say">Prefer not to say</option>
                             </select>
                         </div>
+
+                        <!-- Joined Date (Optional, defaults to today) -->
+                        <div class="mb-3">
+                            <label for="customer-joined-date" class="form-label">Joined Date</label>
+                            <input type="date" class="form-control" id="customer-joined-date"
+                                   name="joined_date" value="{{ now()->toDateString() }}"
+                                   max="{{ now()->toDateString() }}">
+                            <small class="form-text text-muted">Defaults to today if left blank</small>
+                        </div>
                     </div>
                     <div class="modal-footer">
                         <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>

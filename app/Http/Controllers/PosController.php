@@ -506,11 +506,17 @@ class PosController extends Controller
             'phone' => 'required|string|unique:customers',
             'email' => 'nullable|email|unique:customers',
             'gender' => 'nullable|in:male,female,other,prefer_not_to_say',
+            'joined_date' => 'nullable|date|before_or_equal:today',
         ]);
 
         try {
             // Format phone number
             $validated['phone'] = $this->formatPhoneNumberForStorage($validated['phone']);
+
+            // Default joined_date to today if not provided
+            if (empty($validated['joined_date'])) {
+                $validated['joined_date'] = now()->toDateString();
+            }
 
             // Generate slug
             $validated['slug'] = \Illuminate\Support\Str::slug(

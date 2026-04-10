@@ -21,6 +21,7 @@ class Customer extends Model
         'phone',
         'email',
         'date_of_birth',
+        'joined_date',
         'address',
         'gender',
         'status',
@@ -36,6 +37,7 @@ class Customer extends Model
     {
         return [
             'date_of_birth' => 'date',
+            'joined_date' => 'date',
         ];
     }
 

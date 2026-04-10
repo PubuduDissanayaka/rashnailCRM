@@ -104,7 +104,7 @@
                             </div>
                         </div>
                         <div class="row">
-                            <div class="col-md-4">
+                            <div class="col-md-3">
                                 <div class="mb-3">
                                     <label for="date_of_birth" class="form-label">Date of Birth</label>
                                     <input class="form-control" type="date" id="date_of_birth" name="date_of_birth" value="{{ old('date_of_birth', $customer->date_of_birth?->format('Y-m-d')) }}">
@@ -115,7 +115,20 @@
                                     @enderror
                                 </div>
                             </div>
-                            <div class="col-md-4">
+                            <div class="col-md-3">
+                                <div class="mb-3">
+                                    <label for="joined_date" class="form-label">Joined Date</label>
+                                    <input class="form-control" type="date" id="joined_date" name="joined_date"
+                                           value="{{ old('joined_date', $customer->joined_date?->format('Y-m-d')) }}"
+                                           max="{{ now()->toDateString() }}">
+                                    @error('joined_date')
+                                        <span class="text-danger" role="alert">
+                                            <small>{{ $message }}</small>
+                                        </span>
+                                    @enderror
+                                </div>
+                            </div>
+                            <div class="col-md-3">
                                 <div class="mb-3">
                                     <label for="gender" class="form-label">Gender</label>
                                     <select class="form-control" id="gender" name="gender" data-choices data-choices-search-false>
@@ -132,7 +145,7 @@
                                     @enderror
                                 </div>
                             </div>
-                            <div class="col-md-4">
+                            <div class="col-md-3">
                                 <div class="mb-3">
                                     <label for="status" class="form-label">Status</label>
                                     <select class="form-control" id="status" name="status" data-choices data-choices-search-false>

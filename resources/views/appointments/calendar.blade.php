@@ -188,6 +188,11 @@
                                         <div class="col-6">
                                             <input type="email" class="form-control form-control-sm" id="qc-email" placeholder="Email (optional)">
                                         </div>
+                                        <div class="col-12">
+                                            <label for="qc-joined-date" class="form-label fs-xs mb-1 text-muted">Joined Date</label>
+                                            <input type="date" class="form-control form-control-sm" id="qc-joined-date"
+                                                   value="{{ now()->toDateString() }}" max="{{ now()->toDateString() }}">
+                                        </div>
                                     </div>
                                     <div id="qc-error" class="text-danger fs-xs mt-1" style="display:none;"></div>
                                     <div class="mt-2 d-flex gap-2">
@@ -302,10 +307,11 @@
         closeBtn2?.addEventListener('click', hidePanel);
 
         saveBtn?.addEventListener('click', async function () {
-            const firstName = document.getElementById('qc-first-name').value.trim();
-            const lastName  = document.getElementById('qc-last-name').value.trim();
-            const phone     = document.getElementById('qc-phone').value.trim();
-            const email     = document.getElementById('qc-email').value.trim();
+            const firstName  = document.getElementById('qc-first-name').value.trim();
+            const lastName   = document.getElementById('qc-last-name').value.trim();
+            const phone      = document.getElementById('qc-phone').value.trim();
+            const email      = document.getElementById('qc-email').value.trim();
+            const joinedDate = document.getElementById('qc-joined-date')?.value || '';
 
             errEl.style.display = 'none';
 
@@ -326,7 +332,7 @@
                         'X-CSRF-TOKEN': window.csrfToken,
                         'Accept': 'application/json',
                     },
-                    body: JSON.stringify({ first_name: firstName, last_name: lastName, phone, email: email || undefined }),
+                    body: JSON.stringify({ first_name: firstName, last_name: lastName, phone, email: email || undefined, joined_date: joinedDate || undefined }),
                 });
 
                 const data = await resp.json();

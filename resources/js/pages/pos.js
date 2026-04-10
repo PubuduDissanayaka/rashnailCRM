@@ -69,6 +69,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 phone: formData.get('phone'),
                 email: formData.get('email') || null,
                 gender: formData.get('gender') || null,
+                joined_date: formData.get('joined_date') || null,
             };
 
             try {

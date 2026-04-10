@@ -56,13 +56,19 @@ class CustomerController extends Controller
         $this->authorize('create customers');
 
         $data = $request->validate([
-            'first_name' => 'required|string|max:255',
-            'last_name'  => 'required|string|max:255',
-            'phone'      => 'required|string|max:30',
-            'email'      => 'nullable|email|unique:customers',
+            'first_name'  => 'required|string|max:255',
+            'last_name'   => 'required|string|max:255',
+            'phone'       => 'required|string|max:30',
+            'email'       => 'nullable|email|unique:customers',
+            'joined_date' => 'nullable|date|before_or_equal:today',
         ]);
 
         $data['phone'] = $this->formatPhoneNumberForStorage($data['phone']);
+
+        // Default joined_date to today if not provided
+        if (empty($data['joined_date'])) {
+            $data['joined_date'] = now()->toDateString();
+        }
 
         $customer = Customer::create($data);
 
@@ -87,6 +93,7 @@ class CustomerController extends Controller
             'phone' => 'required|string|unique:customers',
             'email' => 'nullable|email|unique:customers',
             'date_of_birth' => 'nullable|date|before:today',
+            'joined_date' => 'nullable|date|before_or_equal:today',
             'gender' => 'nullable|in:'.implode(',', ['male', 'female', 'other', 'prefer_not_to_say']),
             'address' => 'nullable|string|max:500',
             'notes' => 'nullable|string|max:1000',
@@ -95,11 +102,16 @@ class CustomerController extends Controller
         // Prepare the validated data from request
         $validatedData = $request->only([
             'first_name', 'last_name', 'phone', 'email', 'date_of_birth',
-            'gender', 'address', 'notes'
+            'joined_date', 'gender', 'address', 'notes'
         ]);
 
         // Format phone number using country code and local phone from request
         $validatedData['phone'] = $this->formatPhoneNumberForStorage($request->country_code . $request->local_phone);
+
+        // Default joined_date to today if not provided
+        if (empty($validatedData['joined_date'])) {
+            $validatedData['joined_date'] = now()->toDateString();
+        }
 
         // Remove helper fields that are not in the database
         unset($validatedData['country_code']);
@@ -249,6 +261,7 @@ class CustomerController extends Controller
             'phone' => 'required|string|unique:customers,phone,' . $customer->id,
             'email' => 'nullable|email|unique:customers,email,' . $customer->id,
             'date_of_birth' => 'nullable|date|before:today',
+            'joined_date' => 'nullable|date|before_or_equal:today',
             'gender' => 'nullable|in:'.implode(',', ['male', 'female', 'other', 'prefer_not_to_say']),
             'address' => 'nullable|string|max:500',
             'notes' => 'nullable|string|max:1000',
@@ -257,7 +270,7 @@ class CustomerController extends Controller
         // Prepare the validated data from request
         $validatedData = $request->only([
             'first_name', 'last_name', 'phone', 'email', 'date_of_birth',
-            'gender', 'address', 'notes'
+            'joined_date', 'gender', 'address', 'notes'
         ]);
 
         // Format phone number using country code and local phone from request
