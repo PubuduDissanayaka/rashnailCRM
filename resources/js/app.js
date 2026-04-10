@@ -564,32 +564,130 @@ class LayoutCustomizer {
 
     // Topbar Fullscreen Button
     initfullScreenListener() {
-        var self = this;
-        var fullScreenBtn = document.querySelector('[data-toggle="fullscreen"]');
+        const fullScreenBtn = document.querySelector('[data-toggle="fullscreen"]');
+        if (!fullScreenBtn) return;
 
-        if (fullScreenBtn) {
-            fullScreenBtn.addEventListener('click', function (e) {
-                e.preventDefault();
-                document.body.classList.toggle('fullscreen-enable')
-                if (!document.fullscreenElement && /* alternative standard method */ !document.mozFullScreenElement && !document.webkitFullscreenElement) {  // current working methods
-                    if (document.documentElement.requestFullscreen) {
-                        document.documentElement.requestFullscreen();
-                    } else if (document.documentElement.mozRequestFullScreen) {
-                        document.documentElement.mozRequestFullScreen();
-                    } else if (document.documentElement.webkitRequestFullscreen) {
-                        document.documentElement.webkitRequestFullscreen(Element.ALLOW_KEYBOARD_INPUT);
-                    }
-                } else {
-                    if (document.cancelFullScreen) {
-                        document.cancelFullScreen();
-                    } else if (document.mozCancelFullScreen) {
-                        document.mozCancelFullScreen();
-                    } else if (document.webkitCancelFullScreen) {
-                        document.webkitCancelFullScreen();
-                    }
-                }
-            });
+        const FS_PREF_KEY = '__UBOLD_FULLSCREEN__';
+        const docEl = document.documentElement;
+
+        // Cross-browser API detection
+        const requestFs = docEl.requestFullscreen
+            || docEl.webkitRequestFullscreen
+            || docEl.mozRequestFullScreen
+            || docEl.msRequestFullscreen;
+        const exitFs = document.exitFullscreen
+            || document.webkitExitFullscreen
+            || document.mozCancelFullScreen
+            || document.msExitFullscreen;
+
+        // Unsupported (iOS Safari on iPhone has no Fullscreen API)
+        if (!requestFs) {
+            fullScreenBtn.style.display = 'none';
+            return;
         }
+
+        // Cross-browser fullscreen state check
+        const isFullscreen = () => !!(
+            document.fullscreenElement
+            || document.webkitFullscreenElement
+            || document.mozFullScreenElement
+            || document.msFullscreenElement
+        );
+
+        // Keep body class + icon in sync with actual state
+        const syncUI = () => {
+            document.body.classList.toggle('fullscreen-enable', isFullscreen());
+        };
+
+        const enterFullscreen = () => {
+            try {
+                const result = requestFs.call(docEl);
+                if (result && typeof result.then === 'function') {
+                    result.then(() => {
+                        sessionStorage.setItem(FS_PREF_KEY, '1');
+                        syncUI();
+                    }).catch(() => {
+                        // Request blocked (no gesture, permission, etc.)
+                        sessionStorage.removeItem(FS_PREF_KEY);
+                        syncUI();
+                    });
+                } else {
+                    sessionStorage.setItem(FS_PREF_KEY, '1');
+                    setTimeout(syncUI, 50);
+                }
+            } catch (_) {
+                sessionStorage.removeItem(FS_PREF_KEY);
+            }
+        };
+
+        const leaveFullscreen = () => {
+            try {
+                if (isFullscreen() && exitFs) {
+                    exitFs.call(document);
+                }
+            } catch (_) {}
+            sessionStorage.removeItem(FS_PREF_KEY);
+        };
+
+        // Button click: toggle based on ACTUAL state, not class
+        fullScreenBtn.addEventListener('click', function (e) {
+            e.preventDefault();
+            if (isFullscreen()) {
+                leaveFullscreen();
+            } else {
+                enterFullscreen();
+            }
+        });
+
+        // Sync UI whenever fullscreen state changes (ESC, F11, programmatic)
+        ['fullscreenchange', 'webkitfullscreenchange', 'mozfullscreenchange', 'MSFullscreenChange']
+            .forEach(evt => document.addEventListener(evt, syncUI));
+
+        // On errors, clear pref so we don't retry in a loop
+        ['fullscreenerror', 'webkitfullscreenerror', 'mozfullscreenerror']
+            .forEach(evt => document.addEventListener(evt, () => {
+                sessionStorage.removeItem(FS_PREF_KEY);
+                syncUI();
+            }));
+
+        // ESC key = user intentionally exits → clear persistence pref
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape' && isFullscreen()) {
+                sessionStorage.removeItem(FS_PREF_KEY);
+            }
+        });
+
+        // Persistence: browsers force-exit fullscreen on page navigation.
+        // If the user wanted fullscreen, re-enter on the first user gesture
+        // (browsers require a user activation to re-grant fullscreen).
+        if (sessionStorage.getItem(FS_PREF_KEY) === '1' && !isFullscreen()) {
+            const reenter = (e) => {
+                // For clicks: skip if target is a nav link / submit / dropdown
+                // so we don't interfere with navigation. We'll retry on the next page.
+                if (e && e.type === 'click') {
+                    const navTarget = e.target.closest(
+                        'a[href], button[type="submit"], input[type="submit"], [data-bs-toggle], [data-bs-dismiss]'
+                    );
+                    if (navTarget) return; // Let navigation proceed; we'll try again.
+                }
+
+                // Detach all gesture listeners
+                document.removeEventListener('click', reenter, true);
+                document.removeEventListener('keydown', reenter, true);
+                document.removeEventListener('touchstart', reenter, true);
+
+                if (sessionStorage.getItem(FS_PREF_KEY) === '1' && !isFullscreen()) {
+                    enterFullscreen();
+                }
+            };
+            // Capture phase so we run before other handlers
+            document.addEventListener('click', reenter, true);
+            document.addEventListener('keydown', reenter, true);
+            document.addEventListener('touchstart', reenter, true);
+        }
+
+        // Initial sync (e.g. user entered via F11 keyboard shortcut)
+        syncUI();
     }
 
 
