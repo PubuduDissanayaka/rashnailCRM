@@ -269,6 +269,7 @@ Route::middleware(['auth'])->group(function () {
         Route::get('/leaves', [LeaveRequestController::class, 'index'])->name('leaves.index');
         Route::get('/leaves/create', [LeaveRequestController::class, 'create'])->name('leaves.create');
         Route::post('/leaves', [LeaveRequestController::class, 'store'])->name('leaves.store');
+        Route::get('/leaves/calendar', [LeaveRequestController::class, 'calendar'])->name('leaves.calendar');
         Route::get('/leaves/{leaveRequest}', [LeaveRequestController::class, 'show'])->name('leaves.show');
         Route::delete('/leaves/{leaveRequest}', [LeaveRequestController::class, 'destroy'])->name('leaves.destroy');
         Route::get('/leaves/{leaveRequest}/approval', [LeaveRequestController::class, 'showApproval'])->name('leaves.approval');
@@ -276,11 +277,6 @@ Route::middleware(['auth'])->group(function () {
             ->middleware('can:approve leave requests')->name('leaves.approve');
         Route::post('/leaves/{leaveRequest}/reject', [LeaveRequestController::class, 'reject'])
             ->middleware('can:approve leave requests')->name('leaves.reject');
-    });
-
-    // Leave Calendar - viewable by anyone with leave view permission
-    Route::middleware(['can:view leave requests'])->group(function () {
-        Route::get('/leaves/calendar', [LeaveRequestController::class, 'calendar'])->name('leaves.calendar');
     });
 
     // Leave Balance routes
