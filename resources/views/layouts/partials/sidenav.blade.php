@@ -303,17 +303,27 @@
                 </a>
                 <div class="collapse" id="sidebarLeaves">
                     <ul class="sub-menu">
-                        @can('view leave requests')
                         <li class="side-nav-item">
-                            <a class="side-nav-link" href="{{ route('leaves.index') }}">
-                                <span class="menu-text">Leave Requests</span>
+                            <a class="side-nav-link" href="{{ route('leaves.my-requests') }}">
+                                <span class="menu-text">My Requests</span>
                             </a>
                         </li>
-                        @endcan
                         @can('create leave requests')
                         <li class="side-nav-item">
                             <a class="side-nav-link" href="{{ route('leaves.create') }}">
                                 <span class="menu-text">Request Leave</span>
+                            </a>
+                        </li>
+                        @endcan
+                        @can('view leave requests')
+                        <li class="side-nav-item">
+                            <a class="side-nav-link" href="{{ route('leaves.index') }}">
+                                <span class="menu-text">All Requests</span>
+                            </a>
+                        </li>
+                        <li class="side-nav-item">
+                            <a class="side-nav-link" href="{{ route('leaves.calendar') }}">
+                                <span class="menu-text">Calendar</span>
                             </a>
                         </li>
                         @endcan
