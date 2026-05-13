@@ -4,25 +4,34 @@
     @include('layouts.partials.page-title', ['title' => 'Manage Role: ' . ucfirst($role->name)])
 
     <div class="row">
-        <!-- Permissions Panel -->
         <div class="col-lg-8">
             <div class="card">
-                <div class="card-header d-flex justify-content-between align-items-center">
+                <div class="card-header border-light d-flex justify-content-between align-items-center">
                     <div>
                         <h4 class="card-title">Permissions</h4>
-                        <p class="text-muted mb-0">Toggle what this role can do</p>
+                        <p class="text-muted mb-0">Toggle what members with this role can access and do</p>
                     </div>
-                    <div>
-                        <button class="btn btn-sm btn-outline-primary me-1" onclick="checkAll()">Allow All</button>
-                        <button class="btn btn-sm btn-outline-secondary" onclick="uncheckAll()">Disallow All</button>
+                    <div class="d-flex gap-2">
+                        <button class="btn btn-sm btn-outline-primary" onclick="checkAll()">
+                            <i class="ti ti-check-all me-1"></i> Allow All
+                        </button>
+                        <button class="btn btn-sm btn-outline-secondary" onclick="uncheckAll()">
+                            <i class="ti ti-x me-1"></i> Disallow All
+                        </button>
                     </div>
                 </div>
                 <div class="card-body">
                     @if(session('success'))
-                        <div class="alert alert-success">{{ session('success') }}</div>
+                        <div class="alert alert-success alert-dismissible fade show" role="alert">
+                            <i class="ti ti-check me-1"></i> {{ session('success') }}
+                            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                        </div>
                     @endif
                     @if(session('error'))
-                        <div class="alert alert-danger">{{ session('error') }}</div>
+                        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                            <i class="ti ti-alert-circle me-1"></i> {{ session('error') }}
+                            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                        </div>
                     @endif
 
                     <form action="{{ route('users.roles.update', $role) }}" method="POST" id="permissions-form">
@@ -51,12 +60,10 @@
                         @endphp
 
                         @foreach($categories as $category => $perms)
-                            @php
-                                $existingPerms = array_intersect($perms, $allPermissions->pluck('name')->toArray());
-                            @endphp
+                            @php $existingPerms = array_intersect($perms, $allPermissions->pluck('name')->toArray()); @endphp
                             @if(count($existingPerms) > 0)
-                            <div class="mb-4">
-                                <h6 class="fw-bold mb-2">{{ $category }}</h6>
+                            <div class="mb-4 p-3 border rounded">
+                                <h6 class="fw-bold text-uppercase fs-xxs text-muted mb-3">{{ $category }}</h6>
                                 <div class="row">
                                     @foreach($existingPerms as $perm)
                                     <div class="col-md-6 col-lg-4">
@@ -76,7 +83,8 @@
                             @endif
                         @endforeach
 
-                        <div class="text-end mt-3">
+                        <div class="text-end mt-3 border-top pt-3">
+                            <a href="{{ route('users.roles') }}" class="btn btn-light me-2">Cancel</a>
                             <button type="submit" class="btn btn-primary">
                                 <i class="ti ti-device-floppy me-1"></i> Save Permissions
                             </button>
@@ -86,24 +94,28 @@
             </div>
         </div>
 
-        <!-- Users Panel -->
         <div class="col-lg-4">
             <div class="card">
-                <div class="card-header">
-                    <h4 class="card-title">Users with this Role</h4>
-                    <p class="text-muted mb-0">{{ $role->users->count() }} user(s) assigned</p>
+                <div class="card-header border-light">
+                    <h4 class="card-title">Assigned Users</h4>
+                    <p class="text-muted mb-0">{{ $role->users->count() }} user(s) with this role</p>
                 </div>
                 <div class="card-body">
                     @if($role->users->count() > 0)
                         <div class="mb-3">
                             @foreach($role->users as $user)
-                                <div class="d-flex align-items-center mb-2 p-2 border rounded">
+                                <div class="d-flex align-items-center mb-2 p-3 border rounded">
+                                    <div class="avatar-sm rounded-circle bg-soft-primary me-3">
+                                        <span class="avatar-title rounded-circle text-uppercase">
+                                            {{ substr($user->name, 0, 1) }}
+                                        </span>
+                                    </div>
                                     <div class="flex-grow-1">
-                                        <span class="fw-semibold">{{ $user->name }}</span>
-                                        <br><small class="text-muted">{{ $user->email }}</small>
+                                        <h6 class="mb-0">{{ $user->name }}</h6>
+                                        <small class="text-muted">{{ $user->email }}</small>
                                     </div>
                                     @if($role->name !== 'administrator')
-                                    <form action="{{ route('users.roles.update', $role) }}" method="POST" class="d-inline">
+                                    <form action="{{ route('users.roles.update', $role) }}" method="POST" class="d-inline ms-2">
                                         @csrf
                                         @method('PUT')
                                         <input type="hidden" name="action" value="remove_user">
@@ -117,26 +129,29 @@
                             @endforeach
                         </div>
                     @else
-                        <p class="text-muted">No users assigned to this role yet.</p>
+                        <div class="text-center py-4 text-muted">
+                            <i class="ti ti-users fs-32 mb-2 d-block"></i>
+                            No users assigned to this role yet.
+                        </div>
                     @endif
 
                     <hr>
 
-                    <h6 class="fw-bold">Assign Users</h6>
+                    <h6 class="fw-bold mb-3">Assign Users to This Role</h6>
                     <form action="{{ route('users.roles.update', $role) }}" method="POST">
                         @csrf
                         @method('PUT')
                         <input type="hidden" name="action" value="assign_users">
 
                         <div class="mb-3">
-                            <select name="assign_users[]" class="form-select" multiple size="8">
+                            <select name="assign_users[]" class="form-select" multiple size="6">
                                 @foreach($allUsers as $user)
                                     @if(!$user->hasRole($role->name))
                                     <option value="{{ $user->id }}">{{ $user->name }} ({{ $user->email }})</option>
                                     @endif
                                 @endforeach
                             </select>
-                            <small class="text-muted">Hold Ctrl/Cmd to select multiple users</small>
+                            <small class="text-muted">Hold Ctrl/Cmd to select multiple</small>
                         </div>
 
                         <button type="submit" class="btn btn-primary w-100">
@@ -146,16 +161,17 @@
                 </div>
             </div>
 
-            <!-- Danger Zone -->
             @if($role->name !== 'administrator')
             <div class="card border-danger mt-3">
-                <div class="card-header bg-danger bg-opacity-10">
-                    <h5 class="card-title text-danger mb-0">Danger Zone</h5>
+                <div class="card-header border-danger bg-danger bg-opacity-10">
+                    <h5 class="card-title text-danger mb-0">
+                        <i class="ti ti-alert-triangle me-1"></i> Danger Zone
+                    </h5>
                 </div>
                 <div class="card-body">
-                    <p class="text-muted">Deleting this role will remove it from all assigned users. They will lose all associated permissions.</p>
+                    <p class="text-muted mb-3">Permanently delete this role and remove it from all {{ $role->users->count() }} assigned user(s).</p>
                     <form action="{{ route('users.roles.destroy', $role) }}" method="POST"
-                        onsubmit="return confirm('PERMANENTLY delete the role \'{{ $role->name }}\'? This will affect {{ $role->users->count() }} user(s).')">
+                        onsubmit="return confirm('PERMANENTLY delete the role \'{{ $role->name }}\'? This cannot be undone.')">
                         @csrf
                         @method('DELETE')
                         <button type="submit" class="btn btn-danger w-100">
