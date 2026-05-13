@@ -173,19 +173,15 @@ Route::middleware(['auth'])->group(function () {
     // Coupon management routes — gated by granular coupon permissions
     Route::middleware(['auth', 'can:view coupons'])->group(function () {
         Route::get('/coupons', [CouponController::class, 'index'])->name('coupons.index');
-        Route::get('/coupons/{coupon}', [CouponController::class, 'show'])->name('coupons.show');
-
         Route::get('/coupons/create', [CouponController::class, 'create'])->middleware('can:create coupons')->name('coupons.create');
         Route::post('/coupons', [CouponController::class, 'store'])->middleware('can:create coupons')->name('coupons.store');
-
+        Route::get('/coupons/bulk/create', [CouponController::class, 'bulkCreate'])->middleware('can:manage coupon batches')->name('coupons.bulk.create');
+        Route::post('/coupons/bulk/generate', [CouponController::class, 'bulkStore'])->middleware('can:manage coupon batches')->name('coupons.bulk.generate');
+        Route::get('/coupons/{coupon}', [CouponController::class, 'show'])->name('coupons.show');
         Route::get('/coupons/{coupon}/edit', [CouponController::class, 'edit'])->middleware('can:edit coupons')->name('coupons.edit');
         Route::put('/coupons/{coupon}', [CouponController::class, 'update'])->middleware('can:edit coupons')->name('coupons.update');
 
         Route::delete('/coupons/{coupon}', [CouponController::class, 'destroy'])->middleware('can:delete coupons')->name('coupons.destroy');
-
-        // Bulk coupon generation
-        Route::get('/coupons/bulk/create', [CouponController::class, 'bulkCreate'])->middleware('can:manage coupon batches')->name('coupons.bulk.create');
-        Route::post('/coupons/bulk/generate', [CouponController::class, 'bulkStore'])->middleware('can:manage coupon batches')->name('coupons.bulk.generate');
 
         // Customer groups management
         Route::middleware(['can:manage coupon batches'])->group(function () {
