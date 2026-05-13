@@ -279,17 +279,25 @@ Route::middleware(['auth'])->group(function () {
             ->middleware('can:approve leave requests')->name('leaves.reject');
     });
 
-    // Leave Balance routes
-    Route::middleware(['can:view leave balances'])->group(function () {
-        Route::get('/leave-balances', [LeaveBalanceController::class, 'index'])->name('leave-balances.index');
-        Route::get('/leave-balances/{leaveBalance}', [LeaveBalanceController::class, 'show'])->name('leave-balances.show');
-    });
-    Route::middleware(['can:manage leave balances'])->group(function () {
-        Route::get('/leave-balances/create', [LeaveBalanceController::class, 'create'])->name('leave-balances.create');
-        Route::post('/leave-balances', [LeaveBalanceController::class, 'store'])->name('leave-balances.store');
-        Route::get('/leave-balances/{leaveBalance}/edit', [LeaveBalanceController::class, 'edit'])->name('leave-balances.edit');
-        Route::put('/leave-balances/{leaveBalance}', [LeaveBalanceController::class, 'update'])->name('leave-balances.update');
-        Route::delete('/leave-balances/{leaveBalance}', [LeaveBalanceController::class, 'destroy'])->name('leave-balances.destroy');
+    // Leave Balance routes — fixed paths before wildcards
+    Route::middleware(['auth'])->group(function () {
+        // Create route MUST be before the wildcard {leaveBalance} in the view group
+        Route::get('/leave-balances/create', [LeaveBalanceController::class, 'create'])
+            ->middleware('can:manage leave balances')->name('leave-balances.create');
+        Route::post('/leave-balances', [LeaveBalanceController::class, 'store'])
+            ->middleware('can:manage leave balances')->name('leave-balances.store');
+        // View routes (wildcard {leaveBalance} here, so keep after fixed paths)
+        Route::middleware(['can:view leave balances'])->group(function () {
+            Route::get('/leave-balances', [LeaveBalanceController::class, 'index'])->name('leave-balances.index');
+            Route::get('/leave-balances/{leaveBalance}', [LeaveBalanceController::class, 'show'])->name('leave-balances.show');
+        });
+        // Other manage routes
+        Route::get('/leave-balances/{leaveBalance}/edit', [LeaveBalanceController::class, 'edit'])
+            ->middleware('can:manage leave balances')->name('leave-balances.edit');
+        Route::put('/leave-balances/{leaveBalance}', [LeaveBalanceController::class, 'update'])
+            ->middleware('can:manage leave balances')->name('leave-balances.update');
+        Route::delete('/leave-balances/{leaveBalance}', [LeaveBalanceController::class, 'destroy'])
+            ->middleware('can:manage leave balances')->name('leave-balances.destroy');
     });
 
     // Work Schedule routes
