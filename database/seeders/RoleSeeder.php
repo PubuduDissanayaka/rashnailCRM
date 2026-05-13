@@ -99,44 +99,21 @@ class RoleSeeder extends Seeder
             'view reports', 'export reports', 'manage system',
         ]);
 
-        // ── Create/ensure roles exist ─────────────────────────
+        // ── Create administrator role with ALL permissions ────
         $administrator = Role::firstOrCreate(
             ['name' => 'administrator', 'guard_name' => 'web']
         );
-        $staff = Role::firstOrCreate(
-            ['name' => 'staff', 'guard_name' => 'web']
-        );
-
-        // Administrator gets every permission
         $administrator->syncPermissions(Permission::all());
 
-        // Staff has operational permissions only
-        $staff->syncPermissions([
-            // Customers
-            'view customers', 'create customers', 'edit customers',
-            // Appointments
-            'view appointments', 'create appointments', 'edit appointments',
-            // Services
-            'view services', 'create services', 'edit services',
-            // Service packages
-            'view service packages', 'create service packages', 'edit service packages',
-            // POS & transactions
-            'view pos', 'create pos transactions',
-            'process transactions', 'view transactions',
-            // Attendance (staff can clock in/out and view own records)
-            'view attendances',
-            // Leave
-            'view leave requests', 'create leave requests', 'view leave balances',
-            // Inventory (view and log usage)
-            'inventory.view', 'inventory.supplies.adjust', 'inventory.usage.create',
-            // Expenses (own expenses)
-            'expenses.view', 'expenses.create', 'expenses.edit',
-        ]);
+        // ── Do NOT pre-create "staff" role ────────────────────
+        // Admin creates custom roles (Manager, Staff L1, Reception, etc.)
+        // via the Roles & Permissions UI at /users/roles
 
-        // Ensure the default admin user has the administrator role
+        // ── Ensure default admin user has administrator role ──
         $adminUser = User::where('email', 'admin@rashnail.com')->first();
         if ($adminUser && !$adminUser->hasRole('administrator')) {
             $adminUser->assignRole('administrator');
+            $adminUser->update(['role' => 'administrator']);
         }
     }
 

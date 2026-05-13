@@ -52,47 +52,53 @@ class User extends Authenticatable
     }
 
     /**
-     * Scope a query to only include users with staff or admin roles.
-     * Handles both Spatie roles (model_has_roles) and legacy role column.
-     * Also matches custom role names like "Staff L4", "Manger", "Administrator" etc.
+     * Scope a query to include all staff-role users.
+     * Matches: any Spatie role (administrator + all custom roles),
+     * or legacy role column with admin/staff/manager in the name.
      */
     public function scopeWithStaffRole($query)
     {
         return $query->where(function($q) {
-            // Spatie roles — exact match
-            $q->whereHas('roles', function ($sub) {
-                $sub->whereIn('name', ['administrator', 'staff']);
-            })
-            // Legacy role column — case-insensitive partial match for admin/staff/manager
+            // Has any Spatie role (administrator or any custom staff role)
+            $q->whereHas('roles')
+            // OR legacy role column fallback
             ->orWhere(function ($sub) {
                 $sub->whereRaw('LOWER(role) LIKE ?', ['%admin%'])
                     ->orWhereRaw('LOWER(role) LIKE ?', ['%staff%'])
-                    ->orWhereRaw('LOWER(role) LIKE ?', ['%manager%']);
+                    ->orWhereRaw('LOWER(role) LIKE ?', ['%manager%'])
+                    ->orWhereRaw('LOWER(role) LIKE ?', ['%reception%']);
             });
         });
     }
 
     /**
-     * Check if the user has administrator role
+     * Check if the user has the administrator role.
      *
      * @return bool
      */
     public function isAdmin(): bool
     {
-        return $this->hasRole('administrator')
-            || stripos($this->role ?? '', 'admin') !== false;
+        return $this->hasRole('administrator');
     }
 
     /**
-     * Check if the user has staff role
+     * Check if the user has any staff-type role.
+     * True if the user has ANY Spatie role that is not 'administrator',
+     * or has a role column value indicating staff.
      *
      * @return bool
      */
     public function isStaff(): bool
     {
-        return $this->hasRole('staff')
-            || stripos($this->role ?? '', 'staff') !== false
-            || stripos($this->role ?? '', 'manager') !== false;
+        // Has any Spatie role AND it's not administrator
+        $spatieRoles = $this->getRoleNames();
+        if ($spatieRoles->isNotEmpty() && !$spatieRoles->contains('administrator')) {
+            return true;
+        }
+
+        // Fallback: role column check
+        $role = strtolower($this->role ?? '');
+        return $role !== '' && $role !== 'administrator';
     }
 
     /**

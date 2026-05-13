@@ -2,59 +2,51 @@
 
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Schema;
 use Spatie\Permission\Models\Role;
 
 return new class extends Migration
 {
     /**
-     * Normalize user roles and ensure Spatie role assignments.
+     * Normalize user role assignments.
+     * - Creates Spatie roles for any role names found in users.role column
+     * - Creates Spatie role assignments (model_has_roles) for users missing them
+     * - Preserves custom role names (Manager, Staff L4, Reception, etc.)
+     * - Only the administrator role is treated as admin; everything else is staff
      */
     public function up(): void
     {
-        // Ensure Spatie roles exist
-        $adminRole = Role::firstOrCreate(['name' => 'administrator', 'guard_name' => 'web']);
-        $staffRole = Role::firstOrCreate(['name' => 'staff', 'guard_name' => 'web']);
-
-        // Map non-standard role values to standard ones
-        $roleMap = [
-            'Administrator' => 'administrator',
-            'Admin' => 'administrator',
-            'Manger' => 'staff',        // typo fix
-            'Manager' => 'staff',
-            'Staff L4' => 'staff',       // custom level → staff
-            'Staff L3' => 'staff',
-            'Staff L2' => 'staff',
-            'Staff L1' => 'staff',
-        ];
+        // Ensure administrator role exists (gets all permissions via RoleSeeder)
+        Role::firstOrCreate(['name' => 'administrator', 'guard_name' => 'web']);
 
         $users = DB::table('users')->get();
 
         foreach ($users as $user) {
-            $roleColumn = $user->role;
-            $normalizedRole = null;
+            $roleColumn = trim($user->role ?? '');
 
-            // Check if it needs normalization
-            if (isset($roleMap[$roleColumn])) {
-                $normalizedRole = $roleMap[$roleColumn];
-            } elseif (stripos($roleColumn, 'admin') !== false) {
-                $normalizedRole = 'administrator';
-            } elseif (stripos($roleColumn, 'staff') !== false || stripos($roleColumn, 'manager') !== false) {
-                $normalizedRole = 'staff';
+            if (empty($roleColumn)) {
+                continue; // Skip users with no role
             }
 
-            // Update the role column if needed
-            if ($normalizedRole && $normalizedRole !== $roleColumn) {
-                DB::table('users')->where('id', $user->id)->update(['role' => $normalizedRole]);
+            // Determine the Spatie role name
+            $spatieRoleName = $roleColumn;
+
+            // Fix known typos
+            $typoFixes = [
+                'Manger' => 'Manager',
+                'manger' => 'Manager',
+                'Adminstrator' => 'Administrator',
+            ];
+            if (isset($typoFixes[$roleColumn])) {
+                $spatieRoleName = $typoFixes[$roleColumn];
+                DB::table('users')->where('id', $user->id)->update(['role' => $spatieRoleName]);
             }
 
-            $targetRole = $normalizedRole ?? $roleColumn;
+            // Ensure the Spatie role exists
+            $role = Role::firstOrCreate(
+                ['name' => $spatieRoleName, 'guard_name' => 'web']
+            );
 
-            // Ensure Spatie role assignment exists
-            $spatieRoleId = ($targetRole === 'administrator' || stripos($targetRole, 'admin') !== false)
-                ? $adminRole->id
-                : $staffRole->id;
-
+            // Check if user already has a Spatie role assignment
             $hasSpatieRole = DB::table('model_has_roles')
                 ->where('model_type', 'App\\Models\\User')
                 ->where('model_id', $user->id)
@@ -62,7 +54,7 @@ return new class extends Migration
 
             if (! $hasSpatieRole) {
                 DB::table('model_has_roles')->insert([
-                    'role_id' => $spatieRoleId,
+                    'role_id' => $role->id,
                     'model_type' => 'App\\Models\\User',
                     'model_id' => $user->id,
                 ]);
@@ -71,10 +63,10 @@ return new class extends Migration
     }
 
     /**
-     * Reverse the migration (no destructive rollback).
+     * Reverse the migration (non-destructive — we don't remove roles).
      */
     public function down(): void
     {
-        // Intentionally left blank — we don't reverse data normalization
+        // Intentionally blank — we don't destroy role data
     }
 };

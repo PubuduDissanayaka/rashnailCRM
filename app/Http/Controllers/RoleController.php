@@ -23,15 +23,13 @@ class RoleController extends Controller
     {
         abort_unless(auth()->user()->can('manage system'), 403);
 
-        // Find the role by name
         $role = Role::where('name', $roleName)->firstOrFail();
 
-        // Load role with its permissions and users, including detailed user information
         $role->loadMissing(['permissions', 'users' => function($query) {
             $query->with(['roles']);
         }]);
 
-        $allUsers = User::with('roles')->get(); // Load all users with their roles
+        $allUsers = User::with('roles')->get();
         $allPermissions = Permission::all();
 
         return view('users.role-details', compact('role', 'allUsers', 'allPermissions'));
@@ -52,17 +50,25 @@ class RoleController extends Controller
         abort_unless(auth()->user()->can('manage system'), 403);
 
         $request->validate([
-            'name' => 'required|string|unique:roles,name',
+            'name' => 'required|string|unique:roles,name|regex:/^[a-zA-Z0-9\s\-]+$/',
         ]);
 
         $role = Role::create(['name' => $request->name]);
 
-        // Assign permissions to the role if specified
-        if ($request->has('permissions')) {
+        // Copy permissions from an existing role if specified
+        if ($request->filled('copy_from')) {
+            $sourceRole = Role::where('name', $request->copy_from)->first();
+            if ($sourceRole) {
+                $role->syncPermissions($sourceRole->permissions);
+            }
+        }
+        // Or assign specific permissions if provided
+        elseif ($request->has('permissions')) {
             $role->syncPermissions($request->permissions);
         }
 
-        return redirect()->route('users.roles')->with('success', 'Role created successfully.');
+        return redirect()->route('users.role-details', $role->name)
+            ->with('success', 'Role "' . $role->name . '" created. Now configure its permissions.');
     }
 
     public function update(Request $request, Role $role)
@@ -82,14 +88,35 @@ class RoleController extends Controller
             foreach ($userIds as $userId) {
                 $user = User::find($userId);
                 if ($user) {
-                    $user->syncRoles([$role->name]); // replaces any existing role
+                    $user->syncRoles([$role->name]);
                     $user->update(['role' => $role->name]);
                     $assigned++;
                 }
             }
 
             return redirect()->route('users.role-details', $role->name)
-                ->with('success', $assigned . ' user(s) assigned to ' . $role->name . ' successfully.');
+                ->with('success', $assigned . ' user(s) assigned to ' . $role->name . '.');
+        }
+
+        // ── Remove User action ────────────────────────────────
+        if ($request->input('action') === 'remove_user') {
+            $userId = $request->input('remove_user_id');
+            $user = User::find($userId);
+
+            if ($user && $user->hasRole($role->name)) {
+                $user->removeRole($role->name);
+
+                // If user has other roles, set role column to first remaining role
+                $remainingRoles = $user->getRoleNames();
+                if ($remainingRoles->isNotEmpty()) {
+                    $user->update(['role' => $remainingRoles->first()]);
+                } else {
+                    $user->update(['role' => 'staff']);
+                }
+            }
+
+            return redirect()->route('users.role-details', $role->name)
+                ->with('success', 'User removed from ' . $role->name . '.');
         }
 
         // ── Edit role name + permissions action ───────────────
@@ -97,9 +124,13 @@ class RoleController extends Controller
             'name' => 'required|string|unique:roles,name,' . $role->id,
         ]);
 
-        // Only rename if not a protected role
-        if (!in_array($role->name, ['administrator', 'staff'])) {
+        // Only protect the administrator role from renaming
+        if ($role->name !== 'administrator') {
+            $oldName = $role->name;
             $role->update(['name' => $request->name]);
+
+            // Update role column on all users with this role
+            User::where('role', $oldName)->update(['role' => $request->name]);
         }
 
         // Sync permissions
@@ -113,12 +144,24 @@ class RoleController extends Controller
     {
         abort_unless(auth()->user()->can('manage system'), 403);
 
-        // Don't allow deleting the default roles
-        if (in_array($role->name, ['administrator', 'staff'])) {
-            return redirect()->back()->with('error', 'Cannot delete default roles.');
+        // Only protect the administrator role — all others can be deleted
+        if ($role->name === 'administrator') {
+            return redirect()->back()->with('error', 'Cannot delete the administrator role.');
         }
 
+        // Update users who had this role
+        $users = $role->users;
         $role->delete();
+
+        // Reset role column for affected users
+        foreach ($users as $user) {
+            $remainingRoles = $user->getRoleNames();
+            if ($remainingRoles->isNotEmpty()) {
+                $user->update(['role' => $remainingRoles->first()]);
+            } else {
+                $user->update(['role' => 'staff']);
+            }
+        }
 
         return redirect()->route('users.roles')->with('success', 'Role deleted successfully.');
     }
@@ -136,10 +179,8 @@ class RoleController extends Controller
             'name' => 'required|string|unique:permissions,name,' . $permission->id,
         ]);
 
-        // Update permission name
         $permission->update(['name' => $request->name]);
 
-        // Sync roles with the permission if provided
         if ($request->has('roles')) {
             $roles = Role::whereIn('name', $request->roles)->get();
             $permission->roles()->sync($roles);
