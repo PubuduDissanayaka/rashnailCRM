@@ -184,8 +184,8 @@ Route::middleware(['auth'])->group(function () {
         Route::delete('/coupons/{coupon}', [CouponController::class, 'destroy'])->middleware('can:delete coupons')->name('coupons.destroy');
 
         // Bulk coupon generation
-        Route::get('/coupons/bulk/create', [CouponController::class, 'createBulk'])->middleware('can:manage coupon batches')->name('coupons.bulk.create');
-        Route::post('/coupons/bulk/generate', [CouponController::class, 'generateBulk'])->middleware('can:manage coupon batches')->name('coupons.bulk.generate');
+        Route::get('/coupons/bulk/create', [CouponController::class, 'bulkCreate'])->middleware('can:manage coupon batches')->name('coupons.bulk.create');
+        Route::post('/coupons/bulk/generate', [CouponController::class, 'bulkStore'])->middleware('can:manage coupon batches')->name('coupons.bulk.generate');
 
         // Customer groups management
         Route::middleware(['can:manage coupon batches'])->group(function () {

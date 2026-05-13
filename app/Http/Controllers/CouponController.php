@@ -43,7 +43,7 @@ class CouponController extends Controller
             'total_redemptions' => \App\Models\CouponRedemption::count(),
         ];
 
-        return view('admin.coupons.index', compact('coupons', 'stats'));
+        return view('coupons.index', compact('coupons', 'stats'));
     }
 
     /**
@@ -60,7 +60,7 @@ class CouponController extends Controller
         $servicePackages = ServicePackage::active()->get();
         $categories = ServicePackageCategory::all();
 
-        return view('admin.coupons.create', compact(
+        return view('coupons.create', compact(
             'batches',
             'customerGroups',
             'locations',
@@ -194,7 +194,7 @@ class CouponController extends Controller
 
         $stats = $this->couponService->getRedemptionStats($coupon);
 
-        return view('admin.coupons.show', compact('coupon', 'stats'));
+        return view('coupons.show', compact('coupon', 'stats'));
     }
 
     /**
@@ -224,7 +224,7 @@ class CouponController extends Controller
             $selectedProducts[] = 'package_' . $package->id;
         }
 
-        return view('admin.coupons.edit', compact(
+        return view('coupons.edit', compact(
             'coupon',
             'batches',
             'customerGroups',
@@ -362,7 +362,7 @@ class CouponController extends Controller
         $this->authorize('manage coupon batches');
 
         $groups = CustomerGroup::withCount('customers')->get();
-        return view('admin.customer-groups.index', compact('groups'));
+        return view('customer-groups.index', compact('groups'));
     }
 
     /**
@@ -372,7 +372,7 @@ class CouponController extends Controller
     {
         $this->authorize('manage coupon batches');
 
-        return view('admin.customer-groups.create');
+        return view('customer-groups.create');
     }
 
     /**
@@ -402,7 +402,7 @@ class CouponController extends Controller
     {
         $this->authorize('manage coupon batches');
 
-        return view('admin.customer-groups.edit', compact('group'));
+        return view('customer-groups.edit', compact('group'));
     }
 
     /**
@@ -452,7 +452,7 @@ class CouponController extends Controller
         $this->authorize('manage coupon batches');
 
         $batches = CouponBatch::all();
-        return view('admin.coupons.bulk', compact('batches'));
+        return view('coupons.bulk', compact('batches'));
     }
 
     /**
