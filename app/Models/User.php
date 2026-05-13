@@ -54,13 +54,21 @@ class User extends Authenticatable
     /**
      * Scope a query to only include users with staff or admin roles.
      * Handles both Spatie roles (model_has_roles) and legacy role column.
+     * Also matches custom role names like "Staff L4", "Manger", "Administrator" etc.
      */
     public function scopeWithStaffRole($query)
     {
         return $query->where(function($q) {
+            // Spatie roles — exact match
             $q->whereHas('roles', function ($sub) {
                 $sub->whereIn('name', ['administrator', 'staff']);
-            })->orWhereIn('role', ['administrator', 'staff']);
+            })
+            // Legacy role column — case-insensitive partial match for admin/staff/manager
+            ->orWhere(function ($sub) {
+                $sub->whereRaw('LOWER(role) LIKE ?', ['%admin%'])
+                    ->orWhereRaw('LOWER(role) LIKE ?', ['%staff%'])
+                    ->orWhereRaw('LOWER(role) LIKE ?', ['%manager%']);
+            });
         });
     }
 
@@ -71,7 +79,8 @@ class User extends Authenticatable
      */
     public function isAdmin(): bool
     {
-        return $this->hasRole('administrator');
+        return $this->hasRole('administrator')
+            || stripos($this->role ?? '', 'admin') !== false;
     }
 
     /**
@@ -81,7 +90,9 @@ class User extends Authenticatable
      */
     public function isStaff(): bool
     {
-        return $this->hasRole('staff');
+        return $this->hasRole('staff')
+            || stripos($this->role ?? '', 'staff') !== false
+            || stripos($this->role ?? '', 'manager') !== false;
     }
 
     /**

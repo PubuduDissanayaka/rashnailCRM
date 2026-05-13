@@ -122,28 +122,34 @@
             @endcan
 
             {{-- Customers --}}
+            @can('view customers')
             <li class="side-nav-item">
                 <a class="side-nav-link" href="{{ route('customers.index') }}">
                     <span class="menu-icon"><i data-lucide="users"></i></span>
                     <span class="menu-text">Customers</span>
                 </a>
             </li>
+            @endcan
 
             {{-- Services --}}
+            @can('view services')
             <li class="side-nav-item">
                 <a class="side-nav-link" href="{{ route('services.index') }}">
                     <span class="menu-icon"><i data-lucide="scissors"></i></span>
                     <span class="menu-text">Services</span>
                 </a>
             </li>
+            @endcan
 
             {{-- Service Packages --}}
+            @can('view service packages')
             <li class="side-nav-item">
                 <a class="side-nav-link" href="{{ route('service-packages.index') }}">
                     <span class="menu-icon"><i data-lucide="package"></i></span>
                     <span class="menu-text">Service Packages</span>
                 </a>
             </li>
+            @endcan
 
             {{-- ===== SALES & FINANCE ===== --}}
             <li class="side-nav-title">Sales & Finance</li>
@@ -285,6 +291,43 @@
                     </ul>
                 </div>
             </li>
+
+            {{-- Leaves --}}
+            @can('view leave requests')
+            <li class="side-nav-item">
+                <a aria-controls="sidebarLeaves" aria-expanded="false" class="side-nav-link"
+                    data-bs-toggle="collapse" href="#sidebarLeaves">
+                    <span class="menu-icon"><i data-lucide="calendar-off"></i></span>
+                    <span class="menu-text">Leaves</span>
+                    <span class="menu-arrow"></span>
+                </a>
+                <div class="collapse" id="sidebarLeaves">
+                    <ul class="sub-menu">
+                        @can('view leave requests')
+                        <li class="side-nav-item">
+                            <a class="side-nav-link" href="{{ route('leaves.index') }}">
+                                <span class="menu-text">Leave Requests</span>
+                            </a>
+                        </li>
+                        @endcan
+                        @can('create leave requests')
+                        <li class="side-nav-item">
+                            <a class="side-nav-link" href="{{ route('leaves.create') }}">
+                                <span class="menu-text">Request Leave</span>
+                            </a>
+                        </li>
+                        @endcan
+                        @can('view leave balances')
+                        <li class="side-nav-item">
+                            <a class="side-nav-link" href="{{ route('leave-balances.index') }}">
+                                <span class="menu-text">Leave Balances</span>
+                            </a>
+                        </li>
+                        @endcan
+                    </ul>
+                </div>
+            </li>
+            @endcan
 
             {{-- Inventory --}}
             @can('inventory.view')

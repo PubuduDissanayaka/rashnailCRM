@@ -28,7 +28,9 @@ use App\Http\Controllers\Expense\{ExpenseController, ExpenseCategoryController};
 use App\Http\Controllers\CouponController;
 use App\Http\Controllers\CouponReportController;
 use App\Http\Controllers\ReportsController;
-use App\Http\Controllers\SearchController;
+use App\Http\Controllers\LeaveRequestController;
+use App\Http\Controllers\LeaveBalanceController;
+use App\Http\Controllers\WorkScheduleController;
 
 // Authentication Routes
 Route::get('/login', [AuthController::class, 'showLoginForm'])->name('login');
@@ -256,8 +258,46 @@ Route::middleware(['auth'])->group(function () {
         Route::delete('/attendance/{attendance}', [AttendanceController::class, 'destroy'])->name('attendance.destroy');
     });
 
-    // Work Hour Reports - restricted to users with 'view attendances' permission
-    Route::middleware(['can:view attendances'])->group(function () {
+    // Leave Request routes
+    Route::middleware(['can:view leave requests'])->group(function () {
+        Route::get('/leaves', [LeaveRequestController::class, 'index'])->name('leaves.index');
+        Route::get('/leaves/create', [LeaveRequestController::class, 'create'])->name('leaves.create');
+        Route::post('/leaves', [LeaveRequestController::class, 'store'])->name('leaves.store');
+        Route::get('/leaves/{leaveRequest}', [LeaveRequestController::class, 'show'])->name('leaves.show');
+        Route::delete('/leaves/{leaveRequest}', [LeaveRequestController::class, 'destroy'])->name('leaves.destroy');
+        Route::post('/leaves/{leaveRequest}/approve', [LeaveRequestController::class, 'approve'])
+            ->middleware('can:approve leave requests')->name('leaves.approve');
+        Route::post('/leaves/{leaveRequest}/reject', [LeaveRequestController::class, 'reject'])
+            ->middleware('can:approve leave requests')->name('leaves.reject');
+    });
+
+    // Leave Balance routes
+    Route::middleware(['can:view leave balances'])->group(function () {
+        Route::get('/leave-balances', [LeaveBalanceController::class, 'index'])->name('leave-balances.index');
+        Route::get('/leave-balances/{leaveBalance}', [LeaveBalanceController::class, 'show'])->name('leave-balances.show');
+    });
+    Route::middleware(['can:manage leave balances'])->group(function () {
+        Route::get('/leave-balances/create', [LeaveBalanceController::class, 'create'])->name('leave-balances.create');
+        Route::post('/leave-balances', [LeaveBalanceController::class, 'store'])->name('leave-balances.store');
+        Route::get('/leave-balances/{leaveBalance}/edit', [LeaveBalanceController::class, 'edit'])->name('leave-balances.edit');
+        Route::put('/leave-balances/{leaveBalance}', [LeaveBalanceController::class, 'update'])->name('leave-balances.update');
+        Route::delete('/leave-balances/{leaveBalance}', [LeaveBalanceController::class, 'destroy'])->name('leave-balances.destroy');
+    });
+
+    // Work Schedule routes
+    Route::middleware(['can:view work schedules'])->group(function () {
+        Route::get('/schedules', [WorkScheduleController::class, 'index'])->name('schedules.index');
+    });
+    Route::middleware(['can:manage work schedules'])->group(function () {
+        Route::get('/schedules/create', [WorkScheduleController::class, 'create'])->name('schedules.create');
+        Route::post('/schedules', [WorkScheduleController::class, 'store'])->name('schedules.store');
+        Route::get('/schedules/{workSchedule}/edit', [WorkScheduleController::class, 'edit'])->name('schedules.edit');
+        Route::put('/schedules/{workSchedule}', [WorkScheduleController::class, 'update'])->name('schedules.update');
+        Route::delete('/schedules/{workSchedule}', [WorkScheduleController::class, 'destroy'])->name('schedules.destroy');
+    });
+
+    // Work Hour Reports - restricted to users with 'view work hour reports' permission
+    Route::middleware(['can:view work hour reports'])->group(function () {
         Route::get('/reports/work-hours', [\App\Http\Controllers\WorkHourReportController::class, 'index'])->name('reports.work-hours.index');
         Route::get('/reports/work-hours/summary', [\App\Http\Controllers\WorkHourReportController::class, 'summary'])->name('reports.work-hours.summary');
         Route::get('/reports/work-hours/detail', [\App\Http\Controllers\WorkHourReportController::class, 'detail'])->name('reports.work-hours.detail');
@@ -507,8 +547,10 @@ Route::middleware(['auth'])->group(function () {
             ->name('reports.export');
     });
 
-    // Search route
-    Route::get('/search', [SearchController::class, 'index'])->name('search');
+    // Search route — requires authentication
+    Route::get('/search', function () {
+        return redirect()->route('dashboard')->with('info', 'Search functionality coming soon.');
+    })->name('search');
 
     // Additional routes
     Route::delete('alerts/{alert}', [AlertController::class, 'destroy'])->name('alerts.destroy');

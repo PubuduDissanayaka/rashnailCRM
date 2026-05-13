@@ -13,7 +13,7 @@ class LeaveBalanceController extends Controller
      */
     public function index()
     {
-        $this->authorize('manage leave balances');
+        $this->authorize('view leave balances');
 
         $staffMembers = User::withStaffRole()->get();
 
