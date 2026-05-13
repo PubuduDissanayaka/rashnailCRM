@@ -160,63 +160,6 @@ class LeaveRequest extends Model
     // ==========================================
 
     /**
-     * Approve the leave request
-     */
-    public function approve($approverId, $notes = null)
-    {
-        $this->status = 'approved';
-        $this->approved_by = $approverId;
-        $this->approved_at = now();
-        
-        if ($notes) {
-            $this->rejection_reason = $notes;
-        }
-        
-        $this->save();
-
-        // Update leave balance
-        $this->updateLeaveBalance();
-
-        return $this;
-    }
-
-    /**
-     * Reject the leave request
-     */
-    public function reject($approverId, $reason = null)
-    {
-        $this->status = 'rejected';
-        $this->approved_by = $approverId;
-        $this->approved_at = now();
-        $this->rejection_reason = $reason;
-        $this->save();
-
-        return $this;
-    }
-
-    /**
-     * Update leave balance after approval
-     */
-    protected function updateLeaveBalance()
-    {
-        // Find or create leave balance
-        $leaveBalance = LeaveBalance::firstOrCreate([
-            'user_id' => $this->user_id,
-            'year' => $this->start_date->year,
-            'leave_type' => $this->leave_type,
-        ], [
-            'total_days' => 0,
-            'used_days' => 0,
-            'remaining_days' => 0,
-        ]);
-
-        // Update balance
-        $leaveBalance->used_days += $this->days_count;
-        $leaveBalance->remaining_days = $leaveBalance->total_days - $leaveBalance->used_days;
-        $leaveBalance->save();
-    }
-
-    /**
      * Cancel the leave request (only before the start date)
      */
     public function cancel()
