@@ -27,7 +27,7 @@ class AttendanceController extends Controller
      */
     public function index(Request $request)
     {
-        $canViewAll = auth()->user()->can('view attendances');
+        $canViewAll = auth()->user()->isAdmin() || auth()->user()->can('manage attendances');
 
         // Get filter parameters
         $date   = $request->input('date', today()->format('Y-m-d'));
@@ -158,7 +158,7 @@ class AttendanceController extends Controller
      */
     public function dashboard()
     {
-        $this->authorize('view attendances');
+        $this->authorize('manage attendances');
 
         // Get today's attendance stats
         $today = today();
@@ -194,7 +194,7 @@ class AttendanceController extends Controller
      */
     public function showDate($date)
     {
-        $this->authorize('view attendances');
+        $this->authorize('manage attendances');
 
         $date = Carbon::parse($date);
         $attendances = Attendance::with('user')
@@ -210,7 +210,7 @@ class AttendanceController extends Controller
      */
     public function showStaff(User $user, Request $request)
     {
-        $this->authorize('view attendances');
+        $this->authorize('manage attendances');
 
         $year = $request->input('year', date('Y'));
         $month = $request->input('month', date('n'));
@@ -459,7 +459,7 @@ class AttendanceController extends Controller
      */
     public function report(Request $request)
     {
-        $this->authorize('view attendances');
+        $this->authorize('manage attendances');
 
         $startDate = $request->input('start_date', today()->startOfMonth()->format('Y-m-d'));
         $endDate = $request->input('end_date', today()->format('Y-m-d'));
@@ -526,7 +526,7 @@ class AttendanceController extends Controller
      */
     public function staff(Request $request)
     {
-        $this->authorize('view attendances');
+        $this->authorize('manage attendances');
 
         $staffId = $request->input('staff_id');
         $startDate = $request->input('start_date', today()->startOfMonth()->format('Y-m-d'));
@@ -602,7 +602,7 @@ class AttendanceController extends Controller
      */
     public function export(Request $request)
     {
-        $this->authorize('view attendances');
+        $this->authorize('manage attendances');
 
         $request->validate([
             'start_date' => 'required|date',
@@ -895,7 +895,7 @@ class AttendanceController extends Controller
      */
     public function auditLogs(Attendance $attendance)
     {
-        $this->authorize('view attendances');
+        $this->authorize('manage attendances');
 
         $logs = $attendance->auditLogs()
             ->with('user')
@@ -913,7 +913,7 @@ class AttendanceController extends Controller
      */
     public function viewRecord(Attendance $attendance)
     {
-        $this->authorize('view attendances');
+        $this->authorize('manage attendances');
 
         $attendance->load(['user', 'auditLogs.user', 'breaks']);
 
@@ -964,7 +964,7 @@ class AttendanceController extends Controller
      */
     public function datatableStaff(Request $request)
     {
-        $this->authorize('view attendances');
+        $this->authorize('manage attendances');
 
         // Get filter parameters
         $staffId = $request->input('staff_id');

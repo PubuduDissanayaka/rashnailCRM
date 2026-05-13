@@ -240,8 +240,8 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/attendance', function() { return redirect()->route('attendance.index'); });
     Route::get('/attendance/index', [AttendanceController::class, 'index'])->name('attendance.index');
 
-    // Attendance management routes - restricted to users with 'view attendances' permission
-    Route::middleware(['can:view attendances'])->group(function () {
+    // Attendance management routes - restricted to admin/managers with 'manage attendances'
+    Route::middleware(['can:manage attendances'])->group(function () {
         Route::get('/attendance/report', [AttendanceController::class, 'report'])->name('attendance.report');
         Route::get('/attendance/staff', [AttendanceController::class, 'staff'])->name('attendance.staff');
         // Dashboard

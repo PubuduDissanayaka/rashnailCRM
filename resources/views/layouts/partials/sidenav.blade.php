@@ -276,7 +276,7 @@
                                 <span class="menu-text">Daily Attendance</span>
                             </a>
                         </li>
-                        @can('view attendances')
+                        @can('manage attendances')
                         <li class="side-nav-item">
                             <a class="side-nav-link" href="{{ route('attendance.report') }}">
                                 <span class="menu-text">Attendance Reports</span>
