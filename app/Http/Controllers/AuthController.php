@@ -41,6 +41,14 @@ class AuthController extends Controller
 
             $user = Auth::user();
 
+            // Block inactive or suspended users
+            if ($user->status === 'inactive' || $user->status === 'suspended') {
+                Auth::logout();
+                return back()->withErrors([
+                    'email' => 'Your account is ' . $user->status . '. Please contact the administrator.',
+                ])->withInput($request->only('email'));
+            }
+
             // Redirect after successful login
             return redirect()->intended('/dashboard');
         }
