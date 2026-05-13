@@ -75,6 +75,8 @@ class LeaveRequestController extends Controller
      */
     public function store(Request $request)
     {
+        $this->authorize('create leave requests');
+        
         $user = auth()->user();
 
         $request->validate([

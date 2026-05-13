@@ -232,11 +232,14 @@
                                 <span class="menu-text">All Coupons</span>
                             </a>
                         </li>
+                        @can('create coupons')
                         <li class="side-nav-item">
                             <a class="side-nav-link" href="{{ route('coupons.create') }}">
                                 <span class="menu-text">Create Coupon</span>
                             </a>
                         </li>
+                        @endcan
+                        @can('manage coupon batches')
                         <li class="side-nav-item">
                             <a class="side-nav-link" href="{{ route('coupons.bulk.create') }}">
                                 <span class="menu-text">Bulk Generation</span>
@@ -248,6 +251,7 @@
                                 <span class="menu-text">Customer Groups</span>
                             </a>
                         </li>
+                        @endcan
                         <li class="side-nav-item">
                             <a class="side-nav-link" href="{{ route('reports.coupons.index') }}">
                                 <span class="menu-text">Reports</span>
@@ -292,8 +296,17 @@
                 </div>
             </li>
 
+            {{-- Work Schedules --}}
+            @can('view work schedules')
+            <li class="side-nav-item">
+                <a class="side-nav-link" href="{{ route('schedules.index') }}">
+                    <span class="menu-icon"><i data-lucide="calendar-range"></i></span>
+                    <span class="menu-text">Work Schedules</span>
+                </a>
+            </li>
+            @endcan
+
             {{-- Leaves --}}
-            @can('view leave requests')
             <li class="side-nav-item">
                 <a aria-controls="sidebarLeaves" aria-expanded="false" class="side-nav-link"
                     data-bs-toggle="collapse" href="#sidebarLeaves">
@@ -337,7 +350,6 @@
                     </ul>
                 </div>
             </li>
-            @endcan
 
             {{-- Inventory --}}
             @can('inventory.view')
@@ -416,16 +428,20 @@
                                 <span class="menu-text">Inventory</span>
                             </a>
                         </li>
+                        @can('view work hour reports')
                         <li class="side-nav-item">
                             <a class="side-nav-link" href="{{ route('reports.work-hours.index') }}">
                                 <span class="menu-text">Work Hours</span>
                             </a>
                         </li>
+                        @endcan
+                        @can('view coupons')
                         <li class="side-nav-item">
                             <a class="side-nav-link" href="{{ route('reports.coupons.index') }}">
                                 <span class="menu-text">Coupons</span>
                             </a>
                         </li>
+                        @endcan
                     </ul>
                 </div>
             </li>

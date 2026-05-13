@@ -87,8 +87,8 @@ Route::middleware(['auth'])->group(function () {
         Route::delete('/services/{service}', [ServiceController::class, 'destroy'])->name('services.destroy');
     });
 
-    // Appointment management routes - authorization will be handled in controller methods
-    Route::middleware(['auth'])->group(function () {
+    // Appointment management routes
+    Route::middleware(['auth', 'can:view appointments'])->group(function () {
         Route::get('/appointments', [AppointmentController::class, 'index'])->name('appointments.index');
         Route::get('/appointments/calendar', [AppointmentController::class, 'calendar'])->name('appointments.calendar');
         Route::get('/appointments/create', [AppointmentController::class, 'create'])->name('appointments.create');
@@ -568,10 +568,10 @@ Route::middleware(['auth'])->group(function () {
         return redirect()->route('dashboard')->with('info', 'Search functionality coming soon.');
     })->name('search');
 
-    // Additional routes
-    Route::delete('alerts/{alert}', [AlertController::class, 'destroy'])->name('alerts.destroy');
-    Route::get('/expenses/attachments/{attachment}/download', [ExpenseController::class, 'downloadAttachment'])->name('expenses.attachments.download');
-    Route::post('/expenses/{expense}/comments', [ExpenseController::class, 'storeComment'])->name('expenses.comments.store');
+    // Additional routes (placeholder — methods pending implementation)
+    // Route::delete('alerts/{alert}', [AlertController::class, 'destroy'])->name('alerts.destroy');
+    // Route::get('/expenses/attachments/{attachment}/download', [ExpenseController::class, 'downloadAttachment'])->name('expenses.attachments.download');
+    // Route::post('/expenses/{expense}/comments', [ExpenseController::class, 'storeComment'])->name('expenses.comments.store');
 
     // Catch-all routes (must be last) — exclude storage/ and build/ paths
     Route::group(['prefix' => '/'], function () {

@@ -250,6 +250,8 @@ class WorkHourReportController extends Controller
      */
     public function validateParameters(Request $request): JsonResponse
     {
+        $this->authorize('view work hour reports');
+        
         $filters = FilterCriteria::fromRequest($request->all());
         $validationErrors = $filters->validate();
 

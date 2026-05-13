@@ -202,6 +202,10 @@ class UsageLogController extends Controller
      */
     public function getAppointmentUsageLogs($appointmentId)
     {
+        if (!Gate::allows('inventory.view')) {
+            abort(403);
+        }
+        
         $logs = SupplyUsageLog::with(['supply', 'service'])
             ->where('appointment_id', $appointmentId)
             ->get();

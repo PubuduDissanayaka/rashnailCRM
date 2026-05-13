@@ -13,7 +13,7 @@ class WorkScheduleController extends Controller
      */
     public function index()
     {
-        $this->authorize('manage work schedules');
+        $this->authorize('view work schedules');
 
         $staffMembers = User::withStaffRole()->get();
 
