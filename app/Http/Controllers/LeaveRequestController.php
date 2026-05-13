@@ -46,9 +46,7 @@ class LeaveRequestController extends Controller
         $leaveRequests = $query->orderBy('created_at', 'desc')->paginate(15);
 
         // Get staff members for filter dropdown
-        $staffMembers = User::whereHas('roles', function ($q) {
-            $q->where('name', 'staff');
-        })->get();
+        $staffMembers = User::withStaffRole()->get();
 
         return view('leaves.index', compact('leaveRequests', 'staffMembers'));
     }

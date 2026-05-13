@@ -28,9 +28,7 @@ class PosController extends Controller
         $services = Service::where('is_active', true)->get();
         $servicePackages = ServicePackage::where('is_active', true)
             ->get();
-        $staff = User::whereHas('roles', function ($q) {
-            $q->whereIn('name', ['administrator', 'staff']);
-        })->get();
+        $staff = User::withStaffRole()->get();
 
         // Get business hours from settings
         $businessHours = Setting::get('business.hours', [

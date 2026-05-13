@@ -90,9 +90,7 @@ class UsageLogController extends Controller
         // Get filter data
         $supplies = Supply::active()->orderBy('name')->get();
         $services = Service::where('is_active', true)->orderBy('name')->get();
-        $staff = User::whereHas('roles', function ($q) {
-            $q->where('name', 'staff');
-        })->orderBy('name')->get();
+        $staff = User::withStaffRole()->orderBy('name')->get();
 
         return view('inventory.usage-logs.index', compact('supplies', 'services', 'staff'));
     }
@@ -113,9 +111,7 @@ class UsageLogController extends Controller
             ->orderBy('appointment_date', 'desc')
             ->get();
         $services = Service::where('is_active', true)->orderBy('name')->get();
-        $staff = User::whereHas('roles', function ($q) {
-            $q->where('name', 'staff');
-        })->orderBy('name')->get();
+        $staff = User::withStaffRole()->orderBy('name')->get();
         $customers = User::whereHas('roles', function ($q) {
             $q->where('name', 'customer');
         })->orderBy('name')->get();

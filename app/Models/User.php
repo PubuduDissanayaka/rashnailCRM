@@ -52,6 +52,19 @@ class User extends Authenticatable
     }
 
     /**
+     * Scope a query to only include users with staff or admin roles.
+     * Handles both Spatie roles (model_has_roles) and legacy role column.
+     */
+    public function scopeWithStaffRole($query)
+    {
+        return $query->where(function($q) {
+            $q->whereHas('roles', function ($sub) {
+                $sub->whereIn('name', ['administrator', 'staff']);
+            })->orWhereIn('role', ['administrator', 'staff']);
+        });
+    }
+
+    /**
      * Check if the user has administrator role
      *
      * @return bool

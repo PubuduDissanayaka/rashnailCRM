@@ -15,9 +15,7 @@ class LeaveBalanceController extends Controller
     {
         $this->authorize('manage leave balances');
 
-        $staffMembers = User::whereHas('roles', function($q) {
-            $q->whereIn('name', ['staff']);
-        })->get();
+        $staffMembers = User::withStaffRole()->get();
 
         return view('leave-balances.index', compact('staffMembers'));
     }
@@ -29,9 +27,7 @@ class LeaveBalanceController extends Controller
     {
         $this->authorize('manage leave balances');
 
-        $staffMembers = User::whereHas('roles', function($q) {
-            $q->whereIn('name', ['staff']);
-        })->get();
+        $staffMembers = User::withStaffRole()->get();
 
         return view('leave-balances.create', compact('staffMembers'));
     }

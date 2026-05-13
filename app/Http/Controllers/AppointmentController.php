@@ -50,9 +50,7 @@ class AppointmentController extends Controller
             'completed' => Appointment::completed()->count(),
         ];
 
-        $staff = User::whereHas('roles', function ($q) {
-            $q->whereIn('name', ['administrator', 'staff']);
-        })->get();
+        $staff = User::withStaffRole()->get();
 
         return view('appointments.index', compact('appointments', 'stats', 'staff'));
     }
@@ -66,9 +64,7 @@ class AppointmentController extends Controller
 
         $customers = Customer::orderBy('first_name')->get();
         $services = Service::where('is_active', true)->whereHas('appointments')->get();
-        $staff = User::whereHas('roles', function ($q) {
-            $q->whereIn('name', ['administrator', 'staff']);
-        })->get();
+        $staff = User::withStaffRole()->get();
 
         $businessHours = Setting::get('business.hours');
 
@@ -126,9 +122,7 @@ class AppointmentController extends Controller
 
         $customers = Customer::orderBy('first_name')->get();
         $services = Service::where('is_active', true)->get();
-        $staff = User::whereHas('roles', function ($q) {
-            $q->whereIn('name', ['administrator', 'staff']);
-        })->get();
+        $staff = User::withStaffRole()->get();
 
         return view('appointments.create', compact('customers', 'services', 'staff'));
     }
@@ -202,9 +196,7 @@ class AppointmentController extends Controller
 
         $customers = Customer::orderBy('first_name')->get();
         $services = Service::where('is_active', true)->get();
-        $staff = User::whereHas('roles', function ($q) {
-            $q->whereIn('name', ['administrator', 'staff']);
-        })->get();
+        $staff = User::withStaffRole()->get();
 
         return view('appointments.edit', compact('appointment', 'customers', 'services', 'staff'));
     }

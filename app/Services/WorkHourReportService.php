@@ -113,9 +113,7 @@ class WorkHourReportService
     public function getFilterOptions(): array
     {
         // Get all staff users (users with staff role)
-        $staffUsers = User::whereHas('roles', function ($query) {
-            $query->where('name', 'staff');
-        })
+        $staffUsers = User::withStaffRole()
         ->select(['id', 'name', 'email'])
         ->orderBy('name')
         ->get();

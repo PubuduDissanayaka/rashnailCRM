@@ -15,9 +15,7 @@ class WorkScheduleController extends Controller
     {
         $this->authorize('manage work schedules');
 
-        $staffMembers = User::whereHas('roles', function($q) {
-            $q->whereIn('name', ['staff', 'administrator']);
-        })->get();
+        $staffMembers = User::withStaffRole()->get();
 
         return view('schedules.index', compact('staffMembers'));
     }
@@ -29,9 +27,7 @@ class WorkScheduleController extends Controller
     {
         $this->authorize('manage work schedules');
 
-        $staffMembers = User::whereHas('roles', function($q) {
-            $q->whereIn('name', ['staff', 'administrator']);
-        })->get();
+        $staffMembers = User::withStaffRole()->get();
 
         return view('schedules.create', compact('staffMembers'));
     }
@@ -95,9 +91,7 @@ class WorkScheduleController extends Controller
     {
         $this->authorize('manage work schedules');
 
-        $staffMembers = User::whereHas('roles', function($q) {
-            $q->whereIn('name', ['staff', 'administrator']);
-        })->get();
+        $staffMembers = User::withStaffRole()->get();
 
         return view('schedules.edit', compact('schedule', 'staffMembers'));
     }

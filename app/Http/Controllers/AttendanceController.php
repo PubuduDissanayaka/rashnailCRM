@@ -53,7 +53,7 @@ class AttendanceController extends Controller
 
         // Staff list for the filter dropdown (admins only)
         $staffMembers = $canViewAll
-            ? User::whereHas('roles')->orderBy('name')->get()
+            ? User::withStaffRole()->orderBy('name')->get()
             : collect();
 
         $today = today();
@@ -166,9 +166,7 @@ class AttendanceController extends Controller
             ->whereDate('date', $today)
             ->get();
 
-        $totalStaff = User::whereHas('roles', function ($q) {
-            $q->where('name', 'staff');
-        })->count();
+        $totalStaff = User::withStaffRole()->count();
 
         $presentCount = $attendances->where('status', 'present')->count();
         $lateCount = $attendances->where('status', 'late')->count();
@@ -176,9 +174,7 @@ class AttendanceController extends Controller
         $leaveCount = $attendances->where('status', 'leave')->count();
 
         // Get staff members with their attendance status
-        $staff = User::whereHas('roles', function ($q) {
-            $q->where('name', 'staff');
-        })->with(['attendances' => function ($q) use ($today) {
+        $staff = User::withStaffRole()->with(['attendances' => function ($q) use ($today) {
             $q->whereDate('date', $today);
         }])->get();
 
@@ -234,9 +230,7 @@ class AttendanceController extends Controller
     {
         $this->authorize('manage attendances');
 
-        $staffMembers = User::whereHas('roles', function ($q) {
-            $q->where('name', 'staff');
-        })->get();
+        $staffMembers = User::withStaffRole()->get();
 
         return view('attendance.manual-entry', compact('staffMembers'));
     }
@@ -304,9 +298,7 @@ class AttendanceController extends Controller
     {
         $this->authorize('manage attendances');
 
-        $staffMembers = User::whereHas('roles', function ($q) {
-            $q->whereIn('name', ['staff', 'administrator']);
-        })->get();
+        $staffMembers = User::withStaffRole()->get();
 
         return view('attendance.edit', compact('attendance', 'staffMembers'));
     }
@@ -486,9 +478,7 @@ class AttendanceController extends Controller
             ->paginate(20);
 
         // Get staff members for filter
-        $staffMembers = User::whereHas('roles', function ($q) {
-            $q->whereIn('name', ['staff', 'administrator']);
-        })->get();
+        $staffMembers = User::withStaffRole()->get();
 
         // Calculate summary statistics
         $summary = null;
@@ -544,9 +534,7 @@ class AttendanceController extends Controller
         $status = $request->input('status');
 
         // Get staff members list - include all users with attendance records or staff roles
-        $staffMembers = User::whereHas('roles', function ($q) {
-            $q->whereIn('name', ['staff', 'administrator']);
-        })->orWhereHas('attendances')->get()->unique();
+        $staffMembers = User::withStaffRole()->orWhereHas('attendances')->get()->unique();
 
         $selectedStaff = null;
         $attendanceRecords = collect();

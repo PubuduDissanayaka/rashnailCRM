@@ -80,9 +80,7 @@ class SendReportGenerationFailedNotification implements ShouldQueue
     protected function notifyAdmins(ReportGenerationFailed $event, array $data)
     {
         // Get admin users (users with admin or manager roles)
-        $adminUsers = \App\Models\User::whereHas('roles', function ($query) {
-            $query->whereIn('name', ['admin', 'manager', 'super_admin']);
-        })->get();
+        $adminUsers = \App\Models\User::withStaffRole()->get();
 
         foreach ($adminUsers as $admin) {
             // Skip if it's the same user who attempted to generate the report

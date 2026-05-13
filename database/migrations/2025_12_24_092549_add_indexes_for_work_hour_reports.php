@@ -43,21 +43,26 @@ return new class extends Migration
     private function addModelHasRolesIndex(): void
     {
         $connection = config('database.default');
+        $driver = config("database.connections.{$connection}.driver");
         $prefix = config("database.connections.{$connection}.prefix");
         $tableName = $prefix . 'model_has_roles';
-        
         $indexName = 'idx_model_role';
-        
-        // Check if index already exists
-        $indexExists = DB::select("
-            SELECT COUNT(*) as count 
-            FROM information_schema.statistics 
-            WHERE table_schema = DATABASE() 
-            AND table_name = '{$tableName}' 
-            AND index_name = '{$indexName}'
-        ");
-        
-        if ($indexExists[0]->count == 0) {
+
+        if ($driver === 'sqlite') {
+            $indexes = DB::select("PRAGMA index_list('{$tableName}')");
+            $exists = collect($indexes)->contains('name', $indexName);
+        } else {
+            $indexExists = DB::select("
+                SELECT COUNT(*) as count
+                FROM information_schema.statistics
+                WHERE table_schema = DATABASE()
+                AND table_name = '{$tableName}'
+                AND index_name = '{$indexName}'
+            ");
+            $exists = $indexExists[0]->count > 0;
+        }
+
+        if (! $exists) {
             DB::statement("CREATE INDEX {$indexName} ON {$tableName} (role_id, model_id)");
         }
     }
@@ -68,22 +73,27 @@ return new class extends Migration
     private function dropModelHasRolesIndex(): void
     {
         $connection = config('database.default');
+        $driver = config("database.connections.{$connection}.driver");
         $prefix = config("database.connections.{$connection}.prefix");
         $tableName = $prefix . 'model_has_roles';
-        
         $indexName = 'idx_model_role';
-        
-        // Check if index exists
-        $indexExists = DB::select("
-            SELECT COUNT(*) as count 
-            FROM information_schema.statistics 
-            WHERE table_schema = DATABASE() 
-            AND table_name = '{$tableName}' 
-            AND index_name = '{$indexName}'
-        ");
-        
-        if ($indexExists[0]->count > 0) {
-            DB::statement("DROP INDEX {$indexName} ON {$tableName}");
+
+        if ($driver === 'sqlite') {
+            $indexes = DB::select("PRAGMA index_list('{$tableName}')");
+            $exists = collect($indexes)->contains('name', $indexName);
+        } else {
+            $indexExists = DB::select("
+                SELECT COUNT(*) as count
+                FROM information_schema.statistics
+                WHERE table_schema = DATABASE()
+                AND table_name = '{$tableName}'
+                AND index_name = '{$indexName}'
+            ");
+            $exists = $indexExists[0]->count > 0;
+        }
+
+        if ($exists) {
+            DB::statement("DROP INDEX {$indexName}");
         }
     }
 };
