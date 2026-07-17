@@ -327,7 +327,7 @@ class AppointmentController extends Controller
             return response()->json([
                 'success' => true,
                 'message' => 'Appointment status updated successfully.',
-                'appointment' => $appointment->load(['customer', 'user', 'service'])
+                'appointment' => $appointment->load(['customer', 'user', 'service', 'services'])
             ]);
         }
 

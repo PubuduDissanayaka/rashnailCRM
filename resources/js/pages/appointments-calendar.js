@@ -51,16 +51,18 @@ class AppointmentCalendar {
         // Fill form with appointment data
         document.getElementById('event-title').value = this.selectedEvent.title;
 
-        const serviceId = this.selectedEvent.extendedProps.service_id;
+        // Multi-service: extendedProps.service holds comma-separated names
+        const serviceStr = this.selectedEvent.extendedProps.service || '';
+        const serviceId = this.selectedEvent.extendedProps.service_id; // primary
         const customerId = this.selectedEvent.extendedProps.customer_id;
         const staffId = this.selectedEvent.extendedProps.user_id;
         const status = this.selectedEvent.extendedProps.status || 'scheduled';
         const notes = this.selectedEvent.extendedProps.notes || '';
 
-        console.log('Populating Modal:', { serviceId, customerId, staffId, status, notes });
-
         // Set values using Choices instances if available
-        this.setChoicesValue('event-service', serviceId);
+        if (serviceId) {
+            this.setChoicesValue('event-service', serviceId.toString());
+        }
         this.setChoicesValue('event-customer', customerId);
         this.setChoicesValue('event-staff', staffId);
         this.setChoicesValue('event-status', status);
@@ -71,7 +73,6 @@ class AppointmentCalendar {
         document.getElementById('appointment-id').value = this.selectedEvent.extendedProps.slug;
 
         // Set date and time in the input field
-        // moment is now imported correctly
         const startDateTime = moment(this.selectedEvent.start).format('YYYY-MM-DDTHH:mm');
         document.getElementById('event-date-time').value = startDateTime;
 
@@ -128,8 +129,24 @@ class AppointmentCalendar {
         return element ? element.value : null;
     }
 
+    // Get total duration from selected services (multi-select support)
+    getTotalDuration(serviceIds) {
+        const serviceElement = document.getElementById('event-service');
+        if (!serviceElement) return 60;
+        const ids = Array.isArray(serviceIds) ? serviceIds : (serviceIds ? [serviceIds] : []);
+        let total = 0;
+        ids.forEach(id => {
+            const opt = Array.from(serviceElement.options).find(o => o.value == id);
+            if (opt) {
+                const match = opt.text.match(/\((\d+)\s*min/);
+                if (match) total += parseInt(match[1]);
+            }
+        });
+        return total || 60;
+    }
+
     // Helper method to check if a date/time is within business hours and duration fits
-    isWithinBusinessHours(date, serviceId = null) {
+    isWithinBusinessHours(date, serviceIds = null) {
         const businessHours = window.businessHours || {
             'monday': { open: '09:00', close: '18:00', closed: false },
             'tuesday': { open: '09:00', close: '18:00', closed: false },
@@ -162,32 +179,8 @@ class AppointmentCalendar {
             return false;
         }
 
-        // Get service duration - we'll need to find this from the services list
-        let duration = 60; // Default duration in minutes
-        if (serviceId) {
-            // Find the service in the dropdown choices to get its duration
-            const serviceElement = document.getElementById('event-service');
-            if (serviceElement && serviceElement.choices) {
-                // If using Choices.js, accessing options directly might not work as expected if elements are hidden
-                // But generally the original select options are still there
-                const serviceOption = Array.from(serviceElement.options).find(option => option.value == serviceId);
-                if (serviceOption) {
-                    // Assuming the option text contains the duration (like "Service Name (60 min)")
-                    const match = serviceOption.text.match(/\((\d+)\s*min/);
-                    if (match) {
-                        duration = parseInt(match[1]);
-                    }
-                }
-            } else {
-                const serviceOption = Array.from(document.getElementById('event-service').options).find(option => option.value == serviceId);
-                if (serviceOption) {
-                    const match = serviceOption.text.match(/\((\d+)\s*min/);
-                    if (match) {
-                        duration = parseInt(match[1]);
-                    }
-                }
-            }
-        }
+        // Get total duration from all selected services
+        let duration = this.getTotalDuration(serviceIds);
 
         // Calculate end time of appointment
         const appointmentEndTime = new Date(date.getTime() + duration * 60000); // Add duration in milliseconds
@@ -548,11 +541,13 @@ class AppointmentCalendar {
                 const dateTimeValue = document.getElementById('event-date-time').value;
                 if (dateTimeValue) {
                     const date = new Date(dateTimeValue);
-                    if (!self.isWithinBusinessHours(date, event.detail.value)) {
+                    const vals = self.choices.service.getValue(true);
+                    const ids = Array.isArray(vals) ? vals : [vals];
+                    if (!self.isWithinBusinessHours(date, ids.length ? ids : null)) {
                         Swal.fire({
                             icon: 'warning',
                             title: 'Time/Duration Issue',
-                            text: 'Selected service duration does not fit before closing time. Please select an earlier time slot.'
+                            text: 'The total duration of selected services does not fit before closing time. Please select an earlier time slot.'
                         });
                     }
                 }
@@ -566,14 +561,15 @@ class AppointmentCalendar {
 
             // Check if appointment time is within business hours before saving
             const appointmentDateTime = document.getElementById('event-date-time').value;
-            const serviceId = self.getChoicesValue('event-service');
+            const serviceVals = self.getChoicesValue('event-service');
+            const serviceIds = Array.isArray(serviceVals) ? serviceVals : (serviceVals ? [serviceVals] : []);
             if (appointmentDateTime) {
                 const date = new Date(appointmentDateTime);
-                if (!self.isWithinBusinessHours(date, serviceId)) {
+                if (!self.isWithinBusinessHours(date, serviceIds.length ? serviceIds : null)) {
                     Swal.fire({
                         icon: 'error',
                         title: 'Invalid Time',
-                        text: 'Appointment time must be within business hours, and the service must finish before closing time.'
+                        text: 'Appointment time must be within business hours, and the services must finish before closing time.'
                     });
                     return;
                 }
@@ -583,7 +579,7 @@ class AppointmentCalendar {
             if (form.checkValidity()) {
                 const formData = {
                     title: document.getElementById('event-title').value,
-                    service_id: serviceId,
+                    service_ids: serviceIds,
                     customer_id: self.getChoicesValue('event-customer'),
                     user_id: self.getChoicesValue('event-staff'),
                     status: self.getChoicesValue('event-status'),
