@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 
 class Appointment extends Model
@@ -381,7 +382,12 @@ class Appointment extends Model
                            $q->whereBetween('appointment_date', [$this->appointment_date, $this->end_time])
                              ->orWhere(function ($q2) {
                                  $q2->where('appointment_date', '<=', $this->appointment_date)
-                                    ->whereRaw('DATE_ADD(appointment_date, INTERVAL (SELECT duration FROM services WHERE id = appointments.service_id) MINUTE) > ?', [$this->appointment_date]);
+                                    ->whereRaw(
+                                        DB::connection()->getDriverName() === 'sqlite'
+                                            ? "datetime(appointment_date, '+' || (SELECT duration FROM services WHERE id = appointments.service_id) || ' minutes') > ?"
+                                            : 'DATE_ADD(appointment_date, INTERVAL (SELECT duration FROM services WHERE id = appointments.service_id) MINUTE) > ?',
+                                        [$this->appointment_date]
+                                    );
                              });
                        });
 

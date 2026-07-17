@@ -571,11 +571,15 @@ Route::middleware(['auth'])->group(function () {
 
     // Catch-all routes (must be last) — exclude storage/ and build/ paths
     Route::group(['prefix' => '/'], function () {
+        // Prevent GET /logout from hitting the catch-all (there is no 'logout' view)
+        Route::get('logout', function () {
+            return redirect('/');
+        });
         Route::get('{first}/{second}/{third}', [RoutingController::class, 'thirdLevel'])
-            ->where('first', '(?!storage|build).*')->name('third');
+            ->where('first', '(?!storage|build|logout).*')->name('third');
         Route::get('{first}/{second}', [RoutingController::class, 'secondLevel'])
-            ->where('first', '(?!storage|build).*')->name('second');
+            ->where('first', '(?!storage|build|logout).*')->name('second');
         Route::get('{any}', [RoutingController::class, 'root'])
-            ->where('any', '(?!storage|build).*')->name('any');
+            ->where('any', '(?!storage|build|logout).*')->name('any');
     });
 });

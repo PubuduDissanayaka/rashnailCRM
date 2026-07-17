@@ -108,7 +108,6 @@ export default defineConfig({
                 "resources/js/pages/datatables-show-hide-columns.js",
                 "resources/js/pages/ecommerce-add-product.js",
                 "resources/js/pages/ecommerce-products.js",
-                "resources/js/pages/ecommerce-products.js",
                 "resources/js/pages/ecommerce-reviews.js",
                 "resources/js/pages/ecommerce-seller-details.js",
                 "resources/js/pages/email-compose.js",

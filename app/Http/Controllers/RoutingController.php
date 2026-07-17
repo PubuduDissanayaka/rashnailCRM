@@ -78,8 +78,34 @@ class RoutingController extends Controller
 
     private function checkUserAccess($viewName)
     {
-        // For pages that should be restricted based on roles, we can add checks here
-        // For now, we're just ensuring the user is authenticated via middleware
-        // More granular control can be added as needed
+        // Map view names to required permissions for the catch-all routing
+        $permissionMap = [
+            'dashboard' => null, // Everyone can see dashboard
+            'users' => 'view users',
+            'users.contacts' => 'view users',
+            'users.profile' => null, // Own profile
+            'settings' => 'manage system',
+            'notification-providers' => 'manage system',
+            'templates' => 'manage system',
+            'notification-logs' => 'manage system',
+            'broadcasts' => 'manage system',
+            'notifications.status' => 'manage system',
+        ];
+
+        // Check the first segment of the view path
+        $firstSegment = explode('.', $viewName)[0];
+
+        // Map top-level sections to permissions
+        $sectionMap = [
+            'notification-providers' => 'manage system',
+            'notification-logs' => 'manage system',
+            'broadcasts' => 'manage system',
+        ];
+
+        $permission = $permissionMap[$viewName] ?? $sectionMap[$firstSegment] ?? null;
+
+        if ($permission && !auth()->user()->can($permission)) {
+            abort(403, 'Unauthorized access to this page.');
+        }
     }
 }

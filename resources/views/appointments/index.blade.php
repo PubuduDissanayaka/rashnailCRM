@@ -14,9 +14,11 @@
             <div class="d-flex flex-sm-row flex-column align-items-sm-center gap-3 mb-3">
                 <h4 class="mb-0">Appointment List</h4>
                 <div class="flex-grow-1"></div>
+                @can('create appointments')
                 <a href="{{ route('appointments.create') }}" class="btn btn-primary">
                     <i class="ti ti-calendar-plus me-1"></i> Book Appointment
                 </a>
+                @endcan
                 <a href="{{ route('appointments.calendar') }}" class="btn btn-light">
                     <i class="ti ti-calendar-event me-1"></i> Calendar View
                 </a>
@@ -182,7 +184,11 @@
                                 <td colspan="7" class="text-center py-4">
                                     <div class="text-muted">
                                         <i class="ti ti-calendar-off fs-24 mb-2 d-block"></i>
+                                        @can('create appointments')
                                         No appointments found. <a href="{{ route('appointments.create') }}">Create the first appointment</a>.
+                                        @else
+                                        No appointments found.
+                                        @endcan
                                     </div>
                                 </td>
                             </tr>

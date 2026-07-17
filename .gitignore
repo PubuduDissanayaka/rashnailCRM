@@ -23,3 +23,21 @@ Thumbs.db
 nul
 $null
 debug_business_hours.php
+
+# BMAD Method — project-local skill kits
+_bmad/
+_bmad-output/
+.agents/
+.hermes.md
+bug-hunt/
+_memlog/
+*.memlog.md
+_customization_backups/
+
+# Sensitive config overrides
+_bmad/config.user.toml
+_bmad/custom/config.user.toml
+
+# OS artifacts
+.DS_Store
+Thumbs.db

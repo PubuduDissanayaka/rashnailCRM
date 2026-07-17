@@ -265,7 +265,8 @@
             {{-- ===== OPERATIONS ===== --}}
             <li class="side-nav-title">Operations</li>
 
-            {{-- Attendance — visible to all (everyone clocks in) --}}
+            {{-- Attendance — visible to anyone with 'view attendances' --}}
+            @can('view attendances')
             <li class="side-nav-item">
                 <a aria-controls="sidebarAttendance" aria-expanded="false" class="side-nav-link"
                     data-bs-toggle="collapse" href="#sidebarAttendance">
@@ -295,6 +296,7 @@
                     </ul>
                 </div>
             </li>
+            @endcan
 
             {{-- Work Schedules --}}
             @can('view work schedules')
@@ -307,6 +309,7 @@
             @endcan
 
             {{-- Leaves --}}
+            @can('view leave requests')
             <li class="side-nav-item">
                 <a aria-controls="sidebarLeaves" aria-expanded="false" class="side-nav-link"
                     data-bs-toggle="collapse" href="#sidebarLeaves">
@@ -350,6 +353,7 @@
                     </ul>
                 </div>
             </li>
+            @endcan
 
             {{-- Inventory --}}
             @can('inventory.view')

@@ -192,10 +192,6 @@ class CustomerController extends Controller
         $customer->load([
             'appointments.service',
             'appointments.user',
-            'transactions',
-            'sales.items.sellable', // Load sales with their items
-            'sales.payments',       // Load payment information for sales
-            'sales.items.servicePackageSales' // Load any service package sales
         ]);
 
         // Calculate comprehensive stats
@@ -295,7 +291,7 @@ class CustomerController extends Controller
 
         // Check for pending appointments
         $pendingCount = $customer->appointments()
-            ->whereIn('status', ['scheduled', 'confirmed'])
+            ->whereIn('status', ['scheduled', 'in_progress'])
             ->count();
 
         if ($pendingCount > 0) {

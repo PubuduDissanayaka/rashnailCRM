@@ -18,7 +18,7 @@ class AuthController extends Controller
     {
         // If user is already authenticated, redirect to dashboard
         if (auth()->check()) {
-            return redirect()->intended('/dashboard');
+            return redirect()->intended(route('dashboard'));
         }
 
         return view('auth.2-sign-in');
@@ -50,7 +50,7 @@ class AuthController extends Controller
             }
 
             // Redirect after successful login
-            return redirect()->intended('/dashboard');
+            return redirect()->intended(route('dashboard'));
         }
 
         return back()->withErrors([

@@ -52,6 +52,15 @@ class Customer extends Model
     }
 
     /**
+     * Get the customer's full name via ->name accessor.
+     * Used across 14+ views for consistency with other models.
+     */
+    public function getNameAttribute(): string
+    {
+        return $this->first_name . ' ' . $this->last_name;
+    }
+
+    /**
      * Get appointments for this customer.
      */
     public function appointments()

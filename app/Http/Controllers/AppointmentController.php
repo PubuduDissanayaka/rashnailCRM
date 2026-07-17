@@ -11,6 +11,7 @@ use App\Models\User;
 use App\Models\Setting;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 use Carbon\Carbon;
 
 class AppointmentController extends Controller
@@ -31,9 +32,7 @@ class AppointmentController extends Controller
         }
 
         if ($request->filled('staff') && $request->staff !== 'All') {
-            $query->whereHas('user', function($q) use ($request) {
-                $q->where('name', $request->staff);
-            });
+            $query->where('user_id', $request->staff);
         }
 
         if ($request->filled('date')) {
@@ -546,7 +545,12 @@ class AppointmentController extends Controller
                       // Check for appointments that start before the new one but end after it starts
                       // We need to calculate the end time of existing appointments dynamically
                       $sub->where('appointment_date', '<=', $startWithBuffer)
-                          ->whereRaw('DATE_ADD(appointment_date, INTERVAL COALESCE((SELECT duration FROM services WHERE id = appointments.service_id), 60) + ? MINUTE) > ?', [$bufferTime * 2, $startWithBuffer]);
+                          ->whereRaw(
+                              DB::connection()->getDriverName() === 'sqlite'
+                                  ? "datetime(appointment_date, '+' || COALESCE((SELECT duration FROM services WHERE id = appointments.service_id), 60) || ' minutes') > ?"
+                                  : 'DATE_ADD(appointment_date, INTERVAL COALESCE((SELECT duration FROM services WHERE id = appointments.service_id), 60) + ? MINUTE) > ?',
+                              [$bufferTime * 2, $startWithBuffer]
+                          );
                   });
             });
 
