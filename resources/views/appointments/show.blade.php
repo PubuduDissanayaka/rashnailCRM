@@ -1,7 +1,7 @@
 @extends('layouts.vertical', ['title' => $appointment->customer->name . '\'s Appointment'])
 
 @section('css')
-    @vite([])
+    
 @endsection
 
 @section('content')
@@ -185,7 +185,7 @@
 @endsection
 
 @section('scripts')
-    @vite([])
+    
     <script>
         // Check if there are success messages to display
         @if(session('success'))

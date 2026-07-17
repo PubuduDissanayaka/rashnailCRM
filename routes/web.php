@@ -109,6 +109,8 @@ Route::middleware(['auth'])->group(function () {
         // AJAX endpoints for calendar
         Route::post('/appointments/{appointment}/update-datetime', [AppointmentController::class, 'updateDatetime'])
              ->name('appointments.update-datetime');
+        Route::post('/appointments/check-availability', [AppointmentController::class, 'checkAvailability'])
+             ->name('appointments.check-availability');
         Route::put('/appointments/{appointment}/ajax', [AppointmentController::class, 'updateViaAjax'])
              ->name('appointments.update-via-ajax');
         Route::post('/appointments/ajax', [AppointmentController::class, 'createViaAjax'])

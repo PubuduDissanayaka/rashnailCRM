@@ -122,8 +122,9 @@ class AppointmentController extends Controller
         $customers = Customer::orderBy('first_name')->get();
         $services = Service::where('is_active', true)->get();
         $staff = User::withStaffRole()->get();
+        $currencySymbol = Setting::get('payment.currency_symbol', '$');
 
-        return view('appointments.create', compact('customers', 'services', 'staff'));
+        return view('appointments.create', compact('customers', 'services', 'staff', 'currencySymbol'));
     }
 
     /**
@@ -198,8 +199,9 @@ class AppointmentController extends Controller
         $customers = Customer::orderBy('first_name')->get();
         $services = Service::where('is_active', true)->get();
         $staff = User::withStaffRole()->get();
+        $currencySymbol = Setting::get('payment.currency_symbol', '$');
 
-        return view('appointments.edit', compact('appointment', 'customers', 'services', 'staff'));
+        return view('appointments.edit', compact('appointment', 'customers', 'services', 'staff', 'currencySymbol'));
     }
 
     /**

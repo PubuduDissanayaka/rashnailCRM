@@ -1,7 +1,7 @@
 @extends('layouts.vertical', ['title' => 'Appointment Management'])
 
 @section('css')
-    @vite([])
+    
     <link href="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.19/index.global.min.css" rel="stylesheet">
     
 @endsection

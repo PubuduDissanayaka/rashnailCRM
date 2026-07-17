@@ -1,7 +1,7 @@
 @extends('layouts.vertical', ['title' => 'Edit Appointment'])
 
 @section('css')
-    @vite([])
+    
 @endsection
 
 @section('content')
@@ -42,7 +42,7 @@
                                         @foreach($services as $service)
                                         <option value="{{ $service->id }}" 
                                             {{ old('service_id', $appointment->service_id) == $service->id ? 'selected' : '' }}>
-                                            {{ $service->name }} ({{ $service->duration }} min, ${{ number_format($service->price, 2) }})
+                                            {{ $service->name }} ({{ $service->duration }} min, {{ $currencySymbol }}{{ number_format($service->price, 2) }})
                                         </option>
                                         @endforeach
                                     </select>
