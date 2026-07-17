@@ -33,7 +33,7 @@ class DashboardController extends Controller
         $pendingExpensesCount = Expense::where('status', 'pending')->count();
         $totalStaff = User::where('status', 'active')->count();
         $staffCheckedIn = Attendance::whereDate('date', today())
-            ->whereNotNull('clock_in')->count();
+            ->whereNotNull('check_in')->count();
 
         // ── Appointment Status Breakdown ──────────────
         $todayStatuses = ['scheduled', 'in_progress', 'completed', 'cancelled'];
