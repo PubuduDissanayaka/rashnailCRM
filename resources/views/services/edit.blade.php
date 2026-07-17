@@ -1,7 +1,7 @@
 @extends('layouts.vertical', ['title' => 'Edit Service'])
 
 @section('css')
-    @vite([])
+    
 @endsection
 
 @section('content')
@@ -28,7 +28,7 @@
                             </div>
                             <div class="col-md-6">
                                 <div class="mb-3">
-                                    <label for="price" class="form-label">Price ($)</label>
+                                    <label for="price" class="form-label">Price</label>
                                     <input class="form-control" type="number" id="price" name="price" value="{{ old('price', $service->price) }}" min="0" step="0.01" required>
                                     @error('price')
                                         <span class="text-danger" role="alert">

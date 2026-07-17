@@ -1,7 +1,7 @@
 @extends('layouts.vertical', ['title' => $service->name . ' Details'])
 
 @section('css')
-    @vite([])
+    
 @endsection
 
 @section('content')
@@ -140,7 +140,7 @@
 @endsection
 
 @section('scripts')
-    @vite([])
+    
     <script>
         // Check if there are success messages to display
         @if(session('success'))

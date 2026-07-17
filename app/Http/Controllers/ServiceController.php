@@ -27,7 +27,9 @@ class ServiceController extends Controller
             'inactive' => Service::where('is_active', false)->count(),
         ];
 
-        return view('services.index', compact('services', 'stats'));
+        $currencySymbol = \App\Models\Setting::get('payment.currency_symbol', '$');
+
+        return view('services.index', compact('services', 'stats', 'currencySymbol'));
     }
 
     /**
@@ -101,8 +103,9 @@ class ServiceController extends Controller
         $this->authorize('view services');
 
         $service->load('supplies');
+        $currencySymbol = \App\Models\Setting::get('payment.currency_symbol', '$');
 
-        return view('services.show', compact('service'));
+        return view('services.show', compact('service', 'currencySymbol'));
     }
 
     /**
