@@ -35,21 +35,23 @@
                             </div>
                             <div class="col-md-6">
                                 <div class="mb-3">
-                                    <label for="service_id" class="form-label">Service</label>
-                                    <select class="form-select" name="service_id" id="service_id" required data-choices>
-                                        <option value="">Select Service</option>
+                                    <label for="service_ids" class="form-label">Services</label>
+                                    <select class="form-select" name="service_ids[]" id="service_ids" required multiple data-choices data-choices-search-true>
+                                        <option value="">Select Services</option>
                                         @foreach($services as $service)
                                         <option value="{{ $service->id }}" 
-                                            {{ old('service_id') == $service->id ? 'selected' : '' }}>
+                                            {{ (is_array(old('service_ids')) && in_array($service->id, old('service_ids'))) ? 'selected' : '' }}>
                                             {{ $service->name }} ({{ $service->duration }} min, {{ $currencySymbol }}{{ number_format($service->price, 2) }})
                                         </option>
                                         @endforeach
                                     </select>
-                                    @error('service_id')
-                                        <span class="text-danger" role="alert">
-                                            <small>{{ $message }}</small>
-                                        </span>
+                                    @error('service_ids')
+                                        <span class="text-danger" role="alert"><small>{{ $message }}</small></span>
                                     @enderror
+                                    @error('service_ids.*')
+                                        <span class="text-danger" role="alert"><small>{{ $message }}</small></span>
+                                    @enderror
+                                    <div class="form-text">Hold Ctrl/Cmd to select multiple services</div>
                                 </div>
                             </div>
                         </div>

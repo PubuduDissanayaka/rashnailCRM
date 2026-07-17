@@ -137,26 +137,30 @@ class AppointmentController extends Controller
         $validated = $request->validate([
             'customer_id' => 'required|exists:customers,id',
             'user_id' => 'required|exists:users,id',
-            'service_id' => 'required|exists:services,id',
+            'service_ids' => 'required|array|min:1',
+            'service_ids.*' => 'exists:services,id',
             'appointment_date' => 'required|date|after_or_equal:today',
             'notes' => 'nullable|string|max:1000',
         ], [
             'appointment_date.after_or_equal' => 'Appointment date must be today or in the future.',
+            'service_ids.required' => 'Please select at least one service.',
         ]);
 
-        $service = Service::find($validated['service_id']);
-        $duration = $service->duration ?? 60;
+        $serviceIds = $validated['service_ids'];
+        $primaryServiceId = $serviceIds[0];
+        $services = Service::whereIn('id', $serviceIds)->get();
+        $totalDuration = $services->sum('duration');
         $appointmentDate = Carbon::parse($validated['appointment_date']);
 
-        // Check for conflicts
-        if ($this->hasConflict($validated['user_id'], $appointmentDate, $duration)) {
+        // Check for conflicts using total duration
+        if ($this->hasConflict($validated['user_id'], $appointmentDate, $totalDuration)) {
              return redirect()->back()
                 ->withInput()
                 ->with('error', 'This staff member already has an appointment at this time, with potential overlap.');
         }
 
-        // Check business hours
-        if (!$this->isWithinBusinessHours($appointmentDate, $validated['service_id'])) {
+        // Check business hours using first service for timing
+        if (!$this->isWithinBusinessHours($appointmentDate, $primaryServiceId)) {
             return redirect()->back()
                 ->withInput()
                 ->with('error', 'Appointment time must be within business hours and duration must fit before closing time.');
@@ -164,9 +168,25 @@ class AppointmentController extends Controller
 
         $this->enforceAppointmentLimits($appointmentDate, $validated['user_id'] ?? null);
 
-        $validated['status'] = 'scheduled';
+        // Create appointment with primary service_id for backward compat
+        $appointment = Appointment::create([
+            'customer_id' => $validated['customer_id'],
+            'user_id' => $validated['user_id'],
+            'service_id' => $primaryServiceId,
+            'appointment_date' => $validated['appointment_date'],
+            'status' => 'scheduled',
+            'notes' => $validated['notes'] ?? null,
+        ]);
 
-        $appointment = Appointment::create($validated);
+        // Sync pivot table
+        $pivotData = [];
+        foreach ($services as $service) {
+            $pivotData[$service->id] = [
+                'quantity' => 1,
+                'unit_price' => $service->price,
+            ];
+        }
+        $appointment->services()->sync($pivotData);
 
         return redirect()->route('appointments.calendar')
             ->with('success', 'Appointment created successfully.');
@@ -179,9 +199,10 @@ class AppointmentController extends Controller
     {
         $this->authorize('view appointments');
 
-        $appointment->load(['customer', 'user', 'service', 'transaction']);
+        $appointment->load(['customer', 'user', 'service', 'transaction', 'services']);
+        $currencySymbol = Setting::get('payment.currency_symbol', '$');
 
-        return view('appointments.show', compact('appointment'));
+        return view('appointments.show', compact('appointment', 'currencySymbol'));
     }
 
     /**
@@ -219,25 +240,28 @@ class AppointmentController extends Controller
         $validated = $request->validate([
             'customer_id' => 'required|exists:customers,id',
             'user_id' => 'required|exists:users,id',
-            'service_id' => 'required|exists:services,id',
+            'service_ids' => 'required|array|min:1',
+            'service_ids.*' => 'exists:services,id',
             'appointment_date' => 'required|date',
             'status' => 'required|in:scheduled,in_progress,completed,cancelled',
             'notes' => 'nullable|string|max:1000',
         ]);
 
-        $service = Service::find($validated['service_id']);
-        $duration = $service->duration ?? 60;
+        $serviceIds = $validated['service_ids'];
+        $primaryServiceId = $serviceIds[0];
+        $services = Service::whereIn('id', $serviceIds)->get();
+        $totalDuration = $services->sum('duration');
         $appointmentDate = Carbon::parse($validated['appointment_date']);
 
         // Check for conflicts
-        if ($this->hasConflict($validated['user_id'], $appointmentDate, $duration, $appointment->id)) {
+        if ($this->hasConflict($validated['user_id'], $appointmentDate, $totalDuration, $appointment->id)) {
             return redirect()->back()
                 ->withInput()
                 ->with('error', 'This staff member already has an appointment at this time, with potential overlap.');
         }
 
         // Check business hours
-        if (!$this->isWithinBusinessHours($appointmentDate, $validated['service_id'])) {
+        if (!$this->isWithinBusinessHours($appointmentDate, $primaryServiceId)) {
             return redirect()->back()
                 ->withInput()
                 ->with('error', 'Appointment time must be within business hours and duration must fit before closing time.');
@@ -245,7 +269,22 @@ class AppointmentController extends Controller
 
         $this->enforceAppointmentLimits($appointmentDate, $validated['user_id'] ?? null);
 
-        $appointment->update($validated);
+        // Update appointment
+        $appointment->update([
+            'customer_id' => $validated['customer_id'],
+            'user_id' => $validated['user_id'],
+            'service_id' => $primaryServiceId,
+            'appointment_date' => $validated['appointment_date'],
+            'status' => $validated['status'],
+            'notes' => $validated['notes'] ?? null,
+        ]);
+
+        // Sync pivot table
+        $pivotData = [];
+        foreach ($services as $service) {
+            $pivotData[$service->id] = ['quantity' => 1, 'unit_price' => $service->price];
+        }
+        $appointment->services()->sync($pivotData);
 
         return redirect()->route('appointments.show', $appointment->slug)
             ->with('success', 'Appointment updated successfully.');

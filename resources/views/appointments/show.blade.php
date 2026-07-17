@@ -51,8 +51,13 @@
                                         <tr>
                                             <td class="fw-semibold">Service</td>
                                             <td>
-                                                <h5 class="fs-base mb-0">{{ $appointment->service->name }}</h5>
-                                                <p class="text-muted mb-0 fs-xs">${{ number_format($appointment->service->price, 2) }} • {{ $appointment->service->duration }} min</p>
+                                                <h5 class="fs-base mb-0">
+                                                    @php $showServices = $appointment->services->count() ? $appointment->services : collect([$appointment->service]); @endphp
+                                                    @foreach($showServices as $svc)
+                                                    <span class="badge bg-primary-subtle text-primary me-1">{{ $svc->name }}</span>
+                                                    @endforeach
+                                                </h5>
+                                                <p class="text-muted mb-0 fs-xs">{{ $currencySymbol }}{{ number_format($appointment->services->sum(fn($s) => ($s->pivot->unit_price ?? $s->price) * ($s->pivot->quantity ?? 1)) ?: $appointment->service?->price ?? 0, 2) }} • {{ $appointment->total_duration }} min total</p>
                                             </td>
                                         </tr>
                                         <tr>

@@ -86,6 +86,16 @@ class Appointment extends Model
     }
 
     /**
+     * Many-to-many: multiple services for this appointment.
+     */
+    public function services()
+    {
+        return $this->belongsToMany(Service::class, 'appointment_service')
+            ->withPivot('quantity', 'unit_price')
+            ->withTimestamps();
+    }
+
+    /**
      * Get the transaction for this appointment if exists.
      */
     public function transaction()
@@ -331,36 +341,41 @@ class Appointment extends Model
      */
     public function getCalendarEventData(): array
     {
+        $serviceNames = $this->services->pluck('name')->implode(', ');
+        $firstService = $this->services->first() ?? $this->service;
+        $duration = $this->services->sum(fn($s) => $s->duration * ($s->pivot->quantity ?? 1)) ?: ($this->service?->duration ?? 60);
+
         return [
             'id' => $this->id,
-            'title' => $this->customer->name . ' - ' . $this->service->name,
+            'title' => ($this->customer?->name ?? 'Walk-in') . ' - ' . ($serviceNames ?: $this->service?->name ?? 'Service'),
             'start' => $this->appointment_date->toIso8601String(),
-            'end' => $this->appointment_date->copy()->addMinutes($this->service->duration ?? 60)->toIso8601String(),
+            'end' => $this->appointment_date->copy()->addMinutes($duration)->toIso8601String(),
             'backgroundColor' => $this->status_color,
             'borderColor' => $this->status_color,
             'textColor' => '#ffffff',
             'extendedProps' => [
                 'slug' => $this->slug,
-                'customer' => $this->customer->name,
-                'staff' => $this->user->name,
-                'service' => $this->service->name,
+                'customer' => $this->customer?->name ?? 'Walk-in',
+                'staff' => $this->user?->name ?? '',
+                'service' => $serviceNames ?: $this->service?->name ?? 'Service',
                 'status' => $this->status,
                 'statusLabel' => $this->status_label,
                 'notes' => $this->notes,
-                'phone' => $this->customer->phone ?? 'N/A',
+                'phone' => $this->customer?->phone ?? 'N/A',
                 'customer_id' => $this->customer_id,
                 'user_id' => $this->user_id,
-                'service_id' => $this->service_id,
+                'service_id' => $firstService?->id,
             ],
         ];
     }
 
     /**
-     * Get duration of appointment based on service.
+     * Get total duration from all services.
      */
     public function getDurationAttribute(): int
     {
-        return $this->service->duration ?? 60;
+        $totalServiceDuration = $this->services->sum(fn($s) => ($s->duration ?? 60) * ($s->pivot->quantity ?? 1));
+        return $totalServiceDuration ?: ($this->service?->duration ?? 60);
     }
 
     /**
@@ -369,6 +384,14 @@ class Appointment extends Model
     public function getEndTimeAttribute(): \Carbon\Carbon
     {
         return $this->appointment_date->copy()->addMinutes($this->duration);
+    }
+
+    /**
+     * Get total duration label.
+     */
+    public function getTotalDurationAttribute(): int
+    {
+        return $this->duration;
     }
 
     /**
