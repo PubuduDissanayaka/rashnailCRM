@@ -147,7 +147,7 @@ class ServiceController extends Controller
                 'description' => $request->description,
                 'price' => $request->price,
                 'duration' => $request->duration,
-                'is_active' => $request->filled('is_active') ? $request->is_active : false,
+                'is_active' => $request->filled('is_active') ? $request->is_active : $service->is_active,
             ]);
 
             // Update supplies if provided
@@ -162,10 +162,8 @@ class ServiceController extends Controller
                     }
                 }
                 $service->supplies()->sync($supplyData);
-            } else {
-                // If no supplies provided, detach all
-                $service->supplies()->detach();
             }
+            // If supplies field is absent from the request, don't touch existing relations
 
             DB::commit();
             return redirect()->route('services.index')->with('success', 'Service updated successfully.');
