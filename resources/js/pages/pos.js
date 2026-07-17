@@ -210,7 +210,10 @@
                     <span class="fw-bold">${item.quantity}</span>
                     <button class="btn btn-outline-secondary btn-sm" onclick="window._posIncQty(${idx})">+</button>
                 </div>
-                <div class="cart-item-price">${currencySymbol}${(item.price * item.quantity).toFixed(2)}</div>
+                <div class="cart-item-price" id="ci-price-${idx}">
+                    <span class="price-display" ondblclick="window._posEditPrice(${idx})">${currencySymbol}${(item.price * item.quantity).toFixed(2)}</span>
+                    <button class="btn btn-sm btn-link text-muted p-0 ms-1" onclick="window._posEditPrice(${idx})" title="Edit price"><i class="ti ti-edit" style="font-size:11px;"></i></button>
+                </div>
                 <button class="btn btn-sm btn-outline-danger border-0" onclick="window._posRemove(${idx})"><i class="ti ti-x"></i></button>
             </div>
         `).join('') : '';
@@ -222,6 +225,39 @@
     window._posRemove = removeFromCart;
     window._posDecQty = (i) => updateQty(i, -1);
     window._posIncQty = (i) => updateQty(i, 1);
+    window._posEditPrice = function(idx) {
+        if (idx < 0 || idx >= cart.length) return;
+        const cell = document.getElementById('ci-price-' + idx);
+        if (!cell) return;
+        const display = cell.querySelector('.price-display');
+        if (!display) return;
+        const currentUnit = cart[idx].price;
+        // Replace display with input
+        const input = document.createElement('input');
+        input.type = 'text';
+        input.inputMode = 'decimal';
+        input.className = 'form-control form-control-sm d-inline-block';
+        input.style.width = '80px';
+        input.style.height = '26px';
+        input.style.fontSize = '0.8rem';
+        input.value = currentUnit.toFixed(2);
+        display.replaceWith(input);
+        input.focus();
+        input.select();
+        const save = function() {
+            const raw = input.value.replace(/[^0-9.]/g, '');
+            const val = parseFloat(raw);
+            if (!isNaN(val) && val > 0) {
+                cart[idx].price = Math.round(val * 100) / 100;
+            }
+            renderCart();
+        };
+        input.addEventListener('blur', save);
+        input.addEventListener('keydown', function(e) {
+            if (e.key === 'Enter') { input.blur(); }
+            if (e.key === 'Escape') { renderCart(); }
+        });
+    };
 
     // ============================
     // TOTALS
