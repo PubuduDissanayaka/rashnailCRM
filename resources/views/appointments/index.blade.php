@@ -146,7 +146,16 @@
                                         </div>
                                     </div>
                                 </td>
-                                <td data-sort="sort-service">{{ $appointment->service->name }}</td>
+                                <td data-sort="sort-service">
+                                    @php $svcCount = $appointment->services->count(); @endphp
+                                    @if($svcCount)
+                                        @foreach($appointment->services as $svc)
+                                        <span class="badge bg-primary-subtle text-primary me-1">{{ $svc->name }}</span>
+                                        @endforeach
+                                    @else
+                                        {{ $appointment->service->name ?? '-' }}
+                                    @endif
+                                </td>
                                 <td data-sort="sort-staff">{{ $appointment->user->name }}</td>
                                 <td data-sort="sort-status">
                                     <span class="badge bg-{{ $appointment->status_badge }}-subtle text-{{ $appointment->status_badge }}">

@@ -206,14 +206,14 @@
                             </div>
                             <div class="col-12">
                                 <div class="mb-2">
-                                    <label class="control-label form-label" for="event-service">Service</label>
-                                    <select class="form-select" id="event-service" name="service_id" required="">
-                                        <option value="">Select a service</option>
+                                    <label class="control-label form-label" for="event-service">Services</label>
+                                    <select class="form-select" id="event-service" name="service_ids[]" required="" multiple>
+                                        <option value="">Select services</option>
                                         @foreach($services ?? [] as $service)
                                             <option value="{{ $service->id }}">{{ $service->name }}</option>
                                         @endforeach
                                     </select>
-                                    <div class="invalid-feedback">Please select a valid service</div>
+                                    <div class="invalid-feedback">Please select at least one service</div>
                                 </div>
                             </div>
                             <div class="col-12">

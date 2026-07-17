@@ -429,7 +429,8 @@ class AppointmentController extends Controller
 
         $validated = $request->validate([
             'title' => 'required|string|max:255',
-            'service_id' => 'required|exists:services,id',
+            'service_ids' => 'required|array|min:1',
+            'service_ids.*' => 'exists:services,id',
             'customer_id' => 'required|exists:customers,id',
             'user_id' => 'required|exists:users,id',
             'status' => 'required|in:scheduled,in_progress,completed,cancelled',
@@ -437,12 +438,14 @@ class AppointmentController extends Controller
             'appointment_date' => 'required|date'
         ]);
 
-        $service = Service::find($validated['service_id']);
-        $duration = $service->duration ?? 60;
+        $serviceIds = $validated['service_ids'];
+        $primaryServiceId = $serviceIds[0];
+        $services = Service::whereIn('id', $serviceIds)->get();
+        $totalDuration = $services->sum('duration');
         $appointmentDate = Carbon::parse($validated['appointment_date']);
 
         // Check for conflicts
-        if ($this->hasConflict($validated['user_id'], $appointmentDate, $duration, $appointment->id)) {
+        if ($this->hasConflict($validated['user_id'], $appointmentDate, $totalDuration, $appointment->id)) {
             return response()->json([
                 'success' => false,
                 'message' => 'This staff member already has an appointment at this time, with potential overlap.'
@@ -450,7 +453,7 @@ class AppointmentController extends Controller
         }
 
         // Check business hours
-        if (!$this->isWithinBusinessHours($appointmentDate, $validated['service_id'])) {
+        if (!$this->isWithinBusinessHours($appointmentDate, $primaryServiceId)) {
             return response()->json([
                 'success' => false,
                 'message' => 'Appointment time must be within business hours and duration must fit before closing time.'
@@ -459,11 +462,25 @@ class AppointmentController extends Controller
 
         $this->enforceAppointmentLimits($appointmentDate, $validated['user_id'] ?? null);
 
-        $appointment->update($validated);
+        $appointment->update([
+            'customer_id' => $validated['customer_id'],
+            'user_id' => $validated['user_id'],
+            'service_id' => $primaryServiceId,
+            'status' => $validated['status'],
+            'notes' => $validated['notes'] ?? null,
+            'appointment_date' => $validated['appointment_date'],
+        ]);
+
+        // Sync pivot table
+        $pivotData = [];
+        foreach ($services as $service) {
+            $pivotData[$service->id] = ['quantity' => 1, 'unit_price' => $service->price];
+        }
+        $appointment->services()->sync($pivotData);
 
         // Reload for fresh data
         $appointment->refresh();
-        $appointment->load(['customer', 'user', 'service']);
+        $appointment->load(['customer', 'user', 'service', 'services']);
 
         return response()->json([
             'success' => true,
@@ -483,18 +500,21 @@ class AppointmentController extends Controller
             'title' => 'required|string|max:255',
             'customer_id' => 'required|exists:customers,id',
             'user_id' => 'required|exists:users,id',
-            'service_id' => 'required|exists:services,id',
+            'service_ids' => 'required|array|min:1',
+            'service_ids.*' => 'exists:services,id',
             'appointment_date' => 'required|date|after_or_equal:today',
             'status' => 'required|in:scheduled,in_progress,completed,cancelled',
             'notes' => 'nullable|string|max:1000',
         ]);
 
-        $service = Service::find($validated['service_id']);
-        $duration = $service->duration ?? 60;
+        $serviceIds = $validated['service_ids'];
+        $primaryServiceId = $serviceIds[0];
+        $services = Service::whereIn('id', $serviceIds)->get();
+        $totalDuration = $services->sum('duration');
         $appointmentDate = Carbon::parse($validated['appointment_date']);
 
         // Check for conflicts
-        if ($this->hasConflict($validated['user_id'], $appointmentDate, $duration)) {
+        if ($this->hasConflict($validated['user_id'], $appointmentDate, $totalDuration)) {
              return response()->json([
                 'success' => false,
                 'message' => 'This staff member already has an appointment at this time, with potential overlap.'
@@ -502,7 +522,7 @@ class AppointmentController extends Controller
         }
 
         // Check business hours
-        if (!$this->isWithinBusinessHours($appointmentDate, $validated['service_id'])) {
+        if (!$this->isWithinBusinessHours($appointmentDate, $primaryServiceId)) {
             return response()->json([
                 'success' => false,
                 'message' => 'Appointment time must be within business hours and duration must fit before closing time.'
@@ -511,8 +531,23 @@ class AppointmentController extends Controller
 
         $this->enforceAppointmentLimits($appointmentDate, $validated['user_id'] ?? null);
 
-        $appointment = Appointment::create($validated);
-        $appointment->load(['customer', 'user', 'service']);
+        $appointment = Appointment::create([
+            'customer_id' => $validated['customer_id'],
+            'user_id' => $validated['user_id'],
+            'service_id' => $primaryServiceId,
+            'appointment_date' => $validated['appointment_date'],
+            'status' => $validated['status'],
+            'notes' => $validated['notes'] ?? null,
+        ]);
+
+        // Sync pivot table
+        $pivotData = [];
+        foreach ($services as $service) {
+            $pivotData[$service->id] = ['quantity' => 1, 'unit_price' => $service->price];
+        }
+        $appointment->services()->sync($pivotData);
+
+        $appointment->load(['customer', 'user', 'service', 'services']);
 
         return response()->json([
             'success' => true,
