@@ -1,7 +1,7 @@
 @extends('layouts.vertical', ['title' => 'Inventory Alerts'])
 
 @section('css')
-    @vite([, ])
+    
 @endsection
 
 @section('content')

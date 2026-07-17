@@ -1,7 +1,7 @@
 @extends('layouts.vertical', ['title' => 'File Uploads'])
 
 @section('css')    
-    @vite([, ])
+    
 @endsection
 
 @section('content')

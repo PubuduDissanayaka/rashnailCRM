@@ -1,7 +1,7 @@
 @extends('layouts.vertical', ['title' => 'Supply Management'])
 
 @section('css')
-    @vite([, ])
+    
 @endsection
 
 @section('content')
