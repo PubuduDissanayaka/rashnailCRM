@@ -263,6 +263,13 @@
                 grid-template-columns: repeat(2, 1fr);
             }
         }
+        @media (max-width: 639px) {
+            .action-btn {
+                height: 44px;
+                font-size: 13px;
+                padding: 0 12px;
+            }
+        }
 
         @media (min-width: 1024px) {
             .receipt-container {
@@ -554,7 +561,7 @@
                     <p class="business-tagline">{{ $businessTagline }}</p>
                 @endif
                 <p class="business-contact">
-                    @if($businessAddress){{ $businessAddress }}@endif
+                    @if($businessAddress){{ $businessAddress }}{{ $businessCity ? ', ' . $businessCity : '' }}{{ $businessState ? ', ' . $businessState : '' }}{{ $businessZip ? ' ' . $businessZip : '' }}@endif
                     @if($businessAddress && $businessPhone) • @endif
                     @if($businessPhone){{ $businessPhone }}@endif
                     @if($businessPhone && $businessEmail) • @endif
@@ -650,6 +657,20 @@
 
             <!-- Footer (NO EMOJIS) -->
             <footer class="receipt-footer">
+                @if($businessWebsite)
+                <p><a href="{{ $businessWebsite }}" target="_blank" rel="noopener" style="color:var(--color-muted);text-decoration:none;">{{ $businessWebsite }}</a></p>
+                @endif
+                @if($businessFacebook || $businessInstagram || $businessTwitter || $businessLinkedin)
+                <p style="font-size:var(--font-xs)">
+                    @if($businessFacebook)<span>FB: {{ $businessFacebook }}</span>@endif
+                    @if($businessFacebook && $businessInstagram) &nbsp;|&nbsp; @endif
+                    @if($businessInstagram)<span>IG: {{ $businessInstagram }}</span>@endif
+                    @if(($businessFacebook || $businessInstagram) && $businessTwitter) &nbsp;|&nbsp; @endif
+                    @if($businessTwitter)<span>X: {{ $businessTwitter }}</span>@endif
+                    @if(($businessFacebook || $businessInstagram || $businessTwitter) && $businessLinkedin) &nbsp;|&nbsp; @endif
+                    @if($businessLinkedin)<span>LI: {{ $businessLinkedin }}</span>@endif
+                </p>
+                @endif
                 <p>Thank you for your business!</p>
                 <p>Visit us again soon</p>
                 @if($sale->notes)
@@ -661,9 +682,9 @@
 
         <!-- Action Buttons (Hidden in Print) -->
         <div class="receipt-actions no-print">
-            <div class="actions-grid">
-
-                <!-- Print Receipt Button -->
+            <!-- Action Buttons -->
+            <div class="receipt-actions d-flex flex-wrap gap-2 justify-content-center">
+                <!-- Print Button -->
                 <button
                     onclick="printReceipt()"
                     class="action-btn btn-primary"

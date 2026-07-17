@@ -1,7 +1,7 @@
 @extends('layouts.vertical', ['title' => 'Form Wizard'])
 
 @section('css')
-    @vite(['node_modules/flatpickr/dist/flatpickr.min.css'])
+    
 @endsection
 
 @section('content')

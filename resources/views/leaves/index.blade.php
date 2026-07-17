@@ -1,7 +1,7 @@
 @extends('layouts.vertical', ['title' => 'Leave Requests'])
 
 @section('css')
-    @vite(['node_modules/sweetalert2/dist/sweetalert2.min.css'])
+    @vite([])
 @endsection
 
 @section('content')
@@ -116,5 +116,5 @@
 @endsection
 
 @section('scripts')
-    @vite(['resources/js/pages/custom-table.js', 'node_modules/sweetalert2/dist/sweetalert2.min.js'])
+    @vite(['resources/js/pages/custom-table.js', ])
 @endsection

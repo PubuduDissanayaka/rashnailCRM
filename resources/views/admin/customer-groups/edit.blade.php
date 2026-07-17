@@ -1,7 +1,7 @@
 @extends('layouts.vertical', ['title' => 'Edit Customer Group'])
 
 @section('css')
-    @vite(['node_modules/choices.js/public/assets/styles/choices.min.css'])
+    
 @endsection
 
 @section('scripts')

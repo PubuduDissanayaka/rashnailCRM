@@ -1,7 +1,7 @@
 @extends('layouts.vertical', ['title' => 'Range Slider'])
 
 @section('css')
-    @vite(['node_modules/nouislider/dist/nouislider.min.css'])
+    
 @endsection
 
 @section('content')

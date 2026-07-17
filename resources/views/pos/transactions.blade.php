@@ -18,11 +18,11 @@
                         </div>
                         <button class="btn btn-danger d-none" data-table-delete-selected="">Delete</button>
                     </div>
-                    <div class="d-flex align-items-center gap-2">
+                    <div class="d-flex flex-wrap align-items-center gap-2">
                         <span class="me-2 fw-semibold">Filter By:</span>
                         <!-- Transaction Status Filter -->
                         <div class="app-search">
-                            <select class="form-select form-control my-1 my-md-0" data-table-filter="status">
+                            <select class="form-select form-control" data-table-filter="status">
                                 <option value="All">Status</option>
                                 <option value="Completed">Completed</option>
                                 <option value="Cancelled">Cancelled</option>
@@ -32,7 +32,7 @@
                         </div>
                         <!-- Records Per Page -->
                         <div>
-                            <select class="form-select form-control my-1 my-md-0" data-table-set-rows-per-page="">
+                            <select class="form-select form-control" data-table-set-rows-per-page="">
                                 <option value="5">5</option>
                                 <option value="10" selected>10</option>
                                 <option value="15">15</option>

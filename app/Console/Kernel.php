@@ -15,6 +15,7 @@ class Kernel extends ConsoleKernel
         \App\Console\Commands\CreateMissingPosTables::class,
         \App\Console\Commands\NotificationHealthCheckCommand::class,
         \App\Console\Commands\GenerateSupplyAlerts::class,
+        \App\Console\Commands\SendAppointmentReminders::class,
     ];
 
     /**
@@ -49,6 +50,12 @@ class Kernel extends ConsoleKernel
                  ->withoutOverlapping()
                  ->runInBackground()
                  ->environments(['local', 'development']);
+                 
+        // Appointment reminders — respects notification.reminder_hours setting
+        $schedule->command('appointments:send-reminders')
+                 ->everyThirtyMinutes()
+                 ->withoutOverlapping()
+                 ->runInBackground();
     }
 
     /**

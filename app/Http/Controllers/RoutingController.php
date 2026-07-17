@@ -24,6 +24,11 @@ class RoutingController extends Controller
         // Check if user has access to this specific page
         $this->checkUserAccess($first);
 
+        // Redirect dashboard routes to the real DashboardController
+        if ($first === 'dashboard') {
+            return redirect()->route('dashboard');
+        }
+
         $data = ['user' => Auth::user()];
 
         // Check if view exists, otherwise try index
@@ -43,6 +48,11 @@ class RoutingController extends Controller
 
         // Check if user has access to this specific page
         $this->checkUserAccess($first . '.' . $second);
+
+        // Redirect dashboard routes to the real DashboardController
+        if ($first === 'dashboard') {
+            return redirect()->route('dashboard');
+        }
 
         $data = ['user' => Auth::user()];
 

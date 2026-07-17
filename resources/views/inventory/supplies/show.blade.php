@@ -1,7 +1,7 @@
 @extends('layouts.vertical', ['title' => $supply->name])
 
 @section('css')
-    @vite(['node_modules/datatables.net-bs5/css/dataTables.bootstrap5.min.css', 'node_modules/sweetalert2/dist/sweetalert2.min.css'])
+    @vite([])
 @endsection
 
 @section('content')
@@ -212,5 +212,5 @@
 @endsection
 
 @section('scripts')
-    @vite(['node_modules/sweetalert2/dist/sweetalert2.min.js'])
+    
 @endsection

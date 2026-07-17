@@ -90,63 +90,30 @@ class PosController extends Controller
 
         // Get available payment methods from settings
         $availableMethods = Setting::get('payment.methods', ['cash', 'card']) ?? ['cash', 'card'];
+        if (!is_array($availableMethods)) $availableMethods = ['cash', 'card'];
 
-        // Ensure it's an array (in case JSON decode fails)
-        if (!is_array($availableMethods)) {
-            $availableMethods = ['cash', 'card'];
-        }
-
-        // Additional validation: Check if payment method exists in settings
-        if (!in_array($request->payment_method, $availableMethods)) {
-            throw new \InvalidArgumentException('Invalid payment method selected');
-        }
+        // Support both legacy single-payment and new split-payment format
+        $hasSplitPayments = $request->has('payments') && is_array($request->payments) && count($request->payments) > 0;
 
         $request->validate([
             'customer_id' => 'nullable|exists:customers,id',
             'staff_id' => 'nullable|exists:users,id',
-            'items' => 'required|array|min:1|max:100', // Limit items in a single transaction
+            'items' => 'required|array|min:1|max:100',
             'items.*.type' => 'required|in:service,package',
             'items.*.id' => 'required|integer|min:1',
             'items.*.quantity' => 'required|integer|min:1|max:999',
             'items.*.price' => 'nullable|numeric|min:0|max:999999',
-            'payment_method' => 'required|in:' . implode(',', $availableMethods),
-            'amount_received' => [
-                'required',
-                'numeric',
-                'min:0',
-                'max:' . Setting::get('payment.pos.max_payment_amount', 100000)
-            ],
-            'payment_reference' => [
-                'nullable',
-                'string',
-                'max:100',
-                'regex:/^[A-Za-z0-9\-_#]+$/',
-                function ($attribute, $value, $fail) use ($request) {
-                    $method = $request->payment_method;
-                    $requireRef = false;
-
-                    switch ($method) {
-                        case 'card':
-                            $requireRef = Setting::get('payment.pos.require_reference_card', true);
-                            break;
-                        case 'check':
-                            $requireRef = Setting::get('payment.pos.require_reference_check', true);
-                            break;
-                        case 'bank_transfer':
-                            $requireRef = Setting::get('payment.pos.require_reference_bank_transfer', true);
-                            break;
-                        case 'mobile':
-                            $requireRef = Setting::get('payment.pos.require_reference_mobile', true);
-                            break;
-                    }
-
-                    if ($requireRef && empty($value)) {
-                        $fail("Reference number is required for {$method} payments.");
-                    }
-                },
-            ],
+            // Split payments validation
+            'payments' => 'required_if:payment_method,null|array|min:1|max:10',
+            'payments.*.method' => 'required|in:' . implode(',', $availableMethods),
+            'payments.*.amount' => 'required|numeric|min:0.01|max:' . Setting::get('payment.pos.max_payment_amount', 100000),
+            'payments.*.reference' => 'nullable|string|max:100|regex:/^[A-Za-z0-9\-_#]+$/',
+            'payments.*.notes' => 'nullable|string|max:500',
+            // Legacy single payment (backward compat)
+            'payment_method' => 'required_without:payments|nullable|in:' . implode(',', $availableMethods),
+            'amount_received' => 'required_without:payments|nullable|numeric|min:0',
+            'payment_reference' => 'nullable|string|max:100|regex:/^[A-Za-z0-9\-_#]+$/',
             'payment_notes' => 'nullable|string|max:500',
-            'notes' => 'nullable|string|max:1000|regex:/^[A-Za-z0-9\s\-_,.!?@#$%^&*()]+$/',
             'discount_amount' => 'nullable|numeric|min:0',
             'discount_type' => 'nullable|in:fixed,percent',
             'coupon_discount_amount' => 'nullable|numeric|min:0',
@@ -154,6 +121,7 @@ class PosController extends Controller
             'applied_coupons.*.id' => 'required|integer|exists:coupons,id',
             'applied_coupons.*.code' => 'required|string|max:50',
             'applied_coupons.*.discount_amount' => 'required|numeric|min:0',
+            'notes' => 'nullable|string|max:1000',
         ]);
 
         DB::beginTransaction();
@@ -242,12 +210,17 @@ class PosController extends Controller
             $taxAmount = $taxableAmount * $taxRateDecimal;
             $totalAmount = $taxableAmount + $taxAmount;
 
-            // Validate that amount received is sufficient
-            if ($request->amount_received < $totalAmount) {
-                throw new \Exception('Amount received is less than total amount. Required: $' . number_format($totalAmount, 2) . ', Received: $' . number_format($request->amount_received, 2));
+            // Calculate total amount received (sum of split payments or single amount)
+            $totalReceived = $hasSplitPayments
+                ? array_sum(array_column($request->payments, 'amount'))
+                : $request->amount_received;
+
+            // Validate that total received is sufficient
+            if ($totalReceived < $totalAmount) {
+                throw new \Exception('Total payment amount is less than total amount. Required: $' . number_format($totalAmount, 2) . ', Received: $' . number_format($totalReceived, 2));
             }
 
-            $changeAmount = max(0, $request->amount_received - $totalAmount);
+            $changeAmount = max(0, $totalReceived - $totalAmount);
 
             // Determine which user ID to associate with the sale
             $userId = $request->staff_id ?? auth()->id();
@@ -268,14 +241,14 @@ class PosController extends Controller
             // Create sale record
             $sale = Sale::create([
                 'customer_id' => $request->customer_id,
-                'user_id' => $userId, // Associate with selected staff member or current user
+                'user_id' => $userId,
                 'subtotal' => $subtotal,
                 'tax_amount' => $taxAmount,
                 'discount_amount' => $discountAmount,
                 'coupon_discount_amount' => $couponDiscountAmount,
                 'applied_coupon_ids' => array_column($request->input('applied_coupons', []), 'id'),
                 'total_amount' => $totalAmount,
-                'amount_paid' => $request->amount_received,
+                'amount_paid' => $totalReceived,
                 'change_amount' => $changeAmount,
                 'status' => 'completed',
                 'sale_type' => 'walk_in',
@@ -388,14 +361,27 @@ class PosController extends Controller
                 }
             }
 
-            // Record the payment
-            $sale->payments()->create([
-                'payment_method' => $request->payment_method,
-                'amount' => $request->amount_received,
-                'reference_number' => $request->payment_reference ?? null,
-                'notes' => $request->payment_notes ?? null,
-                'payment_date' => now(),
-            ]);
+            // Record payment(s)
+            if ($hasSplitPayments) {
+                foreach ($request->payments as $pmt) {
+                    $sale->payments()->create([
+                        'payment_method' => $pmt['method'],
+                        'amount' => $pmt['amount'],
+                        'reference_number' => $pmt['reference'] ?? null,
+                        'notes' => $pmt['notes'] ?? null,
+                        'payment_date' => now(),
+                    ]);
+                }
+            } else {
+                // Legacy single payment
+                $sale->payments()->create([
+                    'payment_method' => $request->payment_method,
+                    'amount' => $request->amount_received,
+                    'reference_number' => $request->payment_reference ?? null,
+                    'notes' => $request->payment_notes ?? null,
+                    'payment_date' => now(),
+                ]);
+            }
 
             DB::commit();
 
@@ -420,7 +406,9 @@ class PosController extends Controller
                 'message' => 'Sale completed successfully.',
                 'sale_id' => $sale->id,
                 'sale_number' => $sale->sale_number,
+                'total_received' => $totalReceived,
                 'change_amount' => $changeAmount,
+                'payment_count' => $hasSplitPayments ? count($request->payments) : 1,
             ]);
         } catch (\Exception $e) {
             DB::rollback();
@@ -646,6 +634,15 @@ class PosController extends Controller
         $businessEmail = Setting::get('business.email', '');
         $businessTagline = Setting::get('business.tagline', '');
         $businessLogo = Setting::get('business.logo');
+        $businessWebsite = Setting::get('business.website', '');
+        $businessFacebook = Setting::get('business.social.facebook', '');
+        $businessInstagram = Setting::get('business.social.instagram', '');
+        $businessTwitter = Setting::get('business.social.twitter', '');
+        $businessLinkedin = Setting::get('business.social.linkedin', '');
+        $businessCity = Setting::get('business.city', '');
+        $businessState = Setting::get('business.state', '');
+        $businessZip = Setting::get('business.zip', '');
+        $refundPolicy = Setting::get('payment.refund_policy', '');
         $currencySymbol = Setting::get('payment.currency_symbol', '$');
 
         // Format phone for WhatsApp
@@ -662,6 +659,15 @@ class PosController extends Controller
             'businessEmail',
             'businessTagline',
             'businessLogo',
+            'businessWebsite',
+            'businessFacebook',
+            'businessInstagram',
+            'businessTwitter',
+            'businessLinkedin',
+            'businessCity',
+            'businessState',
+            'businessZip',
+            'refundPolicy',
             'currencySymbol',
             'whatsappPhone'
         ));
@@ -682,6 +688,15 @@ class PosController extends Controller
         $businessEmail = Setting::get('business.email', '');
         $businessTagline = Setting::get('business.tagline', '');
         $businessLogo = Setting::get('business.logo');
+        $businessWebsite = Setting::get('business.website', '');
+        $businessFacebook = Setting::get('business.social.facebook', '');
+        $businessInstagram = Setting::get('business.social.instagram', '');
+        $businessTwitter = Setting::get('business.social.twitter', '');
+        $businessLinkedin = Setting::get('business.social.linkedin', '');
+        $businessCity = Setting::get('business.city', '');
+        $businessState = Setting::get('business.state', '');
+        $businessZip = Setting::get('business.zip', '');
+        $refundPolicy = Setting::get('payment.refund_policy', '');
         $currencySymbol = Setting::get('payment.currency_symbol', '$');
 
         $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView('pos.receipt-pdf', compact(
@@ -692,6 +707,15 @@ class PosController extends Controller
             'businessEmail',
             'businessTagline',
             'businessLogo',
+            'businessWebsite',
+            'businessFacebook',
+            'businessInstagram',
+            'businessTwitter',
+            'businessLinkedin',
+            'businessCity',
+            'businessState',
+            'businessZip',
+            'refundPolicy',
             'currencySymbol'
         ))->setPaper([0, 0, 226.77, 841.89], 'portrait'); // 80mm width, flexible height
 

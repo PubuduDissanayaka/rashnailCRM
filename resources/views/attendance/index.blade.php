@@ -1,7 +1,7 @@
 @extends('layouts.vertical', ['title' => 'Attendance Management'])
 
 @section('css')
-    @vite(['node_modules/sweetalert2/dist/sweetalert2.min.css'])
+    @vite([])
     <style>
         /* Enhanced button processing state */
         .btn-processing {
@@ -539,7 +539,7 @@
 </div>
 
 @section('scripts')
-    @vite(['resources/js/pages/attendance.js', 'node_modules/sweetalert2/dist/sweetalert2.min.js'])
+    @vite(['resources/js/pages/attendance.js', ])
     <script>
         // Initialize date picker and filter functionality
         document.addEventListener('DOMContentLoaded', function () {

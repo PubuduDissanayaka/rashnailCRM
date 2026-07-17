@@ -1,533 +1,383 @@
-@php
-use App\Models\Appointment;
-use App\Models\Sale;
-use App\Models\Customer;
-use App\Models\Expense;
-use App\Models\Attendance;
-use App\Models\Supply;
-use App\Models\User;
-use App\Models\Setting;
-$currencySymbol = Setting::get('payment.currency_symbol', '$');
-
-// KPI Cards
-$todayAppointmentsCount = Appointment::whereDate('appointment_date', today())->count();
-$monthlyRevenue = Sale::whereMonth('sale_date', now()->month)
-    ->whereYear('sale_date', now()->year)
-    ->where('status', 'completed')
-    ->sum('total_amount');
-$activeCustomersCount = Customer::where('status', 'active')->count();
-$pendingExpensesCount = Expense::where('status', 'pending')->count();
-
-// Today's appointments list
-$todayAppointments = Appointment::with(['customer', 'service', 'user'])
-    ->whereDate('appointment_date', today())
-    ->orderBy('appointment_date')
-    ->limit(10)
-    ->get();
-
-// Appointment status counts for donut chart
-$apptStatusCounts = [
-    Appointment::whereDate('appointment_date', today())->where('status', 'scheduled')->count(),
-    Appointment::whereDate('appointment_date', today())->where('status', 'in_progress')->count(),
-    Appointment::whereDate('appointment_date', today())->where('status', 'completed')->count(),
-    Appointment::whereDate('appointment_date', today())->where('status', 'cancelled')->count(),
-];
-
-// Monthly revenue for last 6 months
-$revenueMonths = [];
-$revenueData = [];
-for ($i = 5; $i >= 0; $i--) {
-    $m = now()->subMonths($i);
-    $revenueMonths[] = $m->format('M Y');
-    $revenueData[] = round(
-        Sale::whereMonth('sale_date', $m->month)
-            ->whereYear('sale_date', $m->year)
-            ->where('status', 'completed')
-            ->sum('total_amount'),
-        2
-    );
-}
-
-// Staff attendance today
-$todayAttendance = Attendance::with('user')->whereDate('date', today())->get();
-$totalActiveStaff = User::where('status', 'active')->count();
-
-// Low stock supplies
-$lowStockItems = Supply::where('is_active', true)
-    ->whereColumn('current_stock', '<=', 'min_stock_level')
-    ->with('category')
-    ->limit(6)
-    ->get();
-
-// Recent sales
-$recentSales = Sale::with(['customer', 'user'])
-    ->orderByDesc('created_at')
-    ->limit(6)
-    ->get();
-@endphp
-
 @extends('layouts.vertical', ['title' => 'Dashboard'])
 
 @section('css')
+<style>
+.stat-card { transition: transform .15s ease, box-shadow .15s ease; }
+.stat-card:hover { transform: translateY(-2px); box-shadow: 0 4px 12px rgba(0,0,0,.08); }
+.stat-card .avatar-title { font-size: 1.5rem; }
+.sparkline-area { height: 40px; }
+#revenueChart, #apptDoughnut { min-height: 260px; }
+.quick-action-btn { cursor: pointer; }
+.dashboard-table td, .dashboard-table th { padding: 0.4rem 0.5rem; font-size: 0.8rem; white-space: nowrap; }
+@media (max-width: 576px) {
+.stat-card .avatar-lg { width: 36px; height: 36px; }
+.stat-card .avatar-title { font-size: 1rem; }
+.stat-card h3 { font-size: 1rem; }
+}
+</style>
 @endsection
 
 @section('content')
-    @include('layouts.partials/page-title', ['title' => 'Dashboard'])
+@include('layouts.partials.page-title', ['title' => 'Dashboard'])
 
-    {{-- KPI Stat Cards — visible to all --}}
-    <div class="row row-cols-xxl-4 row-cols-md-2 row-cols-1 g-3 mb-3">
-        {{-- Today's Appointments --}}
-        <div class="col">
-            <div class="card h-100">
-                <div class="card-body">
-                    <div class="d-flex justify-content-between align-items-center">
-                        <div class="avatar avatar-lg flex-shrink-0">
-                            <span class="avatar-title bg-info-subtle text-info rounded-circle fs-24">
-                                <i class="ti ti-calendar-check"></i>
-                            </span>
-                        </div>
-                        <div class="text-end">
-                            <h3 class="mb-1 fw-semibold">{{ $todayAppointmentsCount }}</h3>
-                            <p class="mb-0 text-muted fs-sm">Today's Appointments</p>
-                            <a href="{{ route('appointments.index') }}" class="text-info fs-xs">View all →</a>
-                        </div>
+{{-- ===== KPI ROW ===== --}}
+<div class="row row-cols-xxl-4 row-cols-lg-2 row-cols-1 g-3 mb-3">
+    {{-- Today's Appointments --}}
+    <div class="col">
+        <div class="card stat-card h-100 border-start border-info border-3">
+            <div class="card-body py-3">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div class="avatar avatar-lg flex-shrink-0">
+                        <span class="avatar-title bg-info-subtle text-info rounded-circle"><i class="ti ti-calendar-check"></i></span>
+                    </div>
+                    <div class="text-end flex-grow-1 ms-3">
+                        <h3 class="mb-0 fw-bold">{{ $todayAppointmentsCount }}</h3>
+                        <p class="mb-0 text-muted small">Today's Appointments</p>
+                        <a href="{{ route('appointments.index') }}" class="text-info small">View all →</a>
                     </div>
                 </div>
             </div>
         </div>
-
-        @can('manage system')
-        {{-- Monthly Revenue --}}
-        <div class="col">
-            <div class="card h-100">
-                <div class="card-body">
-                    <div class="d-flex justify-content-between align-items-center">
-                        <div class="avatar avatar-lg flex-shrink-0">
-                            <span class="avatar-title bg-success-subtle text-success rounded-circle fs-24">
-                                <i class="ti ti-currency-dollar"></i>
-                            </span>
-                        </div>
-                        <div class="text-end">
-                            <h3 class="mb-1 fw-semibold">{{ $currencySymbol }}{{ number_format($monthlyRevenue, 2) }}</h3>
-                            <p class="mb-0 text-muted fs-sm">Monthly Revenue</p>
-                            <span class="text-muted fs-xs">{{ now()->format('F Y') }}</span>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        {{-- Active Customers --}}
-        <div class="col">
-            <div class="card h-100">
-                <div class="card-body">
-                    <div class="d-flex justify-content-between align-items-center">
-                        <div class="avatar avatar-lg flex-shrink-0">
-                            <span class="avatar-title bg-primary-subtle text-primary rounded-circle fs-24">
-                                <i class="ti ti-users"></i>
-                            </span>
-                        </div>
-                        <div class="text-end">
-                            <h3 class="mb-1 fw-semibold">{{ $activeCustomersCount }}</h3>
-                            <p class="mb-0 text-muted fs-sm">Active Customers</p>
-                            <a href="{{ route('customers.index') }}" class="text-primary fs-xs">Manage →</a>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        {{-- Pending Expenses --}}
-        <div class="col">
-            <div class="card h-100">
-                <div class="card-body">
-                    <div class="d-flex justify-content-between align-items-center">
-                        <div class="avatar avatar-lg flex-shrink-0">
-                            <span class="avatar-title bg-warning-subtle text-warning rounded-circle fs-24">
-                                <i class="ti ti-clock-exclamation"></i>
-                            </span>
-                        </div>
-                        <div class="text-end">
-                            <h3 class="mb-1 fw-semibold">{{ $pendingExpensesCount }}</h3>
-                            <p class="mb-0 text-muted fs-sm">Pending Expenses</p>
-                            <a href="{{ route('expenses.index') }}" class="text-warning fs-xs">Review →</a>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-        @endcan
-    </div><!-- end row -->
+    </div>
 
     @can('manage system')
-    {{-- Charts Row — admin only --}}
-    <div class="row g-3 mb-3">
-        {{-- Monthly Revenue Chart --}}
-        <div class="col-xl-8">
-            <div class="card h-100">
-                <div class="card-header d-flex justify-content-between align-items-center border-dashed">
-                    <div>
-                        <h4 class="card-title mb-0">Revenue Analytics</h4>
-                        <p class="text-muted fs-xs mb-0">Monthly revenue for the last 6 months</p>
+    {{-- Today's Revenue --}}
+    <div class="col">
+        <div class="card stat-card h-100 border-start border-success border-3">
+            <div class="card-body py-3">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div class="avatar avatar-lg flex-shrink-0">
+                        <span class="avatar-title bg-success-subtle text-success rounded-circle"><i class="ti ti-coin"></i></span>
                     </div>
-                    <a href="{{ route('pos.transactions') }}" class="btn btn-sm btn-outline-primary">
-                        <i class="ti ti-receipt me-1"></i> View Sales
-                    </a>
-                </div>
-                <div class="card-body">
-                    <div id="revenue-chart"></div>
-                </div>
-            </div>
-        </div>
-
-        {{-- Appointment Status Donut --}}
-        <div class="col-xl-4">
-            <div class="card h-100">
-                <div class="card-header border-dashed">
-                    <h4 class="card-title mb-0">Today's Appointments</h4>
-                    <p class="text-muted fs-xs mb-0">Breakdown by status</p>
-                </div>
-                <div class="card-body d-flex flex-column justify-content-center">
-                    @if(array_sum($apptStatusCounts) > 0)
-                        <div id="appointment-status-chart"></div>
-                    @else
-                        <div class="text-center py-4">
-                            <i class="ti ti-calendar-off fs-48 text-muted"></i>
-                            <p class="text-muted mt-2 mb-0">No appointments today</p>
-                            <a href="{{ route('appointments.create') }}" class="btn btn-sm btn-primary mt-2">
-                                <i class="ti ti-plus me-1"></i> Book Appointment
-                            </a>
-                        </div>
-                    @endif
+                    <div class="text-end flex-grow-1 ms-3">
+                        <h3 class="mb-0 fw-bold">{{ $currencySymbol }}{{ number_format($todayRevenue, 2) }}</h3>
+                        <p class="mb-0 text-muted small">Today's Revenue</p>
+                        <span class="small text-muted">{{ $currencySymbol }}{{ number_format($monthlyRevenue, 0) }} this month</span>
+                    </div>
                 </div>
             </div>
         </div>
-    </div><!-- end row -->
+    </div>
     @endcan
 
-    {{-- Today's Appointments Table --}}
-    <div class="row g-3 mb-3">
-        <div class="col-12">
-            <div class="card">
-                <div class="card-header d-flex justify-content-between align-items-center border-dashed">
-                    <div>
-                        <h4 class="card-title mb-0">
-                            Today's Schedule
-                            <span class="badge bg-info-subtle text-info ms-2">{{ $todayAppointmentsCount }}</span>
-                        </h4>
+    {{-- Active Customers --}}
+    <div class="col">
+        <div class="card stat-card h-100 border-start border-warning border-3">
+            <div class="card-body py-3">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div class="avatar avatar-lg flex-shrink-0">
+                        <span class="avatar-title bg-warning-subtle text-warning rounded-circle"><i class="ti ti-users"></i></span>
                     </div>
-                    <div class="d-flex gap-2">
-                        @can('create appointments')
-                        <a href="{{ route('appointments.create') }}" class="btn btn-sm btn-primary">
-                            <i class="ti ti-plus me-1"></i> Book
-                        </a>
-                        @endcan
-                        <a href="{{ route('appointments.index') }}" class="btn btn-sm btn-outline-secondary">
-                            View All
-                        </a>
+                    <div class="text-end flex-grow-1 ms-3">
+                        <h3 class="mb-0 fw-bold">{{ $activeCustomersCount }}</h3>
+                        <p class="mb-0 text-muted small">Active Customers</p>
+                        <a href="{{ route('customers.index') }}" class="text-warning small">Manage →</a>
                     </div>
-                </div>
-                <div class="card-body p-0">
-                    @if($todayAppointments->isEmpty())
-                        <div class="text-center py-5">
-                            <i class="ti ti-calendar-off fs-48 text-muted"></i>
-                            <p class="text-muted mt-2">No appointments scheduled for today.</p>
-                            @can('create appointments')
-                            <a href="{{ route('appointments.create') }}" class="btn btn-primary btn-sm">
-                                <i class="ti ti-plus me-1"></i> Book First Appointment
-                            </a>
-                            @endcan
-                        </div>
-                    @else
-                        <div class="table-responsive">
-                            <table class="table table-centered table-custom table-sm table-nowrap table-hover mb-0">
-                                <thead>
-                                    <tr>
-                                        <th>Time</th>
-                                        <th>Customer</th>
-                                        <th>Service</th>
-                                        <th>Staff</th>
-                                        <th>Status</th>
-                                        <th style="width:40px;"></th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    @foreach($todayAppointments as $appt)
-                                    <tr>
-                                        <td>
-                                            <span class="fw-semibold text-body">
-                                                {{ \Carbon\Carbon::parse($appt->appointment_date)->format('h:i A') }}
-                                            </span>
-                                        </td>
-                                        <td>
-                                            @if($appt->customer)
-                                                <a href="{{ route('customers.show', $appt->customer->id) }}" class="text-body fw-semibold">
-                                                    {{ $appt->customer->first_name }} {{ $appt->customer->last_name }}
-                                                </a>
-                                                <br><span class="text-muted fs-xs">{{ $appt->customer->phone }}</span>
-                                            @else
-                                                <span class="text-muted">—</span>
-                                            @endif
-                                        </td>
-                                        <td>
-                                            @if($appt->service)
-                                                <span class="text-body">{{ $appt->service->name }}</span>
-                                                <br><span class="text-muted fs-xs">{{ $appt->service->duration }} min</span>
-                                            @else
-                                                <span class="text-muted">—</span>
-                                            @endif
-                                        </td>
-                                        <td>
-                                            @if($appt->user)
-                                                <span class="text-body">{{ $appt->user->name }}</span>
-                                            @else
-                                                <span class="text-muted">Unassigned</span>
-                                            @endif
-                                        </td>
-                                        <td>
-                                            @php
-                                                $statusMap = [
-                                                    'scheduled'   => ['bg-info-subtle text-info', 'Scheduled'],
-                                                    'in_progress' => ['bg-warning-subtle text-warning', 'In Progress'],
-                                                    'completed'   => ['bg-success-subtle text-success', 'Completed'],
-                                                    'cancelled'   => ['bg-danger-subtle text-danger', 'Cancelled'],
-                                                ];
-                                                [$cls, $label] = $statusMap[$appt->status] ?? ['bg-secondary-subtle text-secondary', ucfirst($appt->status)];
-                                            @endphp
-                                            <span class="badge {{ $cls }}">{{ $label }}</span>
-                                        </td>
-                                        <td>
-                                            <div class="dropdown">
-                                                <a class="dropdown-toggle text-muted drop-arrow-none card-drop p-0"
-                                                    data-bs-toggle="dropdown" href="#">
-                                                    <i class="ti ti-dots-vertical fs-lg"></i>
-                                                </a>
-                                                <div class="dropdown-menu dropdown-menu-end">
-                                                    <a class="dropdown-item" href="{{ route('appointments.show', $appt->id) }}">
-                                                        <i class="ti ti-eye me-1"></i> View
-                                                    </a>
-                                                    <a class="dropdown-item" href="{{ route('appointments.edit', $appt->id) }}">
-                                                        <i class="ti ti-edit me-1"></i> Edit
-                                                    </a>
-                                                </div>
-                                            </div>
-                                        </td>
-                                    </tr>
-                                    @endforeach
-                                </tbody>
-                            </table>
-                        </div>
-                    @endif
                 </div>
             </div>
         </div>
-    </div><!-- end row -->
+    </div>
 
-    {{-- Staff Attendance (admin) + Low Stock (all) --}}
-    <div class="row g-3 mb-3">
-        @can('manage system')
-        {{-- Staff Attendance — admin only --}}
-        <div class="col-xl-6">
-            <div class="card h-100">
-                <div class="card-header d-flex justify-content-between align-items-center border-dashed">
-                    <div>
-                        <h4 class="card-title mb-0">Staff Attendance Today</h4>
-                        <p class="text-muted fs-xs mb-0">
-                            {{ $todayAttendance->count() }} of {{ $totalActiveStaff }} staff checked in
-                        </p>
+    {{-- Staff Online --}}
+    <div class="col">
+        <div class="card stat-card h-100 border-start border-primary border-3">
+            <div class="card-body py-3">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div class="avatar avatar-lg flex-shrink-0">
+                        <span class="avatar-title bg-primary-subtle text-primary rounded-circle"><i class="ti ti-user-check"></i></span>
                     </div>
-                    @can('view attendances')
-                    <a href="{{ route('attendance.index') }}" class="btn btn-sm btn-outline-secondary">View All</a>
-                    @endcan
+                    <div class="text-end flex-grow-1 ms-3">
+                        <h3 class="mb-0 fw-bold">{{ $staffCheckedIn }}<small class="fw-normal text-muted fs-6">/{{ $totalStaff }}</small></h3>
+                        <p class="mb-0 text-muted small">Staff Checked In</p>
+                        <a href="{{ route('attendance.dashboard') }}" class="text-primary small">View →</a>
+                    </div>
                 </div>
-                <div class="card-body p-0">
-                    @if($todayAttendance->isEmpty())
-                        <div class="text-center py-5">
-                            <i class="ti ti-user-x fs-48 text-muted"></i>
-                            <p class="text-muted mt-2">No staff attendance recorded yet today.</p>
-                        </div>
-                    @else
-                        <ul class="list-group list-group-flush">
-                            @foreach($todayAttendance as $att)
-                            <li class="list-group-item px-3 py-2">
-                                <div class="d-flex justify-content-between align-items-center">
-                                    <div class="d-flex align-items-center gap-2">
-                                        <div class="avatar avatar-sm">
-                                            <span class="avatar-title bg-primary-subtle text-primary rounded-circle fs-14">
-                                                {{ strtoupper(substr($att->user->name ?? 'U', 0, 1)) }}
-                                            </span>
-                                        </div>
-                                        <div>
-                                            <span class="fw-semibold text-body fs-sm">{{ $att->user->name ?? 'Unknown' }}</span>
-                                            <br>
-                                            <span class="text-muted fs-xs">
-                                                In: {{ $att->check_in ? \Carbon\Carbon::parse($att->check_in)->format('h:i A') : '—' }}
-                                                @if($att->check_out)
-                                                    · Out: {{ \Carbon\Carbon::parse($att->check_out)->format('h:i A') }}
-                                                @endif
-                                            </span>
-                                        </div>
-                                    </div>
-                                    @php
-                                        $attStatusMap = [
-                                            'present'  => 'bg-success-subtle text-success',
-                                            'late'     => 'bg-warning-subtle text-warning',
-                                            'absent'   => 'bg-danger-subtle text-danger',
-                                            'leave'    => 'bg-info-subtle text-info',
-                                            'half_day' => 'bg-secondary-subtle text-secondary',
-                                        ];
-                                        $attCls = $attStatusMap[$att->status] ?? 'bg-secondary-subtle text-secondary';
-                                    @endphp
-                                    <span class="badge {{ $attCls }}">{{ ucfirst(str_replace('_', ' ', $att->status)) }}</span>
-                                </div>
-                            </li>
+            </div>
+        </div>
+    </div>
+</div>
+
+{{-- ===== CHARTS ROW ===== --}}
+<div class="row g-3 mb-3">
+    {{-- Revenue Chart --}}
+    <div class="col-lg-8">
+        <div class="card h-100">
+            <div class="card-header d-flex justify-content-between align-items-center py-2">
+                <div>
+                    <h5 class="card-title mb-0 fs-6">Revenue Analytics</h5>
+                    <small class="text-muted">Monthly revenue for the last 6 months</small>
+                </div>
+                <a href="{{ route('reports.index') }}" class="btn btn-sm btn-outline-secondary">View Reports</a>
+            </div>
+            <div class="card-body">
+                <div id="revenueChart"></div>
+            </div>
+        </div>
+    </div>
+
+    {{-- Appointment Doughnut --}}
+    <div class="col-lg-4">
+        <div class="card h-100">
+            <div class="card-header d-flex justify-content-between align-items-center py-2">
+                <div>
+                    <h5 class="card-title mb-0 fs-6">Today's Appointments</h5>
+                    <small class="text-muted">{{ array_sum($apptStatusCounts) }} total</small>
+                </div>
+            </div>
+            <div class="card-body d-flex flex-column align-items-center justify-content-center">
+                <div id="apptDoughnut" class="w-100"></div>
+                <div class="d-flex flex-wrap gap-3 mt-2 justify-content-center small">
+                    <div><span class="badge bg-warning me-1">&nbsp;</span> Scheduled {{ $apptStatusCounts[0] }}</div>
+                    <div><span class="badge bg-info me-1">&nbsp;</span> In Progress {{ $apptStatusCounts[1] }}</div>
+                    <div><span class="badge bg-success me-1">&nbsp;</span> Completed {{ $apptStatusCounts[2] }}</div>
+                    <div><span class="badge bg-secondary me-1">&nbsp;</span> Cancelled {{ $apptStatusCounts[3] }}</div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{{-- ===== LISTS ROW ===== --}}
+<div class="row g-3 mb-3">
+    {{-- Today's Schedule --}}
+    <div class="col-lg-5">
+        <div class="card h-100">
+            <div class="card-header d-flex justify-content-between align-items-center py-2">
+                <h5 class="card-title mb-0 fs-6"><i class="ti ti-calendar-event me-1 text-primary"></i> Today's Schedule</h5>
+                <div class="d-flex gap-1">
+                    <a href="{{ route('appointments.create') }}" class="btn btn-sm btn-primary"><i class="ti ti-plus me-1"></i>Book</a>
+                    <a href="{{ route('appointments.calendar') }}" class="btn btn-sm btn-outline-secondary">View All</a>
+                </div>
+            </div>
+            <div class="card-body p-0">
+                @if($todayAppointments->count())
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle mb-0 dashboard-table">
+                        <thead class="table-light small">
+                            <tr>
+                                <th>Time</th>
+                                <th>Customer</th>
+                                <th>Service</th>
+                                <th>Staff</th>
+                                <th>Status</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach($todayAppointments as $apt)
+                            <tr>
+                                <td>{{ \Carbon\Carbon::parse($apt->appointment_date)->format('h:i A') }}</td>
+                                <td><a href="{{ route('customers.show', $apt->customer) }}" class="text-reset">{{ $apt->customer->full_name }}</a></td>
+                                <td class="text-muted">{{ $apt->service?->name ?? '-' }} <small>{{ $apt->service?->duration ?? '' }}m</small></td>
+                                <td>{{ $apt->user?->name ?? '-' }}</td>
+                                <td>
+                                    <span class="badge bg-{{ $apt->status === 'completed' ? 'success' : ($apt->status === 'in_progress' ? 'info' : ($apt->status === 'cancelled' ? 'secondary' : 'warning')) }}">
+                                        {{ ucfirst($apt->status) }}
+                                    </span>
+                                </td>
+                            </tr>
                             @endforeach
-                        </ul>
-                    @endif
+                        </tbody>
+                    </table>
                 </div>
+                @else
+                <div class="text-center py-5 text-muted">
+                    <i class="ti ti-calendar-off fs-1 d-block mb-2"></i>
+                    <p class="mb-0">No appointments scheduled for today.</p>
+                </div>
+                @endif
             </div>
         </div>
-        @endcan
+    </div>
 
-        {{-- Low Stock Alerts — visible to all --}}
-        <div class="col-xl-{{ auth()->user()->can('manage system') ? '6' : '12' }}">
-            <div class="card h-100">
-                <div class="card-header d-flex justify-content-between align-items-center border-dashed">
-                    <div>
-                        <h4 class="card-title mb-0">Low Stock Alerts</h4>
-                        <p class="text-muted fs-xs mb-0">Supplies at or below minimum level</p>
-                    </div>
-                    @can('inventory.view')
-                    <a href="{{ route('inventory.supplies.index') }}" class="btn btn-sm btn-outline-secondary">View All</a>
-                    @endcan
-                </div>
-                <div class="card-body p-0">
-                    @if($lowStockItems->isEmpty())
-                        <div class="text-center py-5">
-                            <i class="ti ti-package-check fs-48 text-success"></i>
-                            <p class="text-success mt-2 mb-0 fw-semibold">All supplies are well stocked!</p>
-                        </div>
-                    @else
-                        <ul class="list-group list-group-flush">
-                            @foreach($lowStockItems as $supply)
-                            <li class="list-group-item px-3 py-2">
-                                <div class="d-flex justify-content-between align-items-center">
-                                    <div>
-                                        <span class="fw-semibold text-body fs-sm">{{ $supply->name }}</span>
-                                        <br>
-                                        <span class="text-muted fs-xs">{{ $supply->category->name ?? 'Uncategorized' }}</span>
-                                    </div>
-                                    <div class="text-end">
-                                        @if($supply->current_stock <= 0)
-                                            <span class="badge bg-danger-subtle text-danger">Out of Stock</span>
-                                        @else
-                                            <span class="badge bg-warning-subtle text-warning">
-                                                {{ $supply->current_stock }} {{ $supply->unit_type }} left
-                                            </span>
-                                        @endif
-                                        <br>
-                                        <span class="text-muted fs-xs">Min: {{ $supply->min_stock_level }}</span>
-                                    </div>
-                                </div>
-                            </li>
+    {{-- Recent Sales --}}
+    <div class="col-lg-4">
+        <div class="card h-100">
+            <div class="card-header d-flex justify-content-between align-items-center py-2">
+                <h5 class="card-title mb-0 fs-6"><i class="ti ti-receipt me-1 text-success"></i> Recent Sales</h5>
+                <a href="{{ route('pos.transactions') }}" class="btn btn-sm btn-outline-secondary">View All</a>
+            </div>
+            <div class="card-body p-0">
+                @if($recentSales->count())
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle mb-0 dashboard-table">
+                        <thead class="table-light small">
+                            <tr><th>#</th><th>Customer</th><th>Amount</th><th>Status</th></tr>
+                        </thead>
+                        <tbody>
+                            @foreach($recentSales as $sale)
+                            <tr>
+                                <td class="text-muted">{{ $sale->sale_number }}</td>
+                                <td>{{ $sale->customer?->full_name ?? 'Walk-in' }}</td>
+                                <td class="fw-medium">{{ $currencySymbol }}{{ number_format($sale->total_amount, 2) }}</td>
+                                <td><span class="badge bg-success-subtle text-success">Completed</span></td>
+                            </tr>
                             @endforeach
-                        </ul>
-                    @endif
+                        </tbody>
+                    </table>
+                </div>
+                @else
+                <div class="text-center py-5 text-muted">
+                    <i class="ti ti-shopping-cart-off fs-1 d-block mb-2"></i>
+                    <p class="mb-0">No sales yet.</p>
+                </div>
+                @endif
+            </div>
+        </div>
+    </div>
+
+    {{-- Right Sidebar: Staff + Stock + Quick Actions --}}
+    <div class="col-lg-3">
+        {{-- Staff Attendance --}}
+        <div class="card mb-3">
+            <div class="card-header d-flex justify-content-between align-items-center py-2">
+                <h5 class="card-title mb-0 fs-6"><i class="ti ti-clock-check me-1 text-primary"></i> Staff</h5>
+                <a href="{{ route('attendance.dashboard') }}" class="small">View All</a>
+            </div>
+            <div class="card-body py-2">
+                <div class="d-flex align-items-center gap-2 mb-1">
+                    <div class="flex-shrink-0">
+                        @if($staffCheckedIn > 0)
+                        <span class="avatar avatar-sm bg-success text-white">{{ $staffCheckedIn }}</span>
+                        @else
+                        <span class="avatar avatar-sm bg-light text-muted">0</span>
+                        @endif
+                    </div>
+                    <div>
+                        <p class="mb-0 fw-medium">{{ $staffCheckedIn }} of {{ $totalStaff }} checked in</p>
+                        <small class="text-muted">{{ $totalStaff - $staffCheckedIn }} still to clock in</small>
+                    </div>
+                </div>
+                <div class="progress mt-1" style="height:4px;">
+                    <div class="progress-bar bg-success" role="progressbar" style="width: {{ $totalStaff > 0 ? ($staffCheckedIn / $totalStaff * 100) : 0 }}%"></div>
                 </div>
             </div>
         </div>
-    </div><!-- end row -->
 
-    @can('manage system')
-    {{-- Recent Sales — admin only --}}
-    <div class="row g-3">
-        <div class="col-12">
-            <div class="card">
-                <div class="card-header d-flex justify-content-between align-items-center border-dashed">
-                    <h4 class="card-title mb-0">Recent Sales</h4>
-                    <a href="{{ route('pos.transactions') }}" class="btn btn-sm btn-outline-secondary">View All</a>
+        {{-- Low Stock --}}
+        <div class="card mb-3">
+            <div class="card-header d-flex justify-content-between align-items-center py-2">
+                <h5 class="card-title mb-0 fs-6"><i class="ti ti-package me-1 text-warning"></i> Supplies</h5>
+                <a href="{{ route('inventory.supplies.index') }}" class="small">Manage</a>
+            </div>
+            <div class="card-body py-2">
+                @if($lowStockItems->count())
+                <ul class="list-unstyled mb-0 small">
+                    @foreach($lowStockItems as $item)
+                    <li class="d-flex justify-content-between py-1 border-bottom border-light">
+                        <span>{{ $item->name }}</span>
+                        <span class="text-danger fw-medium">{{ $item->current_stock }}/{{ $item->min_stock_level }}</span>
+                    </li>
+                    @endforeach
+                </ul>
+                @else
+                <div class="text-center py-3 text-muted small">
+                    <i class="ti ti-circle-check text-success d-block mb-1 fs-5"></i>
+                    All supplies well stocked
                 </div>
-                <div class="card-body p-0">
-                    @if($recentSales->isEmpty())
-                        <div class="text-center py-5">
-                            <i class="ti ti-receipt-off fs-48 text-muted"></i>
-                            <p class="text-muted mt-2">No sales recorded yet.</p>
-                        </div>
-                    @else
-                        <div class="table-responsive">
-                            <table class="table table-centered table-custom table-sm table-nowrap table-hover mb-0">
-                                <thead>
-                                    <tr>
-                                        <th>Sale #</th>
-                                        <th>Customer</th>
-                                        <th>Amount</th>
-                                        <th>Payment</th>
-                                        <th>Date</th>
-                                        <th>Status</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    @foreach($recentSales as $sale)
-                                    <tr>
-                                        <td>
-                                            <span class="fw-semibold text-body">{{ $sale->sale_number }}</span>
-                                        </td>
-                                        <td>
-                                            @if($sale->customer)
-                                                <a href="{{ route('customers.show', $sale->customer->id) }}" class="text-body">
-                                                    {{ $sale->customer->first_name }} {{ $sale->customer->last_name }}
-                                                </a>
-                                            @else
-                                                <span class="text-muted">Walk-in</span>
-                                            @endif
-                                        </td>
-                                        <td>
-                                            <span class="fw-semibold">{{ $currencySymbol }}{{ number_format($sale->total_amount, 2) }}</span>
-                                        </td>
-                                        <td>
-                                            <span class="text-muted">
-                                                {{ ucfirst(str_replace('_', ' ', $sale->payments->first()?->payment_method ?? '—')) }}
-                                            </span>
-                                        </td>
-                                        <td>
-                                            <span class="text-muted">
-                                                {{ \Carbon\Carbon::parse($sale->sale_date)->format('M d, Y') }}
-                                            </span>
-                                        </td>
-                                        <td>
-                                            @php
-                                                $saleStatusMap = [
-                                                    'completed' => 'bg-success-subtle text-success',
-                                                    'pending'   => 'bg-warning-subtle text-warning',
-                                                    'cancelled' => 'bg-danger-subtle text-danger',
-                                                    'refunded'  => 'bg-secondary-subtle text-secondary',
-                                                ];
-                                                $sCls = $saleStatusMap[$sale->status] ?? 'bg-secondary-subtle text-secondary';
-                                            @endphp
-                                            <span class="badge {{ $sCls }}">{{ ucfirst($sale->status) }}</span>
-                                        </td>
-                                    </tr>
-                                    @endforeach
-                                </tbody>
-                            </table>
-                        </div>
-                    @endif
+                @endif
+            </div>
+        </div>
+
+        {{-- Quick Actions --}}
+        <div class="card">
+            <div class="card-header py-2">
+                <h5 class="card-title mb-0 fs-6"><i class="ti ti-bolt me-1 text-warning"></i> Quick Actions</h5>
+            </div>
+            <div class="card-body py-2">
+                <div class="d-grid gap-2">
+                    <a href="{{ route('appointments.create') }}" class="btn btn-primary btn-sm"><i class="ti ti-plus me-1"></i>New Appointment</a>
+                    <a href="{{ route('customers.create') }}" class="btn btn-outline-primary btn-sm"><i class="ti ti-user-plus me-1"></i>Add Customer</a>
+                    <a href="{{ route('pos.index') }}" class="btn btn-success btn-sm"><i class="ti ti-shopping-cart me-1"></i>New Sale</a>
                 </div>
             </div>
         </div>
-    </div><!-- end row -->
-    @endcan
+    </div>
+</div>
 
+{{-- ===== WEEKLY SPARKLINE + PAYMENT METHODS ===== --}}
+<div class="row g-3 mb-3">
+    <div class="col-lg-6">
+        <div class="card">
+            <div class="card-header py-2">
+                <h5 class="card-title mb-0 fs-6"><i class="ti ti-trending-up me-1 text-success"></i> This Week</h5>
+            </div>
+            <div class="card-body py-2">
+                <div id="weeklySparkline"></div>
+            </div>
+        </div>
+    </div>
+    <div class="col-lg-6">
+        <div class="card">
+            <div class="card-header py-2">
+                <h5 class="card-title mb-0 fs-6"><i class="ti ti-credit-card me-1 text-info"></i> Payment Methods <small class="text-muted">(this month)</small></h5>
+            </div>
+            <div class="card-body py-2">
+                @if(!empty($paymentMethods))
+                @php $pmTotal = array_sum($paymentMethods); @endphp
+                <div class="row g-2">
+                    @foreach($paymentMethods as $method => $amount)
+                    <div class="col-6">
+                        <div class="d-flex justify-content-between small mb-1">
+                            <span class="text-capitalize">{{ $method }}</span>
+                            <span class="fw-medium">{{ $currencySymbol }}{{ number_format($amount, 0) }}</span>
+                        </div>
+                        <div class="progress" style="height:6px;">
+                            <div class="progress-bar bg-{{ $method === 'cash' ? 'success' : ($method === 'card' ? 'primary' : 'info') }}" 
+                                 style="width: {{ $pmTotal > 0 ? ($amount / $pmTotal * 100) : 0 }}%"></div>
+                        </div>
+                    </div>
+                    @endforeach
+                </div>
+                @else
+                <p class="text-muted small mb-0 text-center py-3">No payment data this month.</p>
+                @endif
+            </div>
+        </div>
+    </div>
+</div>
 @endsection
 
 @section('scripts')
+<script src="https://cdn.jsdelivr.net/npm/apexcharts@4"></script>
 <script>
-window.__dashboardData = {
-    revenueMonths: @json($revenueMonths),
-    revenueData: @json($revenueData),
-    apptStatusCounts: @json($apptStatusCounts),
-    hasAppts: {{ array_sum($apptStatusCounts) > 0 ? 'true' : 'false' }},
-};
+document.addEventListener('DOMContentLoaded', function() {
+    // Revenue bar chart
+    var revOpts = {
+        chart: { type: 'bar', height: 260, toolbar: { show: false }, fontFamily: 'inherit' },
+        series: [{ name: 'Revenue', data: @json($revenueData) }],
+        xaxis: { categories: @json($revenueMonths), labels: { style: { fontSize: '11px' } } },
+        yaxis: { labels: { formatter: function(v) { return '{{ $currencySymbol }}' + v.toFixed(0); }, style: { fontSize: '11px' } } },
+        colors: ['#0d6efd'],
+        plotOptions: { bar: { borderRadius: 4, columnWidth: '55%' } },
+        dataLabels: { enabled: false },
+        grid: { borderColor: '#e9ecef', strokeDashArray: 4 },
+        tooltip: { y: { formatter: function(v) { return '{{ $currencySymbol }}' + v.toFixed(2); } } }
+    };
+    new ApexCharts(document.querySelector('#revenueChart'), revOpts).render();
+
+    // Appointment doughnut
+    var donutOpts = {
+        chart: { type: 'donut', height: 220, fontFamily: 'inherit' },
+        series: @json($apptStatusCounts),
+        labels: ['Scheduled', 'In Progress', 'Completed', 'Cancelled'],
+        colors: ['#f7b924', '#0dcaf0', '#198754', '#6c757d'],
+        legend: { show: false },
+        dataLabels: { enabled: false },
+        plotOptions: { pie: { donut: { size: '65%' } } },
+        tooltip: { y: { formatter: function(v) { return v + ' appointment' + (v !== 1 ? 's' : ''); } } }
+    };
+    new ApexCharts(document.querySelector('#apptDoughnut'), donutOpts).render();
+
+    // Weekly sparkline
+    var sparkOpts = {
+        chart: { type: 'area', height: 50, sparkline: { enabled: true }, fontFamily: 'inherit' },
+        series: [{ data: @json($weeklyRevenue) }],
+        stroke: { curve: 'smooth', width: 2 },
+        fill: { opacity: 0.2 },
+        colors: ['#198754'],
+        tooltip: { y: { formatter: function(v) { return '{{ $currencySymbol }}' + v.toFixed(2); } } }
+    };
+    new ApexCharts(document.querySelector('#weeklySparkline'), sparkOpts).render();
+});
 </script>
-@vite(['resources/js/pages/dashboard.js'])
 @endsection

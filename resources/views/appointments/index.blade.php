@@ -1,9 +1,9 @@
 @extends('layouts.vertical', ['title' => 'Appointment Management'])
 
 @section('css')
-    @vite(['node_modules/datatables.net-bs5/css/dataTables.bootstrap5.min.css', 'node_modules/datatables.net-buttons-bs5/css/buttons.bootstrap5.min.css'])
+    @vite([])
     <link href="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.19/index.global.min.css" rel="stylesheet">
-    @vite(['node_modules/sweetalert2/dist/sweetalert2.min.css'])
+    
 @endsection
 
 @section('content')
@@ -208,7 +208,8 @@
 @endsection
 
 @section('scripts')
-    @vite(['resources/js/pages/custom-table.js', 'node_modules/sweetalert2/dist/sweetalert2.min.js'])
+    @vite(['resources/js/pages/custom-table.js'])
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script>
         function confirmCancellation(appointmentId, customerName) {
             Swal.fire({

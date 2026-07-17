@@ -426,7 +426,7 @@
     "src": "public/images/treeview.png"
   },
   "resources/js/app.js": {
-    "file": "assets/app-DRjbGmoh.js",
+    "file": "assets/app-CYSlD8HN.js",
     "name": "app",
     "src": "resources/js/app.js",
     "isEntry": true,
@@ -584,7 +584,7 @@
     ]
   },
   "resources/js/pages/chart-apex-area.js": {
-    "file": "assets/chart-apex-area-DV5AhR21.js",
+    "file": "assets/chart-apex-area-CURy9h_w.js",
     "name": "chart-apex-area",
     "src": "resources/js/pages/chart-apex-area.js",
     "isEntry": true,
@@ -600,7 +600,7 @@
     ]
   },
   "resources/js/pages/chart-apex-bar.js": {
-    "file": "assets/chart-apex-bar-DYgiJNXa.js",
+    "file": "assets/chart-apex-bar-BWJArTGY.js",
     "name": "chart-apex-bar",
     "src": "resources/js/pages/chart-apex-bar.js",
     "isEntry": true,
@@ -616,7 +616,7 @@
     ]
   },
   "resources/js/pages/chart-apex-boxplot.js": {
-    "file": "assets/chart-apex-boxplot-CqNgmnQm.js",
+    "file": "assets/chart-apex-boxplot-oXlFBkSH.js",
     "name": "chart-apex-boxplot",
     "src": "resources/js/pages/chart-apex-boxplot.js",
     "isEntry": true,
@@ -632,7 +632,7 @@
     ]
   },
   "resources/js/pages/chart-apex-bubble.js": {
-    "file": "assets/chart-apex-bubble-BjmtGuCt.js",
+    "file": "assets/chart-apex-bubble-CE2nXYyt.js",
     "name": "chart-apex-bubble",
     "src": "resources/js/pages/chart-apex-bubble.js",
     "isEntry": true,
@@ -648,7 +648,7 @@
     ]
   },
   "resources/js/pages/chart-apex-candlestick.js": {
-    "file": "assets/chart-apex-candlestick-CIZKrV3x.js",
+    "file": "assets/chart-apex-candlestick-BLmqzTxP.js",
     "name": "chart-apex-candlestick",
     "src": "resources/js/pages/chart-apex-candlestick.js",
     "isEntry": true,
@@ -664,7 +664,7 @@
     ]
   },
   "resources/js/pages/chart-apex-column.js": {
-    "file": "assets/chart-apex-column-CDZFYPcN.js",
+    "file": "assets/chart-apex-column-B333ln2m.js",
     "name": "chart-apex-column",
     "src": "resources/js/pages/chart-apex-column.js",
     "isEntry": true,
@@ -680,7 +680,7 @@
     ]
   },
   "resources/js/pages/chart-apex-funnel.js": {
-    "file": "assets/chart-apex-funnel-C_L2dyC_.js",
+    "file": "assets/chart-apex-funnel-B_iAoTsY.js",
     "name": "chart-apex-funnel",
     "src": "resources/js/pages/chart-apex-funnel.js",
     "isEntry": true,
@@ -696,7 +696,7 @@
     ]
   },
   "resources/js/pages/chart-apex-heatmap.js": {
-    "file": "assets/chart-apex-heatmap-aa23qZIh.js",
+    "file": "assets/chart-apex-heatmap-CEvjTUUg.js",
     "name": "chart-apex-heatmap",
     "src": "resources/js/pages/chart-apex-heatmap.js",
     "isEntry": true,
@@ -712,7 +712,7 @@
     ]
   },
   "resources/js/pages/chart-apex-line.js": {
-    "file": "assets/chart-apex-line-C-8RlApS.js",
+    "file": "assets/chart-apex-line-vuN71wNV.js",
     "name": "chart-apex-line",
     "src": "resources/js/pages/chart-apex-line.js",
     "isEntry": true,
@@ -728,7 +728,7 @@
     ]
   },
   "resources/js/pages/chart-apex-mixed.js": {
-    "file": "assets/chart-apex-mixed-Dje6wA2d.js",
+    "file": "assets/chart-apex-mixed-BUfbUpyr.js",
     "name": "chart-apex-mixed",
     "src": "resources/js/pages/chart-apex-mixed.js",
     "isEntry": true,
@@ -744,7 +744,7 @@
     ]
   },
   "resources/js/pages/chart-apex-pie.js": {
-    "file": "assets/chart-apex-pie-B9SvGPNC.js",
+    "file": "assets/chart-apex-pie-C_qXRyVt.js",
     "name": "chart-apex-pie",
     "src": "resources/js/pages/chart-apex-pie.js",
     "isEntry": true,
@@ -760,7 +760,7 @@
     ]
   },
   "resources/js/pages/chart-apex-polar-area.js": {
-    "file": "assets/chart-apex-polar-area-DWVeEwM3.js",
+    "file": "assets/chart-apex-polar-area-BO1yf_Z5.js",
     "name": "chart-apex-polar-area",
     "src": "resources/js/pages/chart-apex-polar-area.js",
     "isEntry": true,
@@ -776,7 +776,7 @@
     ]
   },
   "resources/js/pages/chart-apex-radar.js": {
-    "file": "assets/chart-apex-radar-BAlrSO-q.js",
+    "file": "assets/chart-apex-radar-BCHmNXGE.js",
     "name": "chart-apex-radar",
     "src": "resources/js/pages/chart-apex-radar.js",
     "isEntry": true,
@@ -792,7 +792,7 @@
     ]
   },
   "resources/js/pages/chart-apex-radialbar.js": {
-    "file": "assets/chart-apex-radialbar-8rMfNhq9.js",
+    "file": "assets/chart-apex-radialbar-Cll6VqMU.js",
     "name": "chart-apex-radialbar",
     "src": "resources/js/pages/chart-apex-radialbar.js",
     "isEntry": true,
@@ -808,7 +808,7 @@
     ]
   },
   "resources/js/pages/chart-apex-range.js": {
-    "file": "assets/chart-apex-range-D3nzvMaU.js",
+    "file": "assets/chart-apex-range-eHruBChH.js",
     "name": "chart-apex-range",
     "src": "resources/js/pages/chart-apex-range.js",
     "isEntry": true,
@@ -824,7 +824,7 @@
     ]
   },
   "resources/js/pages/chart-apex-scatter.js": {
-    "file": "assets/chart-apex-scatter-CP1JU5y3.js",
+    "file": "assets/chart-apex-scatter-D-H58Exz.js",
     "name": "chart-apex-scatter",
     "src": "resources/js/pages/chart-apex-scatter.js",
     "isEntry": true,
@@ -840,7 +840,7 @@
     ]
   },
   "resources/js/pages/chart-apex-slope.js": {
-    "file": "assets/chart-apex-slope-BzPaSi4s.js",
+    "file": "assets/chart-apex-slope-CxwKRFjD.js",
     "name": "chart-apex-slope",
     "src": "resources/js/pages/chart-apex-slope.js",
     "isEntry": true,
@@ -856,7 +856,7 @@
     ]
   },
   "resources/js/pages/chart-apex-sparklines.js": {
-    "file": "assets/chart-apex-sparklines-BvFPAXBA.js",
+    "file": "assets/chart-apex-sparklines--rM8eYuB.js",
     "name": "chart-apex-sparklines",
     "src": "resources/js/pages/chart-apex-sparklines.js",
     "isEntry": true,
@@ -872,7 +872,7 @@
     ]
   },
   "resources/js/pages/chart-apex-timeline.js": {
-    "file": "assets/chart-apex-timeline-Cwgyyv3r.js",
+    "file": "assets/chart-apex-timeline-BgQF3sQ0.js",
     "name": "chart-apex-timeline",
     "src": "resources/js/pages/chart-apex-timeline.js",
     "isEntry": true,
@@ -888,7 +888,7 @@
     ]
   },
   "resources/js/pages/chart-apex-treemap.js": {
-    "file": "assets/chart-apex-treemap-D7Szu0Pm.js",
+    "file": "assets/chart-apex-treemap-CdaEIb2r.js",
     "name": "chart-apex-treemap",
     "src": "resources/js/pages/chart-apex-treemap.js",
     "isEntry": true,
@@ -904,7 +904,7 @@
     ]
   },
   "resources/js/pages/chart-apexsankey.js": {
-    "file": "assets/chart-apexsankey-DhDtScQu.js",
+    "file": "assets/chart-apexsankey-DJQETFqN.js",
     "name": "chart-apexsankey",
     "src": "resources/js/pages/chart-apexsankey.js",
     "isEntry": true,
@@ -920,7 +920,7 @@
     ]
   },
   "resources/js/pages/chart-apextree.js": {
-    "file": "assets/chart-apextree-4CWCzk8w.js",
+    "file": "assets/chart-apextree-NuNvxaPu.js",
     "name": "chart-apextree",
     "src": "resources/js/pages/chart-apextree.js",
     "isEntry": true,
@@ -936,7 +936,7 @@
     ]
   },
   "resources/js/pages/chartjs-area.js": {
-    "file": "assets/chartjs-area-BCfl2RLV.js",
+    "file": "assets/chartjs-area-Dvf_Y9aB.js",
     "name": "chartjs-area",
     "src": "resources/js/pages/chartjs-area.js",
     "isEntry": true,
@@ -952,7 +952,7 @@
     ]
   },
   "resources/js/pages/chartjs-bar.js": {
-    "file": "assets/chartjs-bar-B8QtuVmI.js",
+    "file": "assets/chartjs-bar-DXaQbUeI.js",
     "name": "chartjs-bar",
     "src": "resources/js/pages/chartjs-bar.js",
     "isEntry": true,
@@ -968,7 +968,7 @@
     ]
   },
   "resources/js/pages/chartjs-line.js": {
-    "file": "assets/chartjs-line-C-C_fO-4.js",
+    "file": "assets/chartjs-line-CG4XRxSP.js",
     "name": "chartjs-line",
     "src": "resources/js/pages/chartjs-line.js",
     "isEntry": true,
@@ -984,7 +984,7 @@
     ]
   },
   "resources/js/pages/chartjs-other.js": {
-    "file": "assets/chartjs-other-BGh0-6JB.js",
+    "file": "assets/chartjs-other-BUU5pfAy.js",
     "name": "chartjs-other",
     "src": "resources/js/pages/chartjs-other.js",
     "isEntry": true,
@@ -1030,7 +1030,7 @@
     ]
   },
   "resources/js/pages/dashboard-2.js": {
-    "file": "assets/dashboard-2-B1mAAZrm.js",
+    "file": "assets/dashboard-2-Dv1U_Aio.js",
     "name": "dashboard-2",
     "src": "resources/js/pages/dashboard-2.js",
     "isEntry": true,
@@ -1046,7 +1046,7 @@
     ]
   },
   "resources/js/pages/dashboard.js": {
-    "file": "assets/dashboard-DKb8AcD7.js",
+    "file": "assets/dashboard-CNNkOLCK.js",
     "name": "dashboard",
     "src": "resources/js/pages/dashboard.js",
     "isEntry": true,
@@ -1281,7 +1281,7 @@
     ]
   },
   "resources/js/pages/ecommerce-reviews.js": {
-    "file": "assets/ecommerce-reviews-CVYxq9bh.js",
+    "file": "assets/ecommerce-reviews-EM86Y-iZ.js",
     "name": "ecommerce-reviews",
     "src": "resources/js/pages/ecommerce-reviews.js",
     "isEntry": true,
@@ -1297,7 +1297,7 @@
     ]
   },
   "resources/js/pages/ecommerce-seller-details.js": {
-    "file": "assets/ecommerce-seller-details-ClSUIEZo.js",
+    "file": "assets/ecommerce-seller-details-Bo31mqQX.js",
     "name": "ecommerce-seller-details",
     "src": "resources/js/pages/ecommerce-seller-details.js",
     "isEntry": true,
@@ -1324,7 +1324,7 @@
     ]
   },
   "resources/js/pages/expenses-dashboard.js": {
-    "file": "assets/expenses-dashboard-0_c8uwFB.js",
+    "file": "assets/expenses-dashboard-DJ7vTghU.js",
     "name": "expenses-dashboard",
     "src": "resources/js/pages/expenses-dashboard.js",
     "isEntry": true,
@@ -1355,7 +1355,7 @@
     ]
   },
   "resources/js/pages/form-colorpickr.js": {
-    "file": "assets/form-colorpickr-Wi-exfyJ.js",
+    "file": "assets/form-colorpickr-DEy6h6Bx.js",
     "name": "form-colorpickr",
     "src": "resources/js/pages/form-colorpickr.js",
     "isEntry": true,
@@ -1534,7 +1534,7 @@
     ]
   },
   "resources/js/pages/maps-vector.js": {
-    "file": "assets/maps-vector-atyc6-SZ.js",
+    "file": "assets/maps-vector-B_SZCt3N.js",
     "name": "maps-vector",
     "src": "resources/js/pages/maps-vector.js",
     "isEntry": true,
@@ -1620,14 +1620,10 @@
     ]
   },
   "resources/js/pages/pos.js": {
-    "file": "assets/pos-ol9L4reJ.js",
+    "file": "assets/pos-T_Di-2qw.js",
     "name": "pos",
     "src": "resources/js/pages/pos.js",
-    "isEntry": true,
-    "imports": [
-      "_sweetalert2.esm.all-O8mKH-HY.js",
-      "_choices-PN3yYAsG.js"
-    ]
+    "isEntry": true
   },
   "resources/js/pages/provider-test-connection.js": {
     "file": "assets/provider-test-connection-W7ywTGPE.js",
@@ -1639,7 +1635,7 @@
     ]
   },
   "resources/js/pages/reports-appointments.js": {
-    "file": "assets/reports-appointments-C_2olU5m.js",
+    "file": "assets/reports-appointments-DmD685w6.js",
     "name": "reports-appointments",
     "src": "resources/js/pages/reports-appointments.js",
     "isEntry": true,
@@ -1655,7 +1651,7 @@
     ]
   },
   "resources/js/pages/reports-customers.js": {
-    "file": "assets/reports-customers-Cj_LaYhX.js",
+    "file": "assets/reports-customers-Cd5sx59u.js",
     "name": "reports-customers",
     "src": "resources/js/pages/reports-customers.js",
     "isEntry": true,
@@ -1671,7 +1667,7 @@
     ]
   },
   "resources/js/pages/reports-dashboard.js": {
-    "file": "assets/reports-dashboard-BLlGn3aB.js",
+    "file": "assets/reports-dashboard-Bklniyt8.js",
     "name": "reports-dashboard",
     "src": "resources/js/pages/reports-dashboard.js",
     "isEntry": true,
@@ -1687,7 +1683,7 @@
     ]
   },
   "resources/js/pages/reports-expenses.js": {
-    "file": "assets/reports-expenses-CfEsvG5U.js",
+    "file": "assets/reports-expenses-9kGF2KzI.js",
     "name": "reports-expenses",
     "src": "resources/js/pages/reports-expenses.js",
     "isEntry": true,
@@ -1703,7 +1699,7 @@
     ]
   },
   "resources/js/pages/reports-inventory.js": {
-    "file": "assets/reports-inventory-CKi26Sdg.js",
+    "file": "assets/reports-inventory-DKl_Ue0p.js",
     "name": "reports-inventory",
     "src": "resources/js/pages/reports-inventory.js",
     "isEntry": true,
@@ -1719,7 +1715,7 @@
     ]
   },
   "resources/js/pages/reports-sales.js": {
-    "file": "assets/reports-sales-C4bV0ypf.js",
+    "file": "assets/reports-sales-Cv-erdEo.js",
     "name": "reports-sales",
     "src": "resources/js/pages/reports-sales.js",
     "isEntry": true,
@@ -1735,7 +1731,7 @@
     ]
   },
   "resources/js/pages/settings.js": {
-    "file": "assets/settings-CP1uUnBE.js",
+    "file": "assets/settings-FAc2xyzr.js",
     "name": "settings",
     "src": "resources/js/pages/settings.js",
     "isEntry": true,
@@ -1775,40 +1771,5 @@
     "names": [
       "pos-custom.css"
     ]
-  },
-  "node_modules/chart.js/dist/chart.umd.js": {
-    "file": "assets/chart.umd-BhOcQQQE.js",
-    "name": "chart.umd",
-    "src": "node_modules/chart.js/dist/chart.umd.js?commonjs-entry",
-    "isEntry": true
-  },
-  "node_modules/choices.js/public/assets/scripts/choices.min.js": {
-    "file": "assets/choices.min-88MnUYK2.js",
-    "name": "choices.min",
-    "src": "node_modules/choices.js/public/assets/scripts/choices.min.js?commonjs-entry",
-    "isEntry": true
-  },
-  "node_modules/daterangepicker/daterangepicker.js": {
-    "file": "assets/daterangepicker-DUSxEU-V.js",
-    "name": "daterangepicker",
-    "src": "node_modules/daterangepicker/daterangepicker.js?commonjs-entry",
-    "isEntry": true,
-    "imports": [
-      "_jquery-CEMonh9Y.js",
-      "__commonjsHelpers-DsqdWQfm.js",
-      "_moment-C7qA8nIE.js"
-    ]
-  },
-  "node_modules/sweetalert2/dist/sweetalert2.all.js": {
-    "file": "assets/sweetalert2.all-h0SN9Rjp.js",
-    "name": "sweetalert2.all",
-    "src": "node_modules/sweetalert2/dist/sweetalert2.all.js?commonjs-entry",
-    "isEntry": true
-  },
-  "node_modules/sweetalert2/dist/sweetalert2.min.js": {
-    "file": "assets/sweetalert2.min-Dp8cOSTp.js",
-    "name": "sweetalert2.min",
-    "src": "node_modules/sweetalert2/dist/sweetalert2.min.js?commonjs-entry",
-    "isEntry": true
   }
 }

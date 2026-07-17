@@ -29,6 +29,12 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
+        // Apply business timezone from settings (if available)
+        $this->applyBusinessTimezone();
+
+        // Apply security session timeout from settings (if available)
+        $this->applySessionTimeout();
+
         try {
             $appLogoUrl = asset('images/logo.png');
             $appLogoSmUrl = asset('images/logo-sm.png');
@@ -50,6 +56,42 @@ class AppServiceProvider extends ServiceProvider
                 'appLogoSmUrl' => 'https://placehold.co/150x50?text=RashNail',
                 'appLogoDarkUrl' => 'https://placehold.co/150x50?text=RashNail',
             ]);
+        }
+    }
+
+    /**
+     * Read business.timezone from the settings table and apply it.
+     * Wrapped in try/catch to handle missing table during migrations.
+     */
+    private function applyBusinessTimezone(): void
+    {
+        try {
+            $timezone = \App\Models\Setting::get('business.timezone');
+
+            if ($timezone && in_array($timezone, timezone_identifiers_list(), true)) {
+                config(['app.timezone' => $timezone]);
+                date_default_timezone_set($timezone);
+            }
+        } catch (\Exception $e) {
+            // Settings table may not exist yet (e.g. during migrations)
+        }
+    }
+
+    /**
+     * Read security.session_timeout from the settings table and apply it
+     * to config('session.lifetime'). Wrapped in try/catch to handle
+     * missing table during migrations.
+     */
+    private function applySessionTimeout(): void
+    {
+        try {
+            $timeout = \App\Models\Setting::get('security.session_timeout', 120);
+
+            if (is_numeric($timeout) && (int) $timeout > 0) {
+                config(['session.lifetime' => (int) $timeout]);
+            }
+        } catch (\Exception $e) {
+            // Settings table may not exist yet (e.g. during migrations)
         }
     }
 }

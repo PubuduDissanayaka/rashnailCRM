@@ -1,7 +1,7 @@
 @extends('layouts.vertical', ['title' => 'Alert Details'])
 
 @section('css')
-    @vite(['node_modules/sweetalert2/dist/sweetalert2.min.css'])
+    @vite([])
 @endsection
 
 @section('content')

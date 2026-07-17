@@ -1,7 +1,7 @@
 @extends('layouts.vertical', ['title' => 'Treeview'])
 
 @section('css')
-@vite(['node_modules/jstree/dist/themes/default/style.min.css'])
+
 @endsection
 
 @section('content')

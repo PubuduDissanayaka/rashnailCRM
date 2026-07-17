@@ -2,6 +2,7 @@
 
 namespace App\Mail;
 
+use App\Models\Setting;
 use Illuminate\Bus\Queueable;
 use Illuminate\Mail\Mailable;
 use Illuminate\Queue\SerializesModels;
@@ -23,7 +24,16 @@ class TestEmail extends Mailable
      */
     public function build()
     {
+        $signature = Setting::get('notification.email_signature', '');
+        $signatureBlock = $signature
+            ? '<div style="margin-top: 20px; padding-top: 15px; border-top: 1px solid #eee; color: #666; font-size: 14px;">' . nl2br(e($signature)) . '</div>'
+            : '';
+
+        $fromAddress = Setting::get('notification.email_address', config('mail.from.address'));
+        $fromName = config('app.name');
+
         return $this->subject('Test Email - ' . config('app.name'))
+                    ->from($fromAddress, $fromName)
                     ->html('
                         <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
                             <h1 style="color: #333; border-bottom: 2px solid #4CAF50; padding-bottom: 10px;">
@@ -42,6 +52,7 @@ class TestEmail extends Mailable
                                     <strong>Environment:</strong> ' . config('app.env') . '
                                 </p>
                             </div>
+                            ' . $signatureBlock . '
                         </div>
                     ');
     }

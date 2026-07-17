@@ -1,7 +1,7 @@
 @extends('layouts.vertical', ['title' => $customer->full_name . '\'s Profile'])
 
 @section('css')
-    @vite(['node_modules/sweetalert2/dist/sweetalert2.min.css'])
+    @vite([])
     <style>
         .timeline {
             position: relative;
@@ -396,7 +396,7 @@
 @endsection
 
 @section('scripts')
-    @vite(['node_modules/sweetalert2/dist/sweetalert2.min.js'])
+    @vite([])
     <script>
         // Check if there are success messages to display
         @if(session('success'))

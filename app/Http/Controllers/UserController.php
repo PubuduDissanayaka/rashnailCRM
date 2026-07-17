@@ -4,11 +4,13 @@ namespace App\Http\Controllers;
 
 use App\Http\Controllers\Controller;
 use App\Models\User;
+use App\Traits\EnforcesPasswordRules;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
 class UserController extends Controller
 {
+    use EnforcesPasswordRules;
     /**
      * Display a listing of the users.
      */
@@ -58,7 +60,7 @@ class UserController extends Controller
         $request->validate([
             'name' => 'required|string|max:255',
             'email' => 'required|email|unique:users',
-            'password' => 'required|string|min:8|confirmed',
+            'password' => $this->getPasswordRules(required: true),
             'role' => ['required', \Illuminate\Validation\Rule::in(\Spatie\Permission\Models\Role::pluck('name'))],
             'status' => 'nullable|in:active,inactive,suspended',
             'avatar' => 'nullable|image|mimes:jpeg,png,jpg,gif,webp|max:2048',
@@ -124,7 +126,7 @@ class UserController extends Controller
             'role' => ['required', \Illuminate\Validation\Rule::in(\Spatie\Permission\Models\Role::pluck('name'))],
             'status' => 'required|in:active,inactive,suspended',
             'phone' => 'nullable|string|max:20',
-            'password' => 'nullable|string|min:8|confirmed',
+            'password' => $this->getPasswordRules(required: false),
         ]);
 
         $userData = [

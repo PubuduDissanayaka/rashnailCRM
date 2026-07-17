@@ -1,7 +1,7 @@
 @extends('layouts.vertical', ['title' => 'Expense Dashboard'])
 
 @section('css')
-    @vite(['node_modules/datatables.net-bs5/css/dataTables.bootstrap5.min.css', 'node_modules/sweetalert2/dist/sweetalert2.min.css'])
+    @vite([])
     @vite(['resources/js/pages/expenses-dashboard.js'])
 @endsection
 
@@ -292,7 +292,7 @@
 @endsection
 
 @section('scripts')
-    @vite(['resources/js/pages/custom-table.js', 'node_modules/sweetalert2/dist/sweetalert2.min.js'])
+    @vite(['resources/js/pages/custom-table.js'])
     <script>
         window.currencySymbol = @json($currencySymbol);
         window.expenseMonthlyTrend = @json($monthlyTrend);

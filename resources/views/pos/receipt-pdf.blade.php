@@ -283,6 +283,20 @@
 
         <!-- Footer -->
         <div class="footer">
+            @if($businessWebsite)
+            <p><a href="{{ $businessWebsite }}" style="color:#6c757d;text-decoration:none;">{{ $businessWebsite }}</a></p>
+            @endif
+            @if($businessFacebook || $businessInstagram || $businessTwitter || $businessLinkedin)
+            <p style="font-size:9px;">
+                @if($businessFacebook)FB: {{ $businessFacebook }}@endif
+                @if($businessFacebook && $businessInstagram) | @endif
+                @if($businessInstagram)IG: {{ $businessInstagram }}@endif
+                @if(($businessFacebook || $businessInstagram) && $businessTwitter) | @endif
+                @if($businessTwitter)X: {{ $businessTwitter }}@endif
+                @if(($businessFacebook || $businessInstagram || $businessTwitter) && $businessLinkedin) | @endif
+                @if($businessLinkedin)LI: {{ $businessLinkedin }}@endif
+            </p>
+            @endif
             <p>Thank you for your business!</p>
             <p>Visit us again soon</p>
             @if($sale->notes)

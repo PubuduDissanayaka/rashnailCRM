@@ -1,7 +1,7 @@
 @extends('layouts.vertical', ['title' => 'Leaflet Maps'])
 
 @section('css')
-    @vite(['node_modules/leaflet/dist/leaflet.css'])
+    
 @endsection
 
 @section('content')

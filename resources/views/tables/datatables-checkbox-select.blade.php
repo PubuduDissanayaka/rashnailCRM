@@ -1,7 +1,7 @@
 @extends('layouts.vertical', ['title' => 'Checkbox Select Datatables'])
 
 @section('css')    
-    @vite(['node_modules/datatables.net-select-bs5/css/select.bootstrap5.min.css', 'node_modules/datatables.net-responsive-bs5/css/responsive.bootstrap5.min.css'])
+    @vite([])
 @endsection
 
 @section('content')

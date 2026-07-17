@@ -1,7 +1,7 @@
 @extends('layouts.vertical', ['title' => 'Supply Categories'])
 
 @section('css')
-    @vite(['node_modules/datatables.net-bs5/css/dataTables.bootstrap5.min.css', 'node_modules/sweetalert2/dist/sweetalert2.min.css'])
+    @vite([])
 @endsection
 
 @section('content')
@@ -107,7 +107,7 @@
 @endsection
 
 @section('scripts')
-    @vite(['resources/js/pages/custom-table.js', 'node_modules/sweetalert2/dist/sweetalert2.min.js'])
+    @vite(['resources/js/pages/custom-table.js'])
     <script>
         function confirmDelete(categoryId, categoryName, categoryId) {
             Swal.fire({

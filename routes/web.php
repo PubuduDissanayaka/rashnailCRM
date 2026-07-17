@@ -7,6 +7,7 @@ use App\Http\Controllers\UserController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\RoleController;
 use App\Http\Controllers\CustomerController;
+use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\ServiceController;
 use App\Http\Controllers\ServicePackageController;
 use App\Http\Controllers\AppointmentController;
@@ -39,7 +40,7 @@ Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
 
 // Protected routes group
 Route::middleware(['auth'])->group(function () {
-    Route::get('/', [RoutingController::class, 'index'])->name('dashboard');
+    Route::get('/', [DashboardController::class, 'index'])->name('dashboard');
 
     // Profile routes
     Route::get('/profile', [ProfileController::class, 'show'])->name('profile.show');

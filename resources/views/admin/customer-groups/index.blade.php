@@ -1,12 +1,12 @@
 @extends('layouts.vertical', ['title' => 'Customer Groups Management'])
 
 @section('css')
-    @vite(['node_modules/datatables.net-bs5/css/dataTables.bootstrap5.min.css', 'node_modules/datatables.net-buttons-bs5/css/buttons.bootstrap5.min.css'])
-    @vite(['node_modules/sweetalert2/dist/sweetalert2.min.css'])
+    @vite([])
+    
 @endsection
 
 @section('scripts')
-    @vite(['resources/js/pages/custom-table.js', 'node_modules/sweetalert2/dist/sweetalert2.min.js'])
+    @vite(['resources/js/pages/custom-table.js'])
     <script>
         function confirmDelete(groupId, groupName) {
             Swal.fire({

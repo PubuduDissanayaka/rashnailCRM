@@ -6,6 +6,7 @@ use App\Models\Notification;
 use App\Models\NotificationLog;
 use App\Models\NotificationProvider;
 use App\Models\NotificationSetting;
+use App\Models\Setting;
 use App\Models\User;
 use App\Services\Notification\Channels\NotificationChannel;
 use App\Services\Notification\Channels\EmailNotificationChannel;
@@ -449,6 +450,11 @@ class NotificationService
      */
     protected function shouldSendViaChannel(Notification $notification, string $channelName): bool
     {
+        // Check global email_enabled setting for email channel
+        if ($channelName === 'email' && !Setting::get('notification.email_enabled', true)) {
+            return false;
+        }
+
         $notifiable = $notification->notifiable;
         
         if ($notifiable instanceof User) {

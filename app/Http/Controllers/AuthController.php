@@ -41,6 +41,11 @@ class AuthController extends Controller
 
             $user = Auth::user();
 
+            // @todo: security.login_notification — When enabled, send notification
+            // to the user on login from an unrecognized device/IP. This is a
+            // stretch feature requiring device fingerprinting or IP tracking.
+            // Read: Setting::get('security.login_notification', true)
+
             // Block inactive or suspended users
             if ($user->status === 'inactive' || $user->status === 'suspended') {
                 Auth::logout();

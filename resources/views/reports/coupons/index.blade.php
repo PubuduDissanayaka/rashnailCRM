@@ -1,7 +1,7 @@
 @extends('layouts.vertical', ['title' => 'Coupon Reports'])
 
 @section('css')
-    @vite(['node_modules/daterangepicker/daterangepicker.css', 'node_modules/sweetalert2/dist/sweetalert2.min.css'])
+    @vite([])
     <style>
         .summary-card {
             border-radius: 10px;
@@ -354,7 +354,7 @@
 @endsection
 
 @section('scripts')
-    @vite(['node_modules/chart.js/dist/chart.umd.js', 'node_modules/daterangepicker/daterangepicker.js', 'node_modules/sweetalert2/dist/sweetalert2.all.js'])
+    @vite([])
     <script>
         document.addEventListener('DOMContentLoaded', function () {
             // Date range picker

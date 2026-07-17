@@ -1,7 +1,7 @@
 @extends('layouts.vertical', ['title' => 'Editors'])
 
 @section('css')
-    @vite(['node_modules/quill/dist/quill.core.css', 'node_modules/quill/dist/quill.snow.css', 'node_modules/quill/dist/quill.bubble.css', 'node_modules/summernote/dist/summernote-bs5.min.css'])
+    @vite([, , ])
 @endsection
 
 @section('content')

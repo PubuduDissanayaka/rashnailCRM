@@ -1,7 +1,7 @@
 @extends('layouts.vertical', ['title' => 'Scroll Datatables'])
 
 @section('css')
-@vite(['node_modules/datatables.net-responsive-bs5/css/responsive.bootstrap5.min.css'])    
+    
 @endsection
 
 @section('content')

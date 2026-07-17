@@ -1,7 +1,7 @@
 @extends('layouts.vertical', ['title' => 'Create Coupon'])
 
 @section('css')
-    @vite(['node_modules/choices.js/public/assets/styles/choices.min.css', 'node_modules/sweetalert2/dist/sweetalert2.min.css'])
+    @vite([])
     <style>
         .nav-tabs .nav-link.active {
             font-weight: 600;
@@ -13,7 +13,7 @@
 @endsection
 
 @section('scripts')
-    @vite(['resources/js/pages/form-choice.js', 'node_modules/sweetalert2/dist/sweetalert2.min.js'])
+    @vite(['resources/js/pages/form-choice.js'])
     <script>
         document.addEventListener('DOMContentLoaded', function() {
             // Handle coupon type change

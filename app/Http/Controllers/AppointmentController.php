@@ -161,6 +161,8 @@ class AppointmentController extends Controller
                 ->with('error', 'Appointment time must be within business hours and duration must fit before closing time.');
         }
 
+        $this->enforceAppointmentLimits($appointmentDate, $validated['user_id'] ?? null);
+
         $validated['status'] = 'scheduled';
 
         $appointment = Appointment::create($validated);
@@ -238,6 +240,8 @@ class AppointmentController extends Controller
                 ->withInput()
                 ->with('error', 'Appointment time must be within business hours and duration must fit before closing time.');
         }
+
+        $this->enforceAppointmentLimits($appointmentDate, $validated['user_id'] ?? null);
 
         $appointment->update($validated);
 
@@ -412,8 +416,10 @@ class AppointmentController extends Controller
             ]);
         }
 
+        $this->enforceAppointmentLimits($appointmentDate, $validated['user_id'] ?? null);
+
         $appointment->update($validated);
-        
+
         // Reload for fresh data
         $appointment->refresh();
         $appointment->load(['customer', 'user', 'service']);
@@ -461,6 +467,8 @@ class AppointmentController extends Controller
                 'message' => 'Appointment time must be within business hours and duration must fit before closing time.'
             ]);
         }
+
+        $this->enforceAppointmentLimits($appointmentDate, $validated['user_id'] ?? null);
 
         $appointment = Appointment::create($validated);
         $appointment->load(['customer', 'user', 'service']);
@@ -521,6 +529,38 @@ class AppointmentController extends Controller
 
         // Allow ending exactly at closing time
         return $endTimeString <= $closeTime;
+    }
+
+    /**
+     * Check appointment capacity limits — enforces settings from the Settings page
+     * Also validates the default_duration setting
+     */
+    private function enforceAppointmentLimits(Carbon $appointmentDate, ?int $userId = null, ?int $serviceId = null): void
+    {
+        $maxPerDay = (int) Setting::get('appointment.max_per_day', 20);
+        $advanceDays = (int) Setting::get('appointment.advance_booking_days', 30);
+        $minHours = (int) Setting::get('appointment.min_advance_hours', 2);
+        $defaultDuration = (int) Setting::get('appointment.default_duration', 60);
+
+        // Check advance booking limit
+        $maxDate = now()->addDays($advanceDays);
+        if ($appointmentDate->gt($maxDate)) {
+            abort(422, __('Appointments can only be booked :days days in advance.', ['days' => $advanceDays]));
+        }
+
+        // Check minimum advance notice
+        if ($appointmentDate->diffInHours(now(), false) < $minHours) {
+            abort(422, __('Appointments must be booked at least :hours hours in advance.', ['hours' => $minHours]));
+        }
+
+        // Check max per day
+        $count = Appointment::whereDate('appointment_date', $appointmentDate->toDateString());
+        if ($userId) {
+            $count->where('user_id', $userId);
+        }
+        if ($count->count() >= $maxPerDay) {
+            abort(422, __('Maximum :max appointments allowed per day.', ['max' => $maxPerDay]));
+        }
     }
 
     /**

@@ -1,7 +1,7 @@
 @extends('layouts.vertical', ['title' => 'Create New Products'])
 
 @section('css')
-@vite(['node_modules/dropzone/dist/dropzone.css', 'node_modules/quill/dist/quill.core.css', 'node_modules/quill/dist/quill.snow.css'])
+@vite([, ])
 @endsection
 
 @section('content')

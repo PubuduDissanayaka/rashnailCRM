@@ -1,11 +1,11 @@
 @extends('layouts.vertical', ['title' => 'Create Service Package'])
 
 @section('css')
-    @vite(['node_modules/choices.js/public/assets/styles/choices.min.css', 'node_modules/sweetalert2/dist/sweetalert2.min.css'])
+    @vite([])
 @endsection
 
 @section('scripts')
-    @vite(['resources/js/pages/form-choice.js', 'node_modules/sweetalert2/dist/sweetalert2.min.js'])
+    @vite(['resources/js/pages/form-choice.js'])
     <script>
         document.addEventListener('DOMContentLoaded', function() {
             const servicePrices = {};

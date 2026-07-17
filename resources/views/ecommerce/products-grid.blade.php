@@ -1,7 +1,7 @@
 @extends('layouts.vertical', ['title' => 'Products Grid'])
 
 @section('css')
-    @vite(['node_modules/nouislider/dist/nouislider.min.css'])
+    
 @endsection
 
 @section('content')

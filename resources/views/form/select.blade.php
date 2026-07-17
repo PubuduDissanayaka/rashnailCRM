@@ -1,7 +1,7 @@
 @extends('layouts.vertical', ['title' => 'Form Select'])
 
 @section('css')
-    @vite(['node_modules/choices.js/public/assets/styles/choices.min.css', 'node_modules/select2/dist/css/select2.min.css'])
+    @vite([])
 @endsection
 
 @section('content')

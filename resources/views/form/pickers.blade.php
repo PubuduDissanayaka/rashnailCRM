@@ -1,7 +1,7 @@
 @extends('layouts.vertical', ['title' => 'Form Picker'])
 
 @section('css')
-    @vite(['node_modules/flatpickr/dist/flatpickr.min.css', 'node_modules/daterangepicker/daterangepicker.css', 'node_modules/@simonwep/pickr/dist/themes/classic.min.css', 'node_modules/@simonwep/pickr/dist/themes/monolith.min.css', 'node_modules/@simonwep/pickr/dist/themes/nano.min.css'])
+    @vite([, , , ])
 @endsection
 
 @section('content')

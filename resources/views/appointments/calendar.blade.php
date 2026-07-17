@@ -1,7 +1,7 @@
 @extends('layouts.vertical', ['title' => 'Appointments Calendar'])
 
 @section('css')
-    @vite(['node_modules/sweetalert2/dist/sweetalert2.min.css', 'node_modules/choices.js/public/assets/styles/choices.min.css'])
+    
 @endsection
 
 @section('content')
@@ -259,7 +259,7 @@
 @endsection
 
 @section('scripts')
-    @vite(['resources/js/pages/appointments-calendar.js', 'node_modules/sweetalert2/dist/sweetalert2.min.js', 'node_modules/choices.js/public/assets/scripts/choices.min.js'])
+    @vite(['resources/js/pages/appointments-calendar.js'])
     <script>
         // Initialize Choices.js for the dropdowns in the appointment modal
         // Business hours data (from settings)
@@ -271,8 +271,7 @@
                 'thursday' => ['open' => '09:00', 'close' => '18:00', 'closed' => false],
                 'friday' => ['open' => '09:00', 'close' => '18:00', 'closed' => false],
                 'saturday' => ['open' => '10:00', 'close' => '16:00', 'closed' => false],
-                'sunday' => ['open' => null, 'close' => null, 'closed' => true],
-            ];
+                'sunday' => ['open' => null, 'close' => null, 'closed' => true]];
         @endphp
         window.businessHours = @json($businessHours);
         window.quickCustomerUrl = '{{ route('customers.quick-store') }}';

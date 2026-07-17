@@ -1,7 +1,7 @@
 @extends('layouts.vertical', ['title' => 'Expense Details'])
 
 @section('css')
-    @vite(['node_modules/sweetalert2/dist/sweetalert2.min.css'])
+    @vite([])
 @endsection
 
 @section('content')
@@ -356,7 +356,7 @@
 @endsection
 
 @section('scripts')
-    @vite(['node_modules/sweetalert2/dist/sweetalert2.min.js'])
+    @vite([])
     <script>
         function confirmDelete() {
             Swal.fire({

@@ -126,6 +126,14 @@ class SettingsSeeder extends Seeder
             ['key' => 'attendance.compliance.max_break_duration', 'value' => '120', 'type' => 'integer', 'group' => 'attendance', 'description' => 'Maximum break duration (minutes)', 'order' => 53],
             ['key' => 'attendance.compliance.require_break_after_hours', 'value' => '5', 'type' => 'integer', 'group' => 'attendance', 'description' => 'Require break after working hours', 'order' => 54],
             ['key' => 'attendance.compliance.data_encryption_enabled', 'value' => '1', 'type' => 'boolean', 'group' => 'attendance', 'description' => 'Enable encryption for sensitive attendance data', 'order' => 55],
+
+            // Security Settings
+            ['key' => 'security.password_min_length', 'value' => '8', 'type' => 'integer', 'group' => 'security', 'description' => 'Minimum password length requirement', 'order' => 1],
+            ['key' => 'security.password_require_uppercase', 'value' => '1', 'type' => 'boolean', 'group' => 'security', 'description' => 'Require at least one uppercase letter in passwords', 'order' => 2],
+            ['key' => 'security.password_require_numbers', 'value' => '1', 'type' => 'boolean', 'group' => 'security', 'description' => 'Require at least one number in passwords', 'order' => 3],
+            ['key' => 'security.password_require_special', 'value' => '0', 'type' => 'boolean', 'group' => 'security', 'description' => 'Require at least one special character in passwords', 'order' => 4],
+            ['key' => 'security.session_timeout', 'value' => '120', 'type' => 'integer', 'group' => 'security', 'description' => 'Session idle timeout in minutes', 'order' => 5],
+            ['key' => 'security.login_notification', 'value' => '1', 'type' => 'boolean', 'group' => 'security', 'description' => 'Notify user on new login from unrecognized device', 'order' => 6],
         ];
 
         foreach ($settings as $setting) {
@@ -137,7 +145,7 @@ class SettingsSeeder extends Seeder
 
         // Cache all settings
         Setting::flushCache();
-        foreach(['business', 'appointment', 'notification', 'payment', 'attendance'] as $group) {
+        foreach(['business', 'appointment', 'notification', 'payment', 'attendance', 'security'] as $group) {
             Setting::getGroup($group);
         }
 

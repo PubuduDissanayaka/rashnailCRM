@@ -5,6 +5,7 @@ namespace App\Services\Notification\Channels;
 use App\Models\Notification;
 use App\Models\NotificationProvider;
 use App\Models\User;
+use App\Models\Setting;
 use App\Services\TemplateService;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Crypt;
@@ -79,6 +80,11 @@ class EmailNotificationChannel implements NotificationChannel
      */
     public function canSend($notifiable, Notification $notification): bool
     {
+        // Check global email_enabled setting
+        if (!Setting::get('notification.email_enabled', true)) {
+            return false;
+        }
+
         if (!$notifiable instanceof User) {
             return false;
         }
@@ -186,6 +192,14 @@ class EmailNotificationChannel implements NotificationChannel
             $subject = $rendered['subject'] ?? $this->getSubject($notification);
             $bodyHtml = $rendered['body_html'] ?? '';
             $bodyText = $rendered['body_text'] ?? '';
+
+            // Append email signature to template-rendered content
+            $signature = Setting::get('notification.email_signature', '');
+            if ($signature) {
+                $signatureBlock = '<div style="margin-top: 20px; padding-top: 15px; border-top: 1px solid #eee; color: #666; font-size: 14px;">' . nl2br(e($signature)) . '</div>';
+                $bodyHtml = $bodyHtml . "\n" . $signatureBlock;
+                $bodyText = $bodyText . "\n\n" . strip_tags($signature);
+            }
         } else {
             // Fallback to basic email
             $subject = $this->getSubject($notification);
@@ -198,7 +212,7 @@ class EmailNotificationChannel implements NotificationChannel
             'subject' => $subject,
             'body_html' => $bodyHtml,
             'body_text' => $bodyText,
-            'from_address' => $this->provider->getConfigValue('from_address', config('mail.from.address')),
+            'from_address' => Setting::get('notification.email_address', $this->provider->getConfigValue('from_address', config('mail.from.address'))),
             'from_name' => $this->provider->getConfigValue('from_name', config('mail.from.name')),
         ];
     }
@@ -342,7 +356,12 @@ class EmailNotificationChannel implements NotificationChannel
     protected function generateBasicHtml(User $user, Notification $notification): string
     {
         $data = $notification->data;
+        $signature = Setting::get('notification.email_signature', '');
         
+        $signatureBlock = $signature 
+            ? "<div style=\"margin-top: 20px; padding-top: 15px; border-top: 1px solid #eee; color: #666; font-size: 14px;\">" . nl2br(e($signature)) . "</div>"
+            : '';
+
         return "
             <!DOCTYPE html>
             <html>
@@ -355,6 +374,7 @@ class EmailNotificationChannel implements NotificationChannel
                 <p>Data: " . json_encode($data) . "</p>
                 <hr>
                 <p>Sent via " . config('app.name') . "</p>
+                {$signatureBlock}
             </body>
             </html>
         ";
@@ -370,7 +390,9 @@ class EmailNotificationChannel implements NotificationChannel
     protected function generateBasicText(User $user, Notification $notification): string
     {
         $data = $notification->data;
-        
-        return "Hello {$user->name},\n\nThis is a notification of type: {$notification->type}\n\nData: " . json_encode($data) . "\n\nSent via " . config('app.name');
+        $signature = Setting::get('notification.email_signature', '');
+        $signatureBlock = $signature ? "\n\n" . strip_tags($signature) : '';
+
+        return "Hello {$user->name},\n\nThis is a notification of type: {$notification->type}\n\nData: " . json_encode($data) . "\n\nSent via " . config('app.name') . $signatureBlock;
     }
 }

@@ -1,7 +1,7 @@
 @extends('layouts.vertical', ['title' => $appointment->customer->name . '\'s Appointment'])
 
 @section('css')
-    @vite(['node_modules/sweetalert2/dist/sweetalert2.min.css'])
+    @vite([])
 @endsection
 
 @section('content')
@@ -185,7 +185,7 @@
 @endsection
 
 @section('scripts')
-    @vite(['node_modules/sweetalert2/dist/sweetalert2.min.js'])
+    @vite([])
     <script>
         // Check if there are success messages to display
         @if(session('success'))

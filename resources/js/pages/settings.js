@@ -18,8 +18,8 @@ document.addEventListener('DOMContentLoaded', function () {
  * Initialize AJAX form submission for all settings forms
  */
 function initializeFormSubmission() {
-    const forms = ['business-form', 'appointment-form', 'notification-form', 'payment-form'];
-
+    const forms = ['business-form', 'appointment-form', 'notification-form', 'payment-form', 'security-form', 'pos-settings-form'];
+    const CSRF = document.querySelector('meta[name="csrf-token"]')?.content || '';
     forms.forEach(formId => {
         const form = document.getElementById(formId);
         if (!form) return;
@@ -216,7 +216,7 @@ function initializeTestEmail() {
 function initializeUnsavedChangesWarning() {
     // Warn user if they try to navigate away with unsaved changes
     window.addEventListener('beforeunload', function (e) {
-        const forms = ['business-form', 'appointment-form', 'notification-form', 'payment-form'];
+        const forms = ['business-form', 'appointment-form', 'notification-form', 'payment-form', 'security-form', 'pos-settings-form'];
         let hasUnsavedChanges = false;
         console.log('beforeunload triggered, checking forms:');
         forms.forEach(formId => {
@@ -242,7 +242,7 @@ function initializeUnsavedChangesWarning() {
     });
 
     // Mark form as unsaved when changed
-    const forms = ['business-form', 'appointment-form', 'notification-form', 'payment-form'];
+    const forms = ['business-form', 'appointment-form', 'notification-form', 'payment-form', 'security-form', 'pos-settings-form'];
     forms.forEach(formId => {
         const form = document.getElementById(formId);
         if (form) {

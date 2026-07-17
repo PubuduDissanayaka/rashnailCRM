@@ -5,7 +5,7 @@
 @endsection
 
 @section('css')
-    @vite(['node_modules/sweetalert2/dist/sweetalert2.min.css'])
+    @vite([])
 @endsection
 
 @section('scripts')
@@ -175,7 +175,7 @@
 @endsection
 
 @section('scripts')
-    @vite(['resources/js/pages/custom-table.js', 'node_modules/sweetalert2/dist/sweetalert2.min.js'])
+    @vite(['resources/js/pages/custom-table.js', ])
     <script>
         document.addEventListener('DOMContentLoaded', function() {
             // Check if there are success messages to display

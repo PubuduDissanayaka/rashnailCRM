@@ -1,7 +1,7 @@
 @extends('layouts.vertical', ['title' => 'Work Hour Reports'])
 
 @section('css')
-    @vite(['node_modules/daterangepicker/daterangepicker.css', 'node_modules/sweetalert2/dist/sweetalert2.min.css'])
+    @vite([])
     <style>
         .summary-card {
             border-radius: 10px;
@@ -442,7 +442,7 @@
 @endsection
 
 @section('scripts')
-    @vite(['node_modules/daterangepicker/daterangepicker.js', 'node_modules/sweetalert2/dist/sweetalert2.min.js'])
+    @vite([])
     <script>
         document.addEventListener('DOMContentLoaded', function () {
             // Initialize date range picker

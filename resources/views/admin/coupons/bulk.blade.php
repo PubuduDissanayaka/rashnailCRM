@@ -1,7 +1,7 @@
 @extends('layouts.vertical', ['title' => 'Bulk Coupon Generation'])
 
 @section('css')
-    @vite(['node_modules/sweetalert2/dist/sweetalert2.min.css'])
+    @vite([])
     <style>
         .pattern-chip {
             cursor: pointer;
@@ -213,7 +213,7 @@
 @endsection
 
 @section('scripts')
-    @vite(['node_modules/sweetalert2/dist/sweetalert2.min.js'])
+    @vite([])
     <script>
         const sym = @json($currencySymbol);
 

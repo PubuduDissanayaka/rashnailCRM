@@ -1,7 +1,7 @@
 @extends('layouts.vertical', ['title' => 'Edit Attendance'])
 
 @section('css')
-    @vite(['node_modules/sweetalert2/dist/sweetalert2.min.css', 'node_modules/choices.js/public/assets/styles/choices.min.css'])
+    
 @endsection
 
 @section('content')
@@ -122,5 +122,5 @@
 @endsection
 
 @section('scripts')
-    @vite(['resources/js/pages/form-choice.js', 'node_modules/sweetalert2/dist/sweetalert2.min.js'])
+    @vite(['resources/js/pages/form-choice.js'])
 @endsection

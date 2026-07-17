@@ -1,7 +1,7 @@
 @extends('layouts.vertical', ['title' => 'Dashboard 2'])
 
 @section('css')
-    @vite(['node_modules/jsvectormap/dist/jsvectormap.min.css'])
+    
 @endsection
 
 @section('content')

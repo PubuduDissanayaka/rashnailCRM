@@ -1,5 +1,8 @@
 @php
     $faviconPath = \App\Models\Setting::get('business.favicon');
+    $faviconUrl = $faviconPath
+        ? Storage::url($faviconPath)
+        : (file_exists(public_path('images/favicon.ico')) ? asset('images/favicon.ico') : asset('images/logo-sm.png'));
     $tagline = \App\Models\Setting::get('business.tagline') ?: config('app.name');
 @endphp
 <meta charset="utf-8" />
@@ -14,4 +17,4 @@
     name="keywords" />
 <meta content="Coderthemes" name="author" />
 <!-- App favicon -->
-<link href="{{ $faviconPath ? Storage::url($faviconPath) : '/images/favicon.ico' }}" rel="shortcut icon" />
+<link href="{{ $faviconUrl }}" rel="shortcut icon" />

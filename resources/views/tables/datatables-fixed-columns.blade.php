@@ -1,7 +1,7 @@
 @extends('layouts.vertical', ['title' => 'Basic Datatables'])
 
 @section('css')
-    @vite(['node_modules/datatables.net-fixedcolumns-bs5/css/fixedColumns.bootstrap5.min.css'])
+    
 @endsection
 
 @section('content')

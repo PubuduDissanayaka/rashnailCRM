@@ -1,7 +1,7 @@
 @extends('layouts.vertical', ['title' => 'File Uploads'])
 
 @section('css')    
-    @vite(['node_modules/dropzone/dist/dropzone.css', 'node_modules/filepond/dist/filepond.min.css', 'node_modules/filepond-plugin-image-preview/dist/filepond-plugin-image-preview.min.css'])
+    @vite([, ])
 @endsection
 
 @section('content')

@@ -1,7 +1,38 @@
 @extends('layouts.vertical', ['title' => 'System Settings'])
 
 @section('css')
-    @vite(['node_modules/choices.js/public/assets/styles/choices.min.css', 'node_modules/sweetalert2/dist/sweetalert2.min.css'])
+    <style>
+        /* Unsaved-dot indicator */
+        .tab-dirty::after {
+            content: '';
+            display: inline-block;
+            width: 8px; height: 8px;
+            background: #f59e0b;
+            border-radius: 50%;
+            margin-left: 4px;
+            vertical-align: super;
+        }
+        .tab-error::after {
+            background: #ef4444;
+            content: attr(data-errors) !important;
+            width: auto; height: auto;
+            padding: 0 4px;
+            font-size: 9px;
+            line-height: 14px;
+            border-radius: 10px;
+            color: #fff;
+        }
+        .setting-save-btn .spinner-border {
+            width: 14px; height: 14px;
+            border-width: 2px;
+        }
+        .nav-tabs { flex-wrap: nowrap; overflow-x: auto; white-space: nowrap; }
+        .nav-tabs .nav-link { font-size: 0.85rem; padding: 0.5rem 0.75rem; }
+        @media (max-width: 576px) {
+            .nav-tabs { flex-wrap: wrap; }
+            .nav-tabs .nav-link { font-size: 0.8rem; padding: 0.4rem 0.5rem; }
+        }
+    </style>
 @endsection
 
 @section('content')
@@ -41,6 +72,16 @@
                                 <i class="ti ti-clock-check me-1"></i> Attendance
                             </a>
                         </li>
+                        <li class="nav-item">
+                            <a class="nav-link" data-bs-toggle="tab" href="#security-tab">
+                                <i class="ti ti-shield-lock me-1"></i> Security
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" data-bs-toggle="tab" href="#pos-tab">
+                                <i class="ti ti-shopping-cart me-1"></i> POS
+                            </a>
+                        </li>
                     </ul>
 
                     <!-- Tab Content -->
@@ -50,6 +91,8 @@
                         @include('settings.partials.notification')
                         @include('settings.partials.payment')
                         @include('settings.partials.attendance')
+                        @include('settings.partials.security')
+                        @include('settings.partials.pos')
                     </div>
                 </div>
             </div>
@@ -58,5 +101,5 @@
 @endsection
 
 @section('scripts')
-    @vite(['resources/js/pages/settings.js', 'node_modules/choices.js/public/assets/scripts/choices.min.js', 'node_modules/sweetalert2/dist/sweetalert2.min.js'])
+    @vite(['resources/js/pages/settings.js', ])
 @endsection

@@ -1,7 +1,7 @@
 @extends('layouts.vertical', ['title' => 'Tour'])
 
 @section('css')
-@vite(['node_modules/@sjmc11/tourguidejs/dist/css/tour.min.css'])
+
 @endsection
 
 @section('content')

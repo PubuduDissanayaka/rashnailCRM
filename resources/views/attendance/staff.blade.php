@@ -1,7 +1,7 @@
 @extends('layouts.vertical', ['title' => 'Staff Attendance'])
 
 @section('css')
-    @vite(['node_modules/sweetalert2/dist/sweetalert2.min.css'])
+    @vite([])
 @endsection
 
 @section('content')
@@ -284,5 +284,5 @@
 @endsection
 
 @section('scripts')
-    @vite(['resources/js/pages/attendance.js', 'resources/js/pages/staff-attendance.js', 'node_modules/sweetalert2/dist/sweetalert2.min.js'])
+    @vite(['resources/js/pages/attendance.js', 'resources/js/pages/staff-attendance.js', ])
 @endsection
