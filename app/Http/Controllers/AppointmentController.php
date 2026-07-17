@@ -23,7 +23,7 @@ class AppointmentController extends Controller
     {
         $this->authorize('view appointments');
 
-        $query = Appointment::with(['customer', 'user', 'service'])
+        $query = Appointment::with(['customer', 'user', 'service', 'services'])
             ->orderBy('appointment_date', 'desc');
 
         // Apply filters
@@ -85,7 +85,7 @@ class AppointmentController extends Controller
     {
         $this->authorize('view appointments');
 
-        $query = Appointment::with(['customer', 'user', 'service']);
+        $query = Appointment::with(['customer', 'user', 'service', 'services']);
 
         // Filter by date range
         if ($request->filled('start') && $request->filled('end')) {
@@ -379,7 +379,7 @@ class AppointmentController extends Controller
         ]);
 
         $service = $appointment->service;
-        $duration = $service->duration ?? 60;
+        $duration = $appointment->services->sum(fn($s) => ($s->duration ?? 60) * ($s->pivot->quantity ?? 1)) ?: ($service->duration ?? 60);
         $appointmentDate = Carbon::parse($validated['appointment_date']);
 
         // Check for conflicts
@@ -391,7 +391,8 @@ class AppointmentController extends Controller
         }
 
         // Check business hours
-        if (!$this->isWithinBusinessHours($appointmentDate, $appointment->service_id)) {
+        $primaryServiceId = $appointment->services->first()?->id ?? $appointment->service_id;
+        if (!$this->isWithinBusinessHours($appointmentDate, $primaryServiceId)) {
             return response()->json([
                 'success' => false,
                 'message' => 'Appointment time must be within business hours and duration must fit before closing time.'
@@ -402,7 +403,7 @@ class AppointmentController extends Controller
         
         // Reload for fresh data
         $appointment->refresh();
-        $appointment->load(['customer', 'user', 'service']);
+        $appointment->load(['customer', 'user', 'service', 'services']);
 
         return response()->json([
             'success' => true,

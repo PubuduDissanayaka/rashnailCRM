@@ -83,7 +83,7 @@
                             <select class="form-select" data-table-filter="staff">
                                 <option value="All">Staff</option>
                                 @foreach($staff as $member)
-                                    <option value="{{ $member->name }}">{{ $member->name }}</option>
+                                    <option value="{{ $member->id }}">{{ $member->name }}</option>
                                 @endforeach
                             </select>
                             <i class="app-search-icon text-muted" data-lucide="users"></i>

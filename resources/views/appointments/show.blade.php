@@ -1,4 +1,4 @@
-@extends('layouts.vertical', ['title' => $appointment->customer->name . '\'s Appointment'])
+@extends('layouts.vertical', ['title' => ($appointment->customer->name ?? 'Deleted Customer') . '\'s Appointment'])
 
 @section('css')
     
