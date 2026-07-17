@@ -94,8 +94,12 @@
                                 </td>
                                 <td data-sort="{{ $permCount }}">
                                     <span class="badge bg-{{ $permCount > 40 ? 'success' : ($permCount > 15 ? 'warning' : 'secondary') }}-subtle text-{{ $permCount > 40 ? 'success' : ($permCount > 15 ? 'warning' : 'secondary') }}">
-                                        <i class="ti ti-key fs-xs me-1"></i> {{ $permCount }} permission(s)
+                                        <i class="ti ti-key fs-xs me-1"></i> {{ $permCount }}/65
                                     </span>
+                                    <div class="progress mt-1" style="height: 3px; max-width: 80px;">
+                                        <div class="progress-bar bg-{{ $permCount > 40 ? 'success' : ($permCount > 15 ? 'warning' : 'secondary') }}" 
+                                             style="width: {{ round(($permCount / 65) * 100) }}%"></div>
+                                    </div>
                                 </td>
                                 <td data-sort="{{ $role->created_at->format('Y-m-d') }}">
                                     <span class="text-muted">{{ $role->created_at->format('M d, Y') }}</span>
