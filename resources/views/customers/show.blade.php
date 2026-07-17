@@ -1,7 +1,7 @@
 @extends('layouts.vertical', ['title' => $customer->full_name . '\'s Profile'])
 
 @section('css')
-    @vite([])
+    
     <style>
         .timeline {
             position: relative;
@@ -396,7 +396,7 @@
 @endsection
 
 @section('scripts')
-    @vite([])
+    
     <script>
         // Check if there are success messages to display
         @if(session('success'))
