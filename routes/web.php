@@ -274,6 +274,8 @@ Route::middleware(['auth'])->group(function () {
         Route::get('/leaves/{leaveRequest}', [LeaveRequestController::class, 'show'])->name('leaves.show');
         Route::delete('/leaves/{leaveRequest}', [LeaveRequestController::class, 'destroy'])->name('leaves.destroy');
         Route::get('/leaves/{leaveRequest}/approval', [LeaveRequestController::class, 'showApproval'])->name('leaves.approval');
+        Route::get('/leaves/{leaveRequest}/edit', [LeaveRequestController::class, 'edit'])->name('leaves.edit');
+        Route::put('/leaves/{leaveRequest}', [LeaveRequestController::class, 'update'])->name('leaves.update');
         Route::post('/leaves/{leaveRequest}/approve', [LeaveRequestController::class, 'approve'])
             ->middleware('can:approve leave requests')->name('leaves.approve');
         Route::post('/leaves/{leaveRequest}/reject', [LeaveRequestController::class, 'reject'])

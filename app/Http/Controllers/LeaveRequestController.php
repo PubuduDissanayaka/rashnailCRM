@@ -262,8 +262,94 @@ class LeaveRequestController extends Controller
     }
 
     /**
-     * Display calendar view of leave requests
+     * Show the form for editing the specified resource.
      */
+    public function edit(LeaveRequest $leaveRequest)
+    {
+        // User can edit their own pending requests; admins can edit any
+        if ($leaveRequest->user_id != auth()->id()) {
+            $this->authorize('edit leave requests');
+        } elseif ($leaveRequest->status !== 'pending') {
+            return redirect()->back()->with('error', 'Cannot edit a leave request that is not pending.');
+        }
+
+        $user = $leaveRequest->user;
+        $currentYear = now()->year;
+        $leaveBalances = LeaveBalance::where('user_id', $user->id)
+            ->where('year', $currentYear)
+            ->get();
+
+        return view('leaves.edit', compact('leaveRequest', 'leaveBalances'));
+    }
+
+    /**
+     * Update the specified resource in storage.
+     */
+    public function update(Request $request, LeaveRequest $leaveRequest)
+    {
+        // User can update their own pending requests; admins can update any
+        if ($leaveRequest->user_id != auth()->id()) {
+            $this->authorize('edit leave requests');
+        } elseif ($leaveRequest->status !== 'pending') {
+            return redirect()->back()->with('error', 'Cannot update a leave request that is not pending.');
+        }
+
+        $request->validate([
+            'leave_type' => 'required|in:sick,vacation,personal,unpaid,emergency',
+            'start_date' => 'required|date',
+            'end_date' => 'required|date|after_or_equal:start_date',
+            'reason' => 'required|string|max:1000',
+        ]);
+
+        $startDate = Carbon::parse($request->start_date);
+        $endDate = Carbon::parse($request->end_date);
+        $daysCount = LeaveRequest::calculateDaysCount($startDate, $endDate);
+
+        // Re-check balance for paid leaves
+        if (!in_array($request->leave_type, ['sick', 'unpaid', 'emergency'])) {
+            $leaveBalance = LeaveBalance::where('user_id', $leaveRequest->user_id)
+                ->where('year', $startDate->year)
+                ->where('leave_type', $request->leave_type)
+                ->first();
+
+            if (!$leaveBalance || $leaveBalance->remaining_days < $daysCount) {
+                return redirect()->back()
+                    ->with('error', 'Insufficient leave balance.')
+                    ->withInput();
+            }
+        }
+
+        // Check for overlapping (excluding this request)
+        $overlapping = LeaveRequest::where('user_id', $leaveRequest->user_id)
+            ->where('id', '!=', $leaveRequest->id)
+            ->where('status', '!=', 'rejected')
+            ->where(function ($q) use ($startDate, $endDate) {
+                $q->whereBetween('start_date', [$startDate, $endDate])
+                  ->orWhereBetween('end_date', [$startDate, $endDate])
+                  ->orWhere(function ($q2) use ($startDate, $endDate) {
+                      $q2->where('start_date', '<=', $startDate)
+                         ->where('end_date', '>=', $endDate);
+                  });
+            })->first();
+
+        if ($overlapping) {
+            return redirect()->back()
+                ->with('error', 'Updated dates overlap with another leave request.')
+                ->withInput();
+        }
+
+        $leaveRequest->update([
+            'leave_type' => $request->leave_type,
+            'start_date' => $startDate,
+            'end_date' => $endDate,
+            'days_count' => $daysCount,
+            'reason' => $request->reason,
+        ]);
+
+        return redirect()->route('leaves.show', $leaveRequest->id)
+            ->with('success', 'Leave request updated successfully.');
+    }
+
     public function destroy(LeaveRequest $leaveRequest)
     {
         $this->authorize('delete leave requests');
