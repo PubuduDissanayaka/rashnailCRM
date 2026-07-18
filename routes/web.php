@@ -364,8 +364,9 @@ Route::middleware(['auth'])->group(function () {
         Route::put('/notification-providers/{provider}', [\App\Http\Controllers\ProviderController::class, 'update'])->name('notification-providers.update');
         Route::delete('/notification-providers/{provider}', [\App\Http\Controllers\ProviderController::class, 'destroy'])->name('notification-providers.destroy');
         Route::post('/notification-providers/{provider}/test', [\App\Http\Controllers\ProviderController::class, 'testConnection'])->name('notification-providers.test');
-        Route::post('/notification-providers/{provider}/toggle', [\App\Http\Controllers\ProviderController::class, 'toggleStatus'])->name('notification-providers.toggle');
+        Route::post('/notification-providers/{provider}/toggle', [\App\Http\Controllers\ProviderController::class, 'toggleActive'])->name('notification-providers.toggle');
         Route::post('/notification-providers/{provider}/set-default', [\App\Http\Controllers\ProviderController::class, 'setDefault'])->name('notification-providers.set-default');
+        Route::get('/notification-providers/config-fields', [\App\Http\Controllers\ProviderController::class, 'getConfigFields'])->name('notification-providers.get-config-fields');
     });
 
     // Template Management routes - restricted to admin users
