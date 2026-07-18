@@ -589,10 +589,10 @@ Route::middleware(['auth'])->group(function () {
             return redirect('/');
         });
         Route::get('{first}/{second}/{third}', [RoutingController::class, 'thirdLevel'])
-            ->where('first', '(?!storage|build|logout|images|css|js|fonts|assets).*')->name('third');
+            ->where('first', '(?!storage|build|logout).*')->name('third');
         Route::get('{first}/{second}', [RoutingController::class, 'secondLevel'])
-            ->where('first', '(?!storage|build|logout|images|css|js|fonts|assets).*')->name('second');
+            ->where('first', '(?!storage|build|logout).*')->name('second');
         Route::get('{any}', [RoutingController::class, 'root'])
-            ->where('any', '(?!storage|build|logout|images|css|js|fonts|assets).*')->name('any');
+            ->where('any', '(?!storage|build|logout).*')->name('any');
     });
 });

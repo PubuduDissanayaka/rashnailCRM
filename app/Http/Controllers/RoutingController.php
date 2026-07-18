@@ -36,11 +36,7 @@ class RoutingController extends Controller
             return view($first . '.index', $data);
         }
 
-        if (view()->exists($first)) {
-            return view($first, $data);
-        }
-
-        abort(404);
+        return view($first, $data);
     }
 
     public function secondLevel(Request $request, $first, $second)
@@ -66,11 +62,7 @@ class RoutingController extends Controller
             return view($viewPath . '.index', $data);
         }
 
-        if (view()->exists($viewPath)) {
-            return view($viewPath, $data);
-        }
-
-        abort(404);
+        return view($viewPath, $data);
     }
 
     public function thirdLevel(Request $request, $first, $second, $third)
@@ -91,11 +83,7 @@ class RoutingController extends Controller
             return view($viewPath . '.index', $data);
         }
 
-        if (view()->exists($viewPath)) {
-            return view($viewPath, $data);
-        }
-
-        abort(404);
+        return view($viewPath, $data);
     }
 
     private function checkUserAccess($viewName)
