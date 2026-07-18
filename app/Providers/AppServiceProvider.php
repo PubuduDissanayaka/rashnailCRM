@@ -36,25 +36,41 @@ class AppServiceProvider extends ServiceProvider
         $this->applySessionTimeout();
 
         try {
-            $appLogoUrl = asset('images/logo.png');
-            $appLogoSmUrl = asset('images/logo-sm.png');
-            $appLogoDarkUrl = asset('images/logo-dark.png');
+            // Check if user uploaded a logo via Settings → Business Information
+            $uploadedLogo = \App\Models\Setting::get('business.logo');
+            $uploadedFavicon = \App\Models\Setting::get('business.favicon');
 
-            if (!file_exists(public_path('images/logo.png'))) {
-                $appLogoUrl = asset('images/logo-sm.png');
-            }
-            if (!file_exists(public_path('images/logo-sm.png'))) {
-                $appLogoSmUrl = 'https://placehold.co/150x50?text=RashNail';
-                $appLogoUrl = 'https://placehold.co/150x50?text=RashNail';
-                $appLogoDarkUrl = 'https://placehold.co/150x50?text=RashNail';
-            }
+            $appLogoUrl = $uploadedLogo
+                ? \Illuminate\Support\Facades\Storage::url($uploadedLogo)
+                : (file_exists(public_path('images/logo.png'))
+                    ? asset('images/logo.png')
+                    : asset('images/logo-sm.png'));
 
-            view()->share(compact('appLogoUrl', 'appLogoSmUrl', 'appLogoDarkUrl'));
+            $appLogoSmUrl = $uploadedLogo
+                ? \Illuminate\Support\Facades\Storage::url($uploadedLogo)
+                : (file_exists(public_path('images/logo-sm.png'))
+                    ? asset('images/logo-sm.png')
+                    : 'https://placehold.co/150x50?text=RashNail');
+
+            $appLogoDarkUrl = $uploadedLogo
+                ? \Illuminate\Support\Facades\Storage::url($uploadedLogo)
+                : (file_exists(public_path('images/logo-dark.png'))
+                    ? asset('images/logo-dark.png')
+                    : 'https://placehold.co/150x50?text=RashNail');
+
+            $appFaviconUrl = $uploadedFavicon
+                ? \Illuminate\Support\Facades\Storage::url($uploadedFavicon)
+                : (file_exists(public_path('images/favicon.ico'))
+                    ? asset('images/favicon.ico')
+                    : asset('images/logo-sm.png'));
+
+            view()->share(compact('appLogoUrl', 'appLogoSmUrl', 'appLogoDarkUrl', 'appFaviconUrl'));
         } catch (\Exception $e) {
             view()->share([
                 'appLogoUrl' => 'https://placehold.co/150x50?text=RashNail',
                 'appLogoSmUrl' => 'https://placehold.co/150x50?text=RashNail',
                 'appLogoDarkUrl' => 'https://placehold.co/150x50?text=RashNail',
+                'appFaviconUrl' => 'https://placehold.co/32x32?text=RN',
             ]);
         }
     }
