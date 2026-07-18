@@ -1,7 +1,7 @@
 @extends('layouts.vertical', ['title' => 'Purchase Order Details'])
 
 @section('css')
-    @vite([])
+    
 @endsection
 
 @section('content')
@@ -275,7 +275,7 @@
 @endsection
 
 @section('scripts')
-    @vite([])
+    
     <script>
         function confirmApprove(poId) {
             Swal.fire({

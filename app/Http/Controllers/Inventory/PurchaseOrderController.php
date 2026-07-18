@@ -55,7 +55,9 @@ class PurchaseOrderController extends Controller
             'cancelled' => PurchaseOrder::where('status', 'cancelled')->count(),
         ];
 
-        return view('inventory.purchase-orders.index', compact('purchaseOrders', 'stats', 'status', 'search'));
+                $currencySymbol = \App\Models\Setting::get('payment.currency_symbol', '$');
+
+        return view('inventory.purchase-orders.index', compact('purchaseOrders', 'stats', 'status', 'search', 'currencySymbol'));
     }
 
     /**
@@ -68,7 +70,9 @@ class PurchaseOrderController extends Controller
         $supplies = Supply::active()->orderBy('name')->get();
         $poNumber = $this->purchaseOrderService->generatePoNumber();
 
-        return view('inventory.purchase-orders.create', compact('supplies', 'poNumber'));
+                $currencySymbol = \App\Models\Setting::get('payment.currency_symbol', '$');
+
+        return view('inventory.purchase-orders.create', compact('supplies', 'poNumber', 'currencySymbol'));
     }
 
     /**
@@ -157,7 +161,9 @@ class PurchaseOrderController extends Controller
 
         $purchaseOrder->load(['items.supply', 'creator', 'approver', 'receiver']);
 
-        return view('inventory.purchase-orders.show', compact('purchaseOrder'));
+                $currencySymbol = \App\Models\Setting::get('payment.currency_symbol', '$');
+
+        return view('inventory.purchase-orders.show', compact('purchaseOrder', 'currencySymbol'));
     }
 
     /**
@@ -175,7 +181,9 @@ class PurchaseOrderController extends Controller
         $supplies = Supply::active()->orderBy('name')->get();
         $purchaseOrder->load('items.supply');
 
-        return view('inventory.purchase-orders.edit', compact('purchaseOrder', 'supplies'));
+                $currencySymbol = \App\Models\Setting::get('payment.currency_symbol', '$');
+
+        return view('inventory.purchase-orders.edit', compact('purchaseOrder', 'supplies', 'currencySymbol'));
     }
 
     /**

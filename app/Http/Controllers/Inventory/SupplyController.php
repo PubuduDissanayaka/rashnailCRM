@@ -31,7 +31,9 @@ class SupplyController extends Controller
             'out_of_stock' => Supply::outOfStock()->count(),
         ];
 
-        return view('inventory.supplies.index', compact('supplies', 'stats'));
+                $currencySymbol = \App\Models\Setting::get('payment.currency_symbol', '$');
+
+        return view('inventory.supplies.index', compact('supplies', 'stats', 'currencySymbol'));
     }
 
     /**
@@ -53,7 +55,9 @@ class SupplyController extends Controller
             'set' => 'Set',
         ];
 
-        return view('inventory.supplies.create', compact('categories', 'unitTypes'));
+                $currencySymbol = \App\Models\Setting::get('payment.currency_symbol', '$');
+
+        return view('inventory.supplies.create', compact('categories', 'unitTypes', 'currencySymbol'));
     }
 
     /**
@@ -158,7 +162,9 @@ class SupplyController extends Controller
 
         $stockMovements = $supply->stockMovements()->paginate(10);
 
-        return view('inventory.supplies.show', compact('supply', 'stockMovements'));
+                $currencySymbol = \App\Models\Setting::get('payment.currency_symbol', '$');
+
+        return view('inventory.supplies.show', compact('supply', 'stockMovements', 'currencySymbol'));
     }
 
     /**
@@ -180,7 +186,9 @@ class SupplyController extends Controller
             'set' => 'Set',
         ];
 
-        return view('inventory.supplies.edit', compact('supply', 'categories', 'unitTypes'));
+                $currencySymbol = \App\Models\Setting::get('payment.currency_symbol', '$');
+
+        return view('inventory.supplies.edit', compact('supply', 'categories', 'unitTypes', 'currencySymbol'));
     }
 
     /**

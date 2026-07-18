@@ -194,7 +194,9 @@ class UsageLogController extends Controller
 
         $usageLog->load(['supply', 'appointment', 'service', 'user', 'customer']);
         
-        return view('inventory.usage-logs.show', compact('usageLog'));
+                $currencySymbol = \App\Models\Setting::get('payment.currency_symbol', '$');
+
+        return view('inventory.usage-logs.show', compact('usageLog', 'currencySymbol'));
     }
 
     /**

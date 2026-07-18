@@ -1,7 +1,7 @@
 @extends('layouts.vertical', ['title' => 'Stock History - ' . $supply->name])
 
 @section('css')
-    @vite([])
+    
 @endsection
 
 @section('content')

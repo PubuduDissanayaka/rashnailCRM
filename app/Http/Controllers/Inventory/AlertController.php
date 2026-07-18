@@ -68,11 +68,14 @@ class AlertController extends Controller
             ->mapWithKeys(fn($severity) => [$severity => ucfirst($severity)])
             ->toArray();
 
+        $currencySymbol = \App\Models\Setting::get('payment.currency_symbol', '$');
+
         return view('inventory.alerts.index', compact(
             'alerts',
             'stats',
             'alertTypes',
-            'severities'
+            'severities',
+            'currencySymbol'
         ));
     }
 
@@ -92,7 +95,9 @@ class AlertController extends Controller
             ->limit(10)
             ->get();
 
-        return view('inventory.alerts.show', compact('alert', 'relatedAlerts'));
+                $currencySymbol = \App\Models\Setting::get('payment.currency_symbol', '$');
+
+        return view('inventory.alerts.show', compact('alert', 'relatedAlerts', 'currencySymbol'));
     }
 
     /**

@@ -1,7 +1,7 @@
 @extends('layouts.vertical', ['title' => 'Edit Purchase Order'])
 
 @section('css')
-    @vite([])
+    
 @endsection
 
 @section('content')
@@ -35,7 +35,7 @@
 @endsection
 
 @section('scripts')
-    @vite([])
+    
     <script>
         document.addEventListener('DOMContentLoaded', function() {
             // Form validation
