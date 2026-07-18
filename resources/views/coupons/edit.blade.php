@@ -1,7 +1,7 @@
 @extends('layouts.vertical', ['title' => 'Edit Coupon - ' . $coupon->name])
 
 @section('css')
-    @vite([])
+    
     <style>
         .conditional-field { display: none; }
     </style>

@@ -1,7 +1,7 @@
 @extends('layouts.vertical', ['title' => 'Coupons'])
 
 @section('css')
-    @vite([])
+    
 @endsection
 
 @section('content')
@@ -63,7 +63,7 @@
                                 <td><code class="fw-semibold">{{ $coupon->code }}</code></td>
                                 <td>{{ $coupon->name }}</td>
                                 <td><span class="badge bg-info-subtle text-info">{{ ucfirst($coupon->type) }}</span></td>
-                                <td>{{ $coupon->type === 'percentage' ? $coupon->discount_value.'%' : '$'.number_format($coupon->discount_value, 2) }}</td>
+                                <td>{{ $coupon->type === 'percentage' ? $coupon->discount_value.'%' : $currencySymbol.number_format($coupon->discount_value, 2) }}</td>
                                 <td>{{ $used }}/{{ $limit ?: '∞' }}</td>
                                 <td>
                                     @if($isActive)<span class="badge bg-success-subtle text-success">Active</span>

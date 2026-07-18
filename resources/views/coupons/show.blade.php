@@ -1,7 +1,7 @@
 @extends('layouts.vertical', ['title' => $coupon->name . ' - Coupon Details'])
 
 @section('css')
-    @vite([])
+    
 @endsection
 
 @section('content')
@@ -270,7 +270,7 @@
 @endsection
 
 @section('scripts')
-    @vite([])
+    
     <script>
         @if(session('success'))
             Swal.fire({ title: 'Success!', text: @json(session('success')), icon: 'success', confirmButtonClass: 'btn btn-primary' });

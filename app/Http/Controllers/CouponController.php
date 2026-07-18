@@ -193,8 +193,9 @@ class CouponController extends Controller
         ]);
 
         $stats = $this->couponService->getRedemptionStats($coupon);
+        $currencySymbol = \App\Models\Setting::get('payment.currency_symbol', '$');
 
-        return view('coupons.show', compact('coupon', 'stats'));
+        return view('coupons.show', compact('coupon', 'stats', 'currencySymbol'));
     }
 
     /**
@@ -224,6 +225,8 @@ class CouponController extends Controller
             $selectedProducts[] = 'package_' . $package->id;
         }
 
+        $currencySymbol = \App\Models\Setting::get('payment.currency_symbol', '$');
+
         return view('coupons.edit', compact(
             'coupon',
             'batches',
@@ -235,7 +238,8 @@ class CouponController extends Controller
             'selectedCustomerGroups',
             'selectedLocations',
             'selectedProducts',
-            'selectedCategories'
+            'selectedCategories',
+            'currencySymbol'
         ));
     }
 
