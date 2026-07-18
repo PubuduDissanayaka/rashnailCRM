@@ -2,7 +2,7 @@
 
 @section('content')
 @include('layouts.partials.page-title', ['title' => 'Create Customer Group'])
-<div class="row"><div class="col-lg-8"><div class="card"><div class="card-body">
+<div class="row"><div class="col-12"><div class="card"><div class="card-body">
 <form action="{{ route('customer-groups.store') }}" method="POST">
     @csrf
     <div class="mb-3"><label class="form-label">Name *</label><input type="text" name="name" class="form-control" value="{{ old('name') }}" required></div>

@@ -2,7 +2,7 @@
 
 @section('content')
 @include('layouts.partials.page-title', ['title' => 'Edit Customer Group'])
-<div class="row"><div class="col-lg-8"><div class="card"><div class="card-body">
+<div class="row"><div class="col-12"><div class="card"><div class="card-body">
 <form action="{{ route('customer-groups.update', $group) }}" method="POST">
     @csrf @method('PUT')
     <div class="mb-3"><label class="form-label">Name *</label><input type="text" name="name" class="form-control" value="{{ old('name', $group->name) }}" required></div>
