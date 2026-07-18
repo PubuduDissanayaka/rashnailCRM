@@ -33,7 +33,7 @@ class UserController extends Controller
         // Check if user has permission to view users
         $this->authorize('view users');
 
-        $users = User::all();
+        $users = User::select('id', 'name', 'email', 'phone', 'role', 'is_active')->get();
 
         return view('users.contacts', compact('users'));
     }
