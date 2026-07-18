@@ -561,10 +561,10 @@
                     <p class="business-tagline">{{ $businessTagline }}</p>
                 @endif
                 <p class="business-contact">
-                    @if($businessAddress){{ $businessAddress }}{{ $businessCity ? ', ' . $businessCity : '' }}{{ $businessState ? ', ' . $businessState : '' }}{{ $businessZip ? ' ' . $businessZip : '' }}@endif
-                    @if($businessAddress && $businessPhone) • @endif
+                    @if($businessAddress){{ $businessAddress }}@endif
+                    @if($businessAddress && $businessPhone)<br>@endif
                     @if($businessPhone){{ $businessPhone }}@endif
-                    @if($businessPhone && $businessEmail) • @endif
+                    @if($businessPhone && $businessEmail)<br>@endif
                     @if($businessEmail){{ $businessEmail }}@endif
                 </p>
             </header>
@@ -660,27 +660,13 @@
                 </div>
             </section>
 
-            <!-- Footer (NO EMOJIS) -->
+            <!-- Footer -->
             <footer class="receipt-footer">
                 @if($businessWebsite)
                 <p><a href="{{ $businessWebsite }}" target="_blank" rel="noopener" style="color:var(--color-muted);text-decoration:none;">{{ $businessWebsite }}</a></p>
                 @endif
-                @if($businessFacebook || $businessInstagram || $businessTwitter || $businessLinkedin)
-                <p style="font-size:var(--font-xs)">
-                    @if($businessFacebook)<span>FB: {{ $businessFacebook }}</span>@endif
-                    @if($businessFacebook && $businessInstagram) &nbsp;|&nbsp; @endif
-                    @if($businessInstagram)<span>IG: {{ $businessInstagram }}</span>@endif
-                    @if(($businessFacebook || $businessInstagram) && $businessTwitter) &nbsp;|&nbsp; @endif
-                    @if($businessTwitter)<span>X: {{ $businessTwitter }}</span>@endif
-                    @if(($businessFacebook || $businessInstagram || $businessTwitter) && $businessLinkedin) &nbsp;|&nbsp; @endif
-                    @if($businessLinkedin)<span>LI: {{ $businessLinkedin }}</span>@endif
-                </p>
-                @endif
                 <p>Thank you for your business!</p>
                 <p>Visit us again soon</p>
-                @if($refundPolicy)
-                <p style="font-size:var(--font-xs);margin-top:var(--spacing-sm);border-top:1px dashed var(--color-border);padding-top:var(--spacing-sm)">{{ $refundPolicy }}</p>
-                @endif
                 @if($sale->notes)
                 <p class="receipt-notes">{{ $sale->notes }}</p>
                 @endif
@@ -690,47 +676,33 @@
 
         <!-- Action Buttons (Hidden in Print) -->
         <div class="receipt-actions no-print">
-            <div class="d-flex flex-wrap gap-2 justify-content-center">
+            <h3 class="section-title" style="border-bottom:none;margin-bottom:var(--spacing-md);text-align:center;">Actions</h3>
+            <div class="actions-grid">
                 <!-- Print Button -->
-                <button
-                    onclick="printReceipt()"
-                    class="action-btn btn-primary"
-                    id="print-btn"
-                    aria-label="Print receipt">
+                <button onclick="printReceipt()" class="action-btn btn-primary" id="print-btn" aria-label="Print receipt">
                     <i class="ti ti-printer"></i>
                     <span>Print Receipt</span>
                 </button>
 
                 <!-- Download PDF Button -->
-                <a
-                    href="{{ route('pos.receipt.download', $sale) }}"
-                    class="action-btn btn-success"
-                    aria-label="Download PDF receipt">
+                <a href="{{ route('pos.receipt.download', $sale) }}" class="action-btn btn-success" aria-label="Download PDF receipt">
                     <i class="ti ti-download"></i>
                     <span>Download PDF</span>
                 </a>
 
                 <!-- WhatsApp Button (Conditional) -->
                 @if($sale->customer && $sale->customer->phone)
-                <button
-                    onclick="sendWhatsApp()"
-                    class="action-btn btn-whatsapp"
-                    id="whatsapp-btn"
-                    aria-label="Send via WhatsApp">
+                <button onclick="sendWhatsApp()" class="action-btn btn-whatsapp" id="whatsapp-btn" aria-label="Send via WhatsApp">
                     <i class="ti ti-brand-whatsapp"></i>
                     <span>Send WhatsApp</span>
                 </button>
                 @endif
 
                 <!-- Back to POS Button -->
-                <a
-                    href="{{ route('pos.index') }}"
-                    class="action-btn btn-outline"
-                    aria-label="Back to POS">
+                <a href="{{ route('pos.index') }}" class="action-btn btn-outline" aria-label="Back to POS">
                     <i class="ti ti-arrow-left"></i>
                     <span>Back to POS</span>
                 </a>
-
             </div>
         </div>
 
