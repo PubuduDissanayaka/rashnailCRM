@@ -124,7 +124,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
 {{-- Charts Row 1 --}}
 <div class="row mb-4">
-    <div class="col-xl-8">
+    <div class="col-12">
         <div class="card h-100">
             <div class="card-header border-light"><h5 class="card-title mb-0">Monthly Expense Trend (6 Months)</h5></div>
             <div class="card-body pb-0"><div id="exp-monthly-trend-chart"></div></div>

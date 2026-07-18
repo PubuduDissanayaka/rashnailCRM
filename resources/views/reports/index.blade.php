@@ -133,7 +133,7 @@ window.__reportData = {
 
 {{-- Charts --}}
 <div class="row mt-4">
-    <div class="col-xl-8">
+    <div class="col-12">
         <div class="card h-100">
             <div class="card-header border-light">
                 <div class="d-flex align-items-center">
