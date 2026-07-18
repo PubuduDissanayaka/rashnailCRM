@@ -267,5 +267,52 @@
 @endsection
 
 @section('scripts')
-@vite(['resources/js/pages/schedule-grid.js'])
+<script>
+/** Work Schedule Grid — Interactive Manager */
+document.addEventListener('DOMContentLoaded', function () {
+    const staffFilter = document.getElementById('staff-filter');
+    const staffRows = document.querySelectorAll('[data-staff-id]');
+    const printBtn = document.getElementById('print-schedule-btn');
+    const copyForm = document.getElementById('copy-week-form');
+    const csrf = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
+
+    // 1. Staff filter
+    if (staffFilter) {
+        staffFilter.addEventListener('change', function () {
+            const val = this.value;
+            staffRows.forEach(row => {
+                row.style.display = (!val || row.dataset.staffId === val) ? '' : 'none';
+            });
+        });
+    }
+
+    // 2. Quick toggle off day
+    document.querySelectorAll('[data-toggle-day]').forEach(btn => {
+        btn.addEventListener('click', function (e) {
+            e.preventDefault();
+            const schedId = this.dataset.scheduleId;
+            const newState = this.dataset.isWorkingDay === '1' ? '0' : '1';
+            fetch('/schedules/' + schedId + '/toggle', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': csrf },
+                body: JSON.stringify({ is_working_day: newState === '1' })
+            }).then(r => r.json()).then(d => { if (d.success) location.reload(); else alert(d.message); }).catch(() => alert('Network error.'));
+        });
+    });
+
+    // 3. Copy week
+    if (copyForm) {
+        copyForm.addEventListener('submit', function (e) {
+            e.preventDefault();
+            fetch(this.action, {
+                method: 'POST', headers: { 'X-CSRF-TOKEN': csrf },
+                body: new FormData(this)
+            }).then(r => r.json()).then(d => { if (d.success) location.reload(); else alert(d.message); }).catch(() => alert('Network error.'));
+        });
+    }
+
+    // 4. Print
+    if (printBtn) printBtn.addEventListener('click', function () { window.print(); });
+});
+</script>
 @endsection

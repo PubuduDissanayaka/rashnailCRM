@@ -43,3 +43,4 @@ _bmad/custom/config.user.toml
 # OS artifacts
 .DS_Store
 Thumbs.db
+resources/js/pages/schedule-grid.js
