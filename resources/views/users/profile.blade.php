@@ -95,7 +95,7 @@
                     </div> <!-- end card-body-->
                 </div> <!-- end card-->
             </div> <!-- end col-->
-            <div class="col-xl-8">
+            <div class="col-12">
                 <div class="card">
                     <div class="card-header card-tabs d-flex align-items-center">
                         <div class="flex-grow-1">

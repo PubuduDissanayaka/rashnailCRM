@@ -22,7 +22,7 @@
     @include('layouts.partials.page-title', ['title' => 'Manage Role: ' . ucfirst($role->name)])
 
     <div class="row">
-        <div class="col-lg-8">
+        <div class="col-12">
             <div class="card">
                 <div class="card-header border-light d-flex flex-wrap justify-content-between align-items-center gap-2">
                     <div>

@@ -85,7 +85,7 @@
                 </div>
             </div>
         </div>
-        <div class="col-xl-8">
+        <div class="col-12">
             <div class="card">
                 <div class="card-body">
                     <form method="POST" action="{{ route('profile.update') }}">
