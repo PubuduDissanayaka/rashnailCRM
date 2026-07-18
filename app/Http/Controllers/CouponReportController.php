@@ -61,6 +61,7 @@ class CouponReportController extends Controller
             'topCoupons' => $topCoupons,
             'redemptionByLocation' => $redemptionByLocation,
             'redemptionByCustomerGroup' => $redemptionByCustomerGroup,
+            'currencySymbol' => \App\Models\Setting::get('payment.currency_symbol', '$'),
         ]);
     }
 

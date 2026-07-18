@@ -1,7 +1,7 @@
 @extends('layouts.vertical', ['title' => 'Coupon Reports'])
 
 @section('css')
-    @vite([])
+    
     <style>
         .summary-card {
             border-radius: 10px;
@@ -354,7 +354,7 @@
 @endsection
 
 @section('scripts')
-    @vite([])
+    
     <script>
         document.addEventListener('DOMContentLoaded', function () {
             // Date range picker
