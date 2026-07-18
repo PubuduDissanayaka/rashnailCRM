@@ -15,6 +15,40 @@
 @include('layouts.partials.page-title', ['title' => 'Work Schedules'])
 
 <div class="row">
+    @if(isset($stats))
+    <div class="col-xl-3 col-md-6 mb-3">
+        <div class="card border-start border-3 border-primary shadow-none">
+            <div class="card-body d-flex align-items-center gap-3 py-3">
+                <div class="avatar avatar-md bg-primary-subtle rounded-circle"><i class="ti ti-users fs-18 text-primary"></i></div>
+                <div><h5 class="mb-0 fw-bold">{{ $stats['total_staff'] }}</h5><small class="text-muted">Staff</small></div>
+            </div>
+        </div>
+    </div>
+    <div class="col-xl-3 col-md-6 mb-3">
+        <div class="card border-start border-3 border-success shadow-none">
+            <div class="card-body d-flex align-items-center gap-3 py-3">
+                <div class="avatar avatar-md bg-success-subtle rounded-circle"><i class="ti ti-calendar-check fs-18 text-success"></i></div>
+                <div><h5 class="mb-0 fw-bold">{{ $stats['with_schedules'] }}</h5><small class="text-muted">Scheduled Staff</small></div>
+            </div>
+        </div>
+    </div>
+    <div class="col-xl-3 col-md-6 mb-3">
+        <div class="card border-start border-3 border-info shadow-none">
+            <div class="card-body d-flex align-items-center gap-3 py-3">
+                <div class="avatar avatar-md bg-info-subtle rounded-circle"><i class="ti ti-list-details fs-18 text-info"></i></div>
+                <div><h5 class="mb-0 fw-bold">{{ $stats['total_entries'] }}</h5><small class="text-muted">Total Entries</small></div>
+            </div>
+        </div>
+    </div>
+    <div class="col-xl-3 col-md-6 mb-3">
+        <div class="card border-start border-3 border-warning shadow-none">
+            <div class="card-body d-flex align-items-center gap-3 py-3">
+                <div class="avatar avatar-md bg-warning-subtle rounded-circle"><i class="ti ti-briefcase fs-18 text-warning"></i></div>
+                <div><h5 class="mb-0 fw-bold">{{ $stats['working_days'] }}</h5><small class="text-muted">Working Days</small></div>
+            </div>
+        </div>
+    </div>
+    @endif
     <div class="col-12">
         <div class="card">
             <div class="card-header d-flex flex-wrap justify-content-between align-items-center gap-2">
@@ -24,6 +58,16 @@
                     <a href="{{ route('schedules.create') }}" class="btn btn-primary btn-sm">
                         <i class="ti ti-plus me-1"></i>Add Schedule
                     </a>
+                    <div class="dropdown">
+                        <button class="btn btn-secondary btn-sm dropdown-toggle" data-bs-toggle="dropdown">
+                            <i class="ti ti-settings me-1"></i>More
+                        </button>
+                        <ul class="dropdown-menu dropdown-menu-end">
+                            <li><a class="dropdown-item" href="#" onclick="alert('Select a staff member to bulk edit from the table below.'); return false;">
+                                <i class="ti ti-layers me-2"></i>Bulk Edit Week
+                            </a></li>
+                        </ul>
+                    </div>
                 </div>
                 @endcan
             </div>

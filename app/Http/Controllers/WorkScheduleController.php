@@ -17,7 +17,14 @@ class WorkScheduleController extends Controller
 
         $staffMembers = User::withStaffRole()->with('workSchedules')->get();
 
-        return view('schedules.index', compact('staffMembers'));
+        $stats = [
+            'total_staff' => $staffMembers->count(),
+            'with_schedules' => $staffMembers->filter(fn($u) => $u->workSchedules->where('is_working_day', true)->count() > 0)->count(),
+            'total_entries' => WorkSchedule::count(),
+            'working_days' => WorkSchedule::where('is_working_day', true)->count(),
+        ];
+
+        return view('schedules.index', compact('staffMembers', 'stats'));
     }
 
     /**
@@ -75,12 +82,12 @@ class WorkScheduleController extends Controller
     /**
      * Display the specified resource.
      */
-    public function show($id)
+    public function show(WorkSchedule $workSchedule)
     {
-        $schedule = WorkSchedule::with('user')->findOrFail($id);
-        
         $this->authorize('view work schedules');
-        
+
+        $schedule = $workSchedule->load('user');
+
         return view('schedules.show', compact('schedule'));
     }
 
