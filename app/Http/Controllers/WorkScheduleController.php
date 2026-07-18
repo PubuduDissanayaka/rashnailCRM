@@ -98,6 +98,11 @@ class WorkScheduleController extends Controller
     {
         $this->authorize('manage work schedules');
 
+        if (!$schedule->exists) {
+            return redirect()->route('schedules.index')
+                ->with('error', 'Schedule not found.');
+        }
+
         $staffMembers = User::withStaffRole()->get();
 
         return view('schedules.edit', compact('schedule', 'staffMembers'));
@@ -109,6 +114,11 @@ class WorkScheduleController extends Controller
     public function update(Request $request, WorkSchedule $schedule)
     {
         $this->authorize('manage work schedules');
+
+        if (!$schedule->exists) {
+            return redirect()->route('schedules.index')
+                ->with('error', 'Schedule not found.');
+        }
 
         $request->validate([
             'user_id' => 'required|exists:users,id',
@@ -150,6 +160,11 @@ class WorkScheduleController extends Controller
     public function destroy(WorkSchedule $schedule)
     {
         $this->authorize('manage work schedules');
+
+        if (!$schedule->exists) {
+            return redirect()->route('schedules.index')
+                ->with('error', 'Schedule not found.');
+        }
 
         $schedule->delete();
 

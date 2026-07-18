@@ -7,7 +7,11 @@
     <div class="col-12">
         <div class="card">
             <div class="card-body">
-                <form action="{{ route('schedules.update', $schedule) }}" method="POST">
+                @if(!$schedule->exists)
+                <div class="alert alert-danger">Schedule not found.</div>
+                <a href="{{ route('schedules.index') }}" class="btn btn-light">Back to Schedules</a>
+                @else
+                <form action="{{ route('schedules.update', $schedule->id) }}" method="POST">
                     @csrf
                     @method('PUT')
                     <div class="row">
@@ -64,9 +68,10 @@
                         </div>
                     </div>
                 </form>
-                <form id="delete-form" action="{{ route('schedules.destroy', $schedule) }}" method="POST" class="d-none">
+                <form id="delete-form" action="{{ route('schedules.destroy', $schedule->id) }}" method="POST" class="d-none">
                     @csrf @method('DELETE')
                 </form>
+                @endif
             </div>
         </div>
     </div>
