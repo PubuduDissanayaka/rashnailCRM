@@ -104,31 +104,21 @@ class WorkScheduleController extends Controller
     /**
      * Show the form for editing the specified resource.
      */
-    public function edit(WorkSchedule $schedule)
+    public function edit(WorkSchedule $workSchedule)
     {
         $this->authorize('manage work schedules');
 
-        if (!$schedule->exists) {
-            return redirect()->route('schedules.index')
-                ->with('error', 'Schedule not found.');
-        }
-
         $staffMembers = User::withStaffRole()->get();
 
-        return view('schedules.edit', compact('schedule', 'staffMembers'));
+        return view('schedules.edit', compact('workSchedule', 'staffMembers'));
     }
 
     /**
      * Update the specified resource in storage.
      */
-    public function update(Request $request, WorkSchedule $schedule)
+    public function update(Request $request, WorkSchedule $workSchedule)
     {
         $this->authorize('manage work schedules');
-
-        if (!$schedule->exists) {
-            return redirect()->route('schedules.index')
-                ->with('error', 'Schedule not found.');
-        }
 
         $request->validate([
             'user_id' => 'required|exists:users,id',
@@ -142,7 +132,7 @@ class WorkScheduleController extends Controller
         // Check if schedule already exists for this staff member and day (excluding current record)
         $existing = WorkSchedule::where('user_id', $request->user_id)
             ->where('day_of_week', $request->day_of_week)
-            ->where('id', '!=', $schedule->id)
+            ->where('id', '!=', $workSchedule->id)
             ->first();
 
         if ($existing) {
@@ -151,7 +141,7 @@ class WorkScheduleController extends Controller
                 ->withInput();
         }
 
-        $schedule->update([
+        $workSchedule->update([
             'user_id' => $request->user_id,
             'day_of_week' => $request->day_of_week,
             'start_time' => $request->start_time,
@@ -167,16 +157,11 @@ class WorkScheduleController extends Controller
     /**
      * Remove the specified resource from storage.
      */
-    public function destroy(WorkSchedule $schedule)
+    public function destroy(WorkSchedule $workSchedule)
     {
         $this->authorize('manage work schedules');
 
-        if (!$schedule->exists) {
-            return redirect()->route('schedules.index')
-                ->with('error', 'Schedule not found.');
-        }
-
-        $schedule->delete();
+        $workSchedule->delete();
 
         return redirect()->route('schedules.index')
             ->with('success', 'Work schedule deleted successfully.');
@@ -254,13 +239,9 @@ class WorkScheduleController extends Controller
     /**
      * Quick toggle a schedule on/off (set is_working_day or swap times)
      */
-    public function quickToggle(Request $request, WorkSchedule $schedule)
+    public function quickToggle(Request $request, WorkSchedule $workSchedule)
     {
         $this->authorize('manage work schedules');
-
-        if (!$schedule->exists) {
-            return response()->json(['success' => false, 'message' => 'Schedule not found.'], 404);
-        }
 
         $validated = $request->validate([
             'is_working_day' => 'required|boolean',
@@ -270,16 +251,16 @@ class WorkScheduleController extends Controller
 
         $updateData = ['is_working_day' => $validated['is_working_day']];
         if ($validated['is_working_day']) {
-            $updateData['start_time'] = $validated['start_time'] ?? $schedule->start_time;
-            $updateData['end_time'] = $validated['end_time'] ?? $schedule->end_time;
+            $updateData['start_time'] = $validated['start_time'] ?? $workSchedule->start_time;
+            $updateData['end_time'] = $validated['end_time'] ?? $workSchedule->end_time;
         }
 
-        $schedule->update($updateData);
+        $workSchedule->update($updateData);
 
         return response()->json([
             'success' => true,
             'message' => 'Schedule updated.',
-            'schedule' => $schedule->fresh()
+            'schedule' => $workSchedule->fresh()
         ]);
     }
 
