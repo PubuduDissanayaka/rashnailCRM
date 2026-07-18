@@ -1,7 +1,7 @@
 @extends('layouts.vertical', ['title' => 'Attendance Management'])
 
 @section('css')
-    @vite([])
+    
     <style>
         /* Enhanced button processing state */
         .btn-processing {
