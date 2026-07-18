@@ -1,7 +1,7 @@
 @extends('layouts.vertical', ['title' => 'Leave Requests'])
 
 @section('css')
-    @vite([])
+    
 @endsection
 
 @section('content')

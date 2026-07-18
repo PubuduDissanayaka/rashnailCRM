@@ -264,6 +264,16 @@ class LeaveRequestController extends Controller
     /**
      * Display calendar view of leave requests
      */
+    public function destroy(LeaveRequest $leaveRequest)
+    {
+        $this->authorize('delete leave requests');
+
+        $leaveRequest->delete();
+
+        return redirect()->route('leaves.index')
+            ->with('success', 'Leave request deleted.');
+    }
+
     public function calendar()
     {
         $this->authorize('view leave requests');

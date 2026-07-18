@@ -4,7 +4,7 @@
     @include('layouts.partials.page-title', ['title' => 'Request Leave'])
 
     <div class="row">
-        <div class="col-lg-8">
+        <div class="col-12">
             <div class="card">
                 <div class="card-header border-light">
                     <h4 class="card-title">New Leave Request</h4>
