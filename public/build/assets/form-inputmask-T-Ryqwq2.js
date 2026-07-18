@@ -1,1 +1,0 @@
-import{M as o}from"./jsvectormap.min-Bygs7ATk.js";import"./vendor-core-TQQca_2i.js";import"./chart.umd-0MSF6mQa.js";import"./vendor-date-D_j9L7qK.js";document.addEventListener("DOMContentLoaded",()=>{const t=document.querySelectorAll('[data-toggle="input-mask"]');t&&t.length>0&&t.forEach(e=>{const m=e.getAttribute("data-mask-format").replace(/0/g,"9");new o(m).mask(e)})});

@@ -53,12 +53,12 @@ class CouponController extends Controller
     {
         $this->authorize('create coupons');
 
-        $batches = CouponBatch::select('id', 'name', 'type', 'code', 'discount_value', 'is_active')->get();
+        $batches = CouponBatch::all();
         $customerGroups = CustomerGroup::active()->get();
-        $locations = Location::select('id', 'name', 'type', 'code', 'discount_value', 'is_active')->get();
+        $locations = Location::all();
         $services = Service::active()->get();
         $servicePackages = ServicePackage::active()->get();
-        $categories = ServicePackageCategory::select('id', 'name', 'type', 'code', 'discount_value', 'is_active')->get();
+        $categories = ServicePackageCategory::all();
 
         return view('coupons.create', compact(
             'batches',

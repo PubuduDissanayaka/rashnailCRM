@@ -30,7 +30,7 @@ class RoleController extends Controller
         }]);
 
         $allUsers = User::with('roles')->get();
-        $allPermissions = Permission::select('id', 'name')->get();
+        $allPermissions = Permission::all();
 
         return view('users.role-details', compact('role', 'allUsers', 'allPermissions'));
     }
@@ -40,7 +40,7 @@ class RoleController extends Controller
         abort_unless(auth()->user()->can('manage system'), 403);
 
         $permissions = Permission::with('roles', 'users')->get();
-        $allRoles = Role::select('id', 'name')->get();
+        $allRoles = Role::all();
 
         return view('users.permissions', compact('permissions', 'allRoles'));
     }

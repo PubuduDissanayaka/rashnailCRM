@@ -1,1 +1,0 @@
-import{$ as t}from"./vendor-core-TQQca_2i.js";import"./jsvectormap.min-Bygs7ATk.js";import"./chart.umd-0MSF6mQa.js";import"./vendor-date-D_j9L7qK.js";t().select2&&$('[data-toggle="select2"]').select2();
