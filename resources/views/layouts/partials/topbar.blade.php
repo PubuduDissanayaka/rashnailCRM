@@ -556,11 +556,11 @@
                     </ul> <!-- end dropdown-menu-->
                 </div> <!-- end dropdown-->
             </div> <!-- end topbar item-->
-            <!-- FullScreen — visible on all devices -->
-            <div class="topbar-item d-flex">
-                <button class="topbar-link" data-toggle="fullscreen" type="button" title="Toggle Fullscreen">
-                    <i class="fs-xxl fullscreen-off ti ti-maximize"></i>
-                    <i class="fs-xxl fullscreen-on ti ti-minimize"></i>
+            <!-- FullScreen -->
+            <div class="topbar-item d-none d-sm-flex">
+                <button class="topbar-link" data-toggle="fullscreen" type="button">
+                    <i class="fs-xxl fullscreen-off" data-lucide="maximize"></i>
+                    <i class="fs-xxl fullscreen-on" data-lucide="minimize"></i>
                 </button>
             </div>
             <!-- Light/Dark Mode Button -->
