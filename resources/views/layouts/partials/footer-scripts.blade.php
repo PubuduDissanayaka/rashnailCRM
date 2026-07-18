@@ -1,4 +1,6 @@
 <!-- Global Vendor JS (via CDN — avoids Vite manifest issues) -->
+<!-- jQuery first — required by daterangepicker, datatables, and other CDN plugins -->
+<script src="https://cdn.jsdelivr.net/npm/jquery@3.7.1/dist/jquery.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/choices.js@10.2.0/public/assets/scripts/choices.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/flatpickr@4"></script>
 <script src="https://cdn.jsdelivr.net/npm/daterangepicker@3/moment.min.js"></script>
