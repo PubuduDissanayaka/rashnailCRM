@@ -28,7 +28,9 @@ class ServicePackageController extends Controller
             'total_savings' => ServicePackage::sum(DB::raw('base_price - discounted_price')),
         ];
 
-        return view('service-packages.index', compact('packages', 'stats'));
+        $currencySymbol = \App\Models\Setting::get('payment.currency_symbol', '$');
+
+        return view('service-packages.index', compact('packages', 'stats', 'currencySymbol'));
     }
 
     /**
@@ -39,8 +41,9 @@ class ServicePackageController extends Controller
         $this->authorize('create service packages');
 
         $services = Service::where('is_active', true)->get();
+        $currencySymbol = \App\Models\Setting::get('payment.currency_symbol', '$');
 
-        return view('service-packages.create', compact('services'));
+        return view('service-packages.create', compact('services', 'currencySymbol'));
     }
 
     /**
@@ -118,8 +121,9 @@ class ServicePackageController extends Controller
 
         // Since we're using route model binding with slug, $servicePackage is already the correct instance
         $servicePackage->load('services');
+        $currencySymbol = \App\Models\Setting::get('payment.currency_symbol', '$');
 
-        return view('service-packages.show', compact('servicePackage'));
+        return view('service-packages.show', compact('servicePackage', 'currencySymbol'));
     }
 
     /**
@@ -137,7 +141,9 @@ class ServicePackageController extends Controller
             $serviceQuantities[$service->id] = $service->pivot->quantity;
         }
 
-        return view('service-packages.edit', compact('servicePackage', 'services', 'selectedServices', 'serviceQuantities'));
+        $currencySymbol = \App\Models\Setting::get('payment.currency_symbol', '$');
+
+        return view('service-packages.edit', compact('servicePackage', 'services', 'selectedServices', 'serviceQuantities', 'currencySymbol'));
     }
 
     /**

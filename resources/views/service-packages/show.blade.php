@@ -1,11 +1,11 @@
 @extends('layouts.vertical', ['title' => 'Service Package Details'])
 
 @section('css')
-    @vite([])
+    
 @endsection
 
 @section('scripts')
-    @vite([])
+    
     <script>
         // Check if there are success messages to display
         @if(session('success'))

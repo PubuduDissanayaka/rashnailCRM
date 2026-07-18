@@ -1,7 +1,7 @@
 @extends('layouts.vertical', ['title' => 'Create Service Package'])
 
 @section('css')
-    @vite([])
+    
 @endsection
 
 @section('scripts')
