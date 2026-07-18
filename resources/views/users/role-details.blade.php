@@ -1,7 +1,7 @@
 @extends('layouts.vertical', ['title' => 'Manage Role: ' . ucfirst($role->name)])
 
 @section('css')
-    @vite([])
+    
     <style>
         .perm-card { transition: box-shadow .15s ease; }
         .perm-card:hover { box-shadow: 0 0.125rem 0.5rem rgba(0,0,0,.05); }

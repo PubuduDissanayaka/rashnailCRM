@@ -1,7 +1,7 @@
 @extends('layouts.vertical', ['title' => 'Roles & Permissions'])
 
 @section('css')
-    @vite([])
+    
 @endsection
 
 @section('content')

@@ -5,7 +5,7 @@
 @endsection
 
 @section('css')
-    @vite([])
+    
 @endsection
 
 @section('scripts')
