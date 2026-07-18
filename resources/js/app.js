@@ -43,7 +43,6 @@ class App {
         this.initCodePreview();
         this.initToggle();
         this.initDismissible();
-        this.initfullScreenListener();
         this.initLeftSidebar(); // Menu Link Activation (Vertical Menu)
         this.initTopbarMenu(); // Menu Link Activation (Horizontal Menu)
     }
