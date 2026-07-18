@@ -580,7 +580,12 @@
                 </div>
                 @if($sale->customer)
                 <div class="meta-row">
-                    <span>Customer: {{ $sale->customer->first_name }} {{ $sale->customer->last_name }}</span>
+                    <span>Customer: {{ $sale->customer->name }}</span>
+                </div>
+                @endif
+                @if($sale->sale_type)
+                <div class="meta-row">
+                    <span>Type: {{ ucfirst(str_replace('_', ' ', $sale->sale_type)) }}</span>
                 </div>
                 @endif
             </section>
@@ -673,6 +678,9 @@
                 @endif
                 <p>Thank you for your business!</p>
                 <p>Visit us again soon</p>
+                @if($refundPolicy)
+                <p style="font-size:var(--font-xs);margin-top:var(--spacing-sm);border-top:1px dashed var(--color-border);padding-top:var(--spacing-sm)">{{ $refundPolicy }}</p>
+                @endif
                 @if($sale->notes)
                 <p class="receipt-notes">{{ $sale->notes }}</p>
                 @endif
@@ -682,8 +690,7 @@
 
         <!-- Action Buttons (Hidden in Print) -->
         <div class="receipt-actions no-print">
-            <!-- Action Buttons -->
-            <div class="receipt-actions d-flex flex-wrap gap-2 justify-content-center">
+            <div class="d-flex flex-wrap gap-2 justify-content-center">
                 <!-- Print Button -->
                 <button
                     onclick="printReceipt()"
