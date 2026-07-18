@@ -10,7 +10,7 @@
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/datatables.net-select-bs5@2/css/select.bootstrap5.min.css">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/datatables.net-fixedcolumns-bs5@5/css/fixedColumns.bootstrap5.min.css">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/datatables.net-fixedheader-bs5@4/css/fixedHeader.bootstrap5.min.css">
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/dropzone@6/dist/dropzone.css">
+<!-- dropzone CSS is bundled via Vite — CDN path 404s -->
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/quill@2/dist/quill.snow.css">
 
 <!-- SweetAlert2 -->
