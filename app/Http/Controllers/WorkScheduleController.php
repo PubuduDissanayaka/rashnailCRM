@@ -47,37 +47,46 @@ class WorkScheduleController extends Controller
     {
         $this->authorize('manage work schedules');
 
-        $request->validate([
+        $validated = $request->validate([
             'user_id' => 'required|exists:users,id',
-            'day_of_week' => 'required|in:monday,tuesday,wednesday,thursday,friday,saturday,sunday',
+            'days' => 'required|array|min:1',
+            'days.*' => 'in:monday,tuesday,wednesday,thursday,friday,saturday,sunday',
             'start_time' => 'required|date_format:H:i',
             'end_time' => 'required|date_format:H:i|after:start_time',
             'grace_period_minutes' => 'nullable|integer|min:0|max:60',
             'is_working_day' => 'required|boolean'
         ]);
 
-        // Check if schedule already exists for this staff member and day
-        $existing = WorkSchedule::where('user_id', $request->user_id)
-            ->where('day_of_week', $request->day_of_week)
-            ->first();
+        $created = 0;
+        $skipped = 0;
 
-        if ($existing) {
-            return redirect()->back()
-                ->with('error', 'Work schedule already exists for this staff member and day.')
-                ->withInput();
+        foreach ($validated['days'] as $day) {
+            // Check if schedule already exists for this staff member and day
+            $existing = WorkSchedule::where('user_id', $validated['user_id'])
+                ->where('day_of_week', $day)
+                ->first();
+
+            if ($existing) {
+                $skipped++;
+                continue;
+            }
+
+            WorkSchedule::create([
+                'user_id' => $validated['user_id'],
+                'day_of_week' => $day,
+                'start_time' => $validated['start_time'],
+                'end_time' => $validated['end_time'],
+                'grace_period_minutes' => $validated['grace_period_minutes'] ?? 15,
+                'is_working_day' => $validated['is_working_day']
+            ]);
+            $created++;
         }
 
-        WorkSchedule::create([
-            'user_id' => $request->user_id,
-            'day_of_week' => $request->day_of_week,
-            'start_time' => $request->start_time,
-            'end_time' => $request->end_time,
-            'grace_period_minutes' => $request->grace_period_minutes ?? 15,
-            'is_working_day' => $request->is_working_day
-        ]);
+        $msg = "{$created} schedule(s) created.";
+        if ($skipped > 0) $msg .= " {$skipped} skipped (already exist).";
 
         return redirect()->route('schedules.index')
-            ->with('success', 'Work schedule created successfully.');
+            ->with('success', $msg);
     }
 
     /**
