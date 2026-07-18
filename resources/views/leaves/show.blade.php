@@ -9,22 +9,36 @@
     @endphp
 
     <div class="row">
-        <div class="col-12">
+        <div class="col-lg-8">
             <div class="card">
-                <div class="card-header border-light d-flex justify-content-between align-items-center">
+                <div class="card-header border-light d-flex justify-content-between align-items-center flex-wrap gap-2">
                     <div>
                         <h4 class="card-title">{{ $leaveRequest->type_label }}</h4>
                         <span class="badge bg-{{ $color }}-subtle text-{{ $color }} fs-sm">
                             <i class="ti ti-circle-filled fs-xs me-1"></i> {{ $leaveRequest->status_label }}
                         </span>
                     </div>
-                    <div>
+                    <div class="d-flex gap-1">
+                        @can('manage leave requests')
+                        <a href="{{ route('leaves.edit', $leaveRequest) }}" class="btn btn-light btn-sm">
+                            <i class="ti ti-edit me-1"></i> Edit
+                        </a>
+                        <form action="{{ route('leaves.destroy', $leaveRequest) }}" method="POST" class="d-inline" onsubmit="return confirm('Delete this leave request permanently?')">
+                            @csrf @method('DELETE')
+                            <button class="btn btn-outline-danger btn-sm">
+                                <i class="ti ti-trash me-1"></i> Delete
+                            </button>
+                        </form>
+                        @endcan
                         @if($leaveRequest->user_id === auth()->id() && $leaveRequest->status === 'pending')
+                        <a href="{{ route('leaves.edit', $leaveRequest) }}" class="btn btn-outline-primary btn-sm">
+                            <i class="ti ti-edit me-1"></i> Edit
+                        </a>
                         <form action="{{ route('leaves.cancel', $leaveRequest) }}" method="POST" class="d-inline" onsubmit="return confirm('Cancel this leave request?')">
                             @csrf
                             @method('PUT')
                             <button class="btn btn-outline-danger btn-sm">
-                                <i class="ti ti-x me-1"></i> Cancel Request
+                                <i class="ti ti-x me-1"></i> Cancel
                             </button>
                         </form>
                         @endif

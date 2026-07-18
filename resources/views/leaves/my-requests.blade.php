@@ -59,6 +59,9 @@
                                             <i class="ti ti-eye fs-lg"></i>
                                         </a>
                                         @if($lr->status === 'pending')
+                                        <a href="{{ route('leaves.edit', $lr) }}" class="btn btn-warning btn-icon btn-sm rounded-circle" title="Edit">
+                                            <i class="ti ti-edit fs-lg"></i>
+                                        </a>
                                         <form action="{{ route('leaves.cancel', $lr) }}" method="POST" class="d-inline" onsubmit="return confirm('Cancel this request?')">
                                             @csrf
                                             @method('PUT')

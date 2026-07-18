@@ -266,12 +266,7 @@ class LeaveRequestController extends Controller
      */
     public function edit(LeaveRequest $leaveRequest)
     {
-        // User can edit their own pending requests; admins can edit any
-        if ($leaveRequest->user_id != auth()->id()) {
-            $this->authorize('edit leave requests');
-        } elseif ($leaveRequest->status !== 'pending') {
-            return redirect()->back()->with('error', 'Cannot edit a leave request that is not pending.');
-        }
+        $this->authorize('manage leave requests');
 
         $user = $leaveRequest->user;
         $currentYear = now()->year;
@@ -287,10 +282,9 @@ class LeaveRequestController extends Controller
      */
     public function update(Request $request, LeaveRequest $leaveRequest)
     {
-        // User can update their own pending requests; admins can update any
-        if ($leaveRequest->user_id != auth()->id()) {
-            $this->authorize('edit leave requests');
-        } elseif ($leaveRequest->status !== 'pending') {
+        $this->authorize('manage leave requests');
+
+        if ($leaveRequest->status !== 'pending') {
             return redirect()->back()->with('error', 'Cannot update a leave request that is not pending.');
         }
 
@@ -352,7 +346,7 @@ class LeaveRequestController extends Controller
 
     public function destroy(LeaveRequest $leaveRequest)
     {
-        $this->authorize('delete leave requests');
+        $this->authorize('manage leave requests');
 
         $leaveRequest->delete();
 

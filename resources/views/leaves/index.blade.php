@@ -86,6 +86,17 @@
                                         <a href="{{ route('leaves.show', $lr) }}" class="btn btn-light btn-icon btn-sm rounded-circle" title="View">
                                             <i class="ti ti-eye fs-lg"></i>
                                         </a>
+                                        @can('manage leave requests')
+                                        <a href="{{ route('leaves.edit', $lr) }}" class="btn btn-warning btn-icon btn-sm rounded-circle" title="Edit">
+                                            <i class="ti ti-edit fs-lg"></i>
+                                        </a>
+                                        <form action="{{ route('leaves.destroy', $lr) }}" method="POST" class="d-inline" onsubmit="return confirm('Delete this leave request permanently?')">
+                                            @csrf @method('DELETE')
+                                            <button class="btn btn-danger btn-icon btn-sm rounded-circle" title="Delete">
+                                                <i class="ti ti-trash fs-lg"></i>
+                                            </button>
+                                        </form>
+                                        @endcan
                                         @can('approve leave requests')
                                             @if($lr->status === 'pending')
                                             <a href="{{ route('leaves.approval', $lr) }}" class="btn btn-light btn-icon btn-sm rounded-circle" title="Review">
@@ -116,5 +127,5 @@
 @endsection
 
 @section('scripts')
-    @vite(['resources/js/pages/custom-table.js', ])
+    @vite(['resources/js/pages/custom-table.js'])
 @endsection
