@@ -176,6 +176,22 @@
                             </div>
                             <div class="col-md-6">
                                 <div class="mb-3">
+                                    <label for="category_id" class="form-label">Category</label>
+                                    <select class="form-select" id="category_id" name="category_id">
+                                        <option value="">No Category</option>
+                                        @foreach($categories as $cat)
+                                            <option value="{{ $cat->id }}" {{ old('category_id') == $cat->id ? 'selected' : '' }}>{{ $cat->name }}</option>
+                                        @endforeach
+                                    </select>
+                                    @error('category_id')
+                                        <span class="text-danger" role="alert">
+                                            <small>{{ $message }}</small>
+                                        </span>
+                                    @enderror
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
                                     <label for="is_active" class="form-label">Status</label>
                                     <select class="form-select" id="is_active" name="is_active" required>
                                         <option value="1" {{ old('is_active', true) ? 'selected' : '' }}>Active</option>

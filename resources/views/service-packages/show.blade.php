@@ -58,6 +58,12 @@
                             </div>
                             <div class="col-md-6">
                                 <div class="mb-3">
+                                    <label class="form-label">Category</label>
+                                    <input type="text" class="form-control" value="{{ $servicePackage->category->name ?? 'No Category' }}" readonly>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
                                     <label class="form-label">Status</label>
                                     <input type="text" class="form-control" value="{{ $servicePackage->is_active ? 'Active' : 'Inactive' }}" readonly>
                                 </div>

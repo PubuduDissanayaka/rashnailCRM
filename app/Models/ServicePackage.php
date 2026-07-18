@@ -11,7 +11,7 @@ class ServicePackage extends Model
     use SoftDeletes;
 
     protected $fillable = [
-        'name', 'description', 'base_price', 'discounted_price', 'discount_percentage', 'total_duration', 'is_active', 'image', 'slug', 'category_id'
+        'name', 'description', 'base_price', 'discounted_price', 'discount_percentage', 'total_duration', 'is_active', 'image', 'category_id'
     ];
 
     protected $casts = [

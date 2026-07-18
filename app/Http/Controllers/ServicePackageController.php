@@ -41,9 +41,10 @@ class ServicePackageController extends Controller
         $this->authorize('create service packages');
 
         $services = Service::where('is_active', true)->get();
+        $categories = \App\Models\ServicePackageCategory::orderBy('name')->get();
         $currencySymbol = \App\Models\Setting::get('payment.currency_symbol', '$');
 
-        return view('service-packages.create', compact('services', 'currencySymbol'));
+        return view('service-packages.create', compact('services', 'categories', 'currencySymbol'));
     }
 
     /**
@@ -120,7 +121,7 @@ class ServicePackageController extends Controller
         $this->authorize('view service packages');
 
         // Since we're using route model binding with slug, $servicePackage is already the correct instance
-        $servicePackage->load('services');
+        $servicePackage->load('services', 'category');
         $currencySymbol = \App\Models\Setting::get('payment.currency_symbol', '$');
 
         return view('service-packages.show', compact('servicePackage', 'currencySymbol'));
@@ -134,6 +135,7 @@ class ServicePackageController extends Controller
         $this->authorize('edit service packages');
 
         $services = Service::where('is_active', true)->get();
+        $categories = \App\Models\ServicePackageCategory::orderBy('name')->get();
         $selectedServices = $servicePackage->services->pluck('id')->toArray();
         $serviceQuantities = [];
 
@@ -143,7 +145,7 @@ class ServicePackageController extends Controller
 
         $currencySymbol = \App\Models\Setting::get('payment.currency_symbol', '$');
 
-        return view('service-packages.edit', compact('servicePackage', 'services', 'selectedServices', 'serviceQuantities', 'currencySymbol'));
+        return view('service-packages.edit', compact('servicePackage', 'services', 'categories', 'selectedServices', 'serviceQuantities', 'currencySymbol'));
     }
 
     /**
@@ -219,6 +221,14 @@ class ServicePackageController extends Controller
     {
         $this->authorize('delete service packages');
 
+        // Check if package is used in any sales
+        $saleCount = $servicePackage->saleItems()->count();
+        $packageSaleCount = $servicePackage->servicePackageSales()->count();
+
+        if ($saleCount > 0 || $packageSaleCount > 0) {
+            return redirect()->back()->with('error', 'Cannot delete service package that has been sold.');
+        }
+
         $servicePackage->delete();
 
         return redirect()->route('service-packages.index')->with('success', 'Service package deleted successfully.');
@@ -231,12 +241,14 @@ class ServicePackageController extends Controller
     {
         $totalDuration = 0;
         
-        if (!is_array($serviceIds)) {
+        if (!is_array($serviceIds) || empty($serviceIds)) {
             return 0;
         }
 
+        $services = Service::whereIn('id', $serviceIds)->get()->keyBy('id');
+
         foreach ($serviceIds as $serviceId) {
-            $service = Service::find($serviceId);
+            $service = $services->get($serviceId);
             if ($service) {
                 $quantity = 1;
                 if (isset($quantities) && isset($quantities[$serviceId])) {
