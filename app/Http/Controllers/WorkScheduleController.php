@@ -15,7 +15,7 @@ class WorkScheduleController extends Controller
     {
         $this->authorize('view work schedules');
 
-        $staffMembers = User::withStaffRole()->get();
+        $staffMembers = User::withStaffRole()->with('workSchedules')->get();
 
         return view('schedules.index', compact('staffMembers'));
     }
