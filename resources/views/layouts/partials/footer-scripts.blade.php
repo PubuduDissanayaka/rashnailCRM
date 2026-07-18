@@ -12,7 +12,7 @@
 <script src="https://cdn.jsdelivr.net/npm/datatables.net-select@2/js/dataTables.select.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/datatables.net-fixedcolumns@5/js/dataTables.fixedColumns.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/datatables.net-fixedheader@4/js/dataTables.fixedHeader.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/dropzone@6/dist/dropzone-min.js"></script>
+<!-- dropzone: bundled via Vite (npm package), CDN version returns wrong MIME type -->
 <script src="https://cdn.jsdelivr.net/npm/quill@2/dist/quill.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 <script>
