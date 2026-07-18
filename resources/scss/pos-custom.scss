@@ -495,3 +495,13 @@
         }
     }
 }
+
+// Fullscreen Toggle — body class toggled by app.js
+.fullscreen-enable .fullscreen-off { display: none; }
+.fullscreen-enable .fullscreen-on  { display: inline-block; }
+.fullscreen-off { display: inline-block; }
+.fullscreen-on  { display: none; }
+// Mobile responsive — visible on all devices
+@media (max-width: 575px) {
+    [data-toggle="fullscreen"] { font-size: 0.9rem; }
+}
