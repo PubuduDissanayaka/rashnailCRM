@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\WorkSchedule;
 use App\Models\User;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 
 class WorkScheduleController extends Controller
 {
@@ -238,6 +239,79 @@ class WorkScheduleController extends Controller
                 'success' => false,
                 'message' => 'Failed to update work schedules: ' . $e->getMessage()
             ], 500);
+        }
+    }
+
+    /**
+     * Quick toggle a schedule on/off (set is_working_day or swap times)
+     */
+    public function quickToggle(Request $request, WorkSchedule $schedule)
+    {
+        $this->authorize('manage work schedules');
+
+        if (!$schedule->exists) {
+            return response()->json(['success' => false, 'message' => 'Schedule not found.'], 404);
+        }
+
+        $validated = $request->validate([
+            'is_working_day' => 'required|boolean',
+            'start_time' => 'nullable|date_format:H:i',
+            'end_time' => 'nullable|date_format:H:i',
+        ]);
+
+        $updateData = ['is_working_day' => $validated['is_working_day']];
+        if ($validated['is_working_day']) {
+            $updateData['start_time'] = $validated['start_time'] ?? $schedule->start_time;
+            $updateData['end_time'] = $validated['end_time'] ?? $schedule->end_time;
+        }
+
+        $schedule->update($updateData);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Schedule updated.',
+            'schedule' => $schedule->fresh()
+        ]);
+    }
+
+    /**
+     * Copy week schedule from one staff to another
+     */
+    public function copyWeek(Request $request)
+    {
+        $this->authorize('manage work schedules');
+
+        $validated = $request->validate([
+            'from_user_id' => 'required|exists:users,id',
+            'to_user_id' => 'required|exists:users,id',
+        ]);
+
+        if ($validated['from_user_id'] == $validated['to_user_id']) {
+            return response()->json(['success' => false, 'message' => 'Source and target must be different.'], 422);
+        }
+
+        $sourceSchedules = WorkSchedule::where('user_id', $validated['from_user_id'])->get();
+
+        DB::beginTransaction();
+        try {
+            WorkSchedule::where('user_id', $validated['to_user_id'])->delete();
+
+            foreach ($sourceSchedules as $sched) {
+                WorkSchedule::create([
+                    'user_id' => $validated['to_user_id'],
+                    'day_of_week' => $sched->day_of_week,
+                    'start_time' => $sched->start_time,
+                    'end_time' => $sched->end_time,
+                    'grace_period_minutes' => $sched->grace_period_minutes,
+                    'is_working_day' => $sched->is_working_day,
+                ]);
+            }
+
+            DB::commit();
+            return response()->json(['success' => true, 'message' => 'Week schedule copied.']);
+        } catch (\Exception $e) {
+            DB::rollback();
+            return response()->json(['success' => false, 'message' => 'Copy failed: ' . $e->getMessage()], 500);
         }
     }
 }
