@@ -1,7 +1,7 @@
 @extends('layouts.vertical', ['title' => 'Expense Dashboard'])
 
 @section('css')
-    @vite([])
+    
     @vite(['resources/js/pages/expenses-dashboard.js'])
 @endsection
 

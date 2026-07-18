@@ -25,9 +25,13 @@ class ExpenseController extends Controller
         $this->authorize('expenses.view');
 
         $query = Expense::with(['category', 'creator'])
-            ->withTrashed()
             ->orderBy('expense_date', 'desc')
             ->orderBy('id', 'desc');
+
+        // Show trashed only if explicitly requested
+        if ($request->filled('trashed') && $request->trashed) {
+            $query->withTrashed();
+        }
 
         // Apply filters
         if ($request->filled('status')) {
@@ -75,7 +79,9 @@ class ExpenseController extends Controller
             'paid' => 'Paid',
         ];
 
-        return view('expenses.index', compact('expenses', 'stats', 'categories', 'statuses'));
+        $currencySymbol = Setting::get('payment.currency_symbol', '$');
+
+        return view('expenses.index', compact('expenses', 'stats', 'categories', 'statuses', 'currencySymbol'));
     }
 
     /**
@@ -195,8 +201,9 @@ class ExpenseController extends Controller
         $this->authorize('expenses.view');
 
         $expense->load(['category', 'creator', 'approver', 'attachments', 'comments.user']);
+        $currencySymbol = Setting::get('payment.currency_symbol', '$');
 
-        return view('expenses.show', compact('expense'));
+        return view('expenses.show', compact('expense', 'currencySymbol'));
     }
 
     /**

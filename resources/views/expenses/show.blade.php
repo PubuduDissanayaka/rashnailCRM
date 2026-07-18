@@ -1,7 +1,7 @@
 @extends('layouts.vertical', ['title' => 'Expense Details'])
 
 @section('css')
-    @vite([])
+    
 @endsection
 
 @section('content')
@@ -68,19 +68,19 @@
                         <div class="col-md-4">
                             <div class="mb-3">
                                 <label class="form-label text-muted">Amount</label>
-                                <h3 class="mb-0">{{ $currency_symbol ?? '$' }}{{ number_format($expense->amount, 2) }}</h3>
+                                <h3 class="mb-0">{{ $currencySymbol }}{{ number_format($expense->amount, 2) }}</h3>
                             </div>
                         </div>
                         <div class="col-md-4">
                             <div class="mb-3">
                                 <label class="form-label text-muted">Tax</label>
-                                <h5 class="mb-0">{{ $currency_symbol ?? '$' }}{{ number_format($expense->tax_amount, 2) }}</h5>
+                                <h5 class="mb-0">{{ $currencySymbol }}{{ number_format($expense->tax_amount, 2) }}</h5>
                             </div>
                         </div>
                         <div class="col-md-4">
                             <div class="mb-3">
                                 <label class="form-label text-muted">Total</label>
-                                <h3 class="mb-0 text-primary">{{ $currency_symbol ?? '$' }}{{ number_format($expense->total_amount, 2) }}</h3>
+                                <h3 class="mb-0 text-primary">{{ $currencySymbol }}{{ number_format($expense->total_amount, 2) }}</h3>
                             </div>
                         </div>
                     </div>
@@ -356,7 +356,7 @@
 @endsection
 
 @section('scripts')
-    @vite([])
+    
     <script>
         function confirmDelete() {
             Swal.fire({

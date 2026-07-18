@@ -1,7 +1,7 @@
 @extends('layouts.vertical', ['title' => 'Edit Expense'])
 
 @section('css')
-    @vite([])
+    
 @endsection
 
 @section('content')
@@ -34,7 +34,7 @@
 @endsection
 
 @section('scripts')
-    @vite([])
+    
     <script>
         // Form validation
         document.addEventListener('DOMContentLoaded', function() {
