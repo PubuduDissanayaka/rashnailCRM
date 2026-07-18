@@ -12,6 +12,8 @@
 /.vscode
 /.zed
 /auth.json
+deploy.sh
+deploy-webhook.php
 /node_modules
 /public/hot
 /public/storage
