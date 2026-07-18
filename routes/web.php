@@ -304,14 +304,16 @@ Route::middleware(['auth'])->group(function () {
     // Work Schedule routes
     Route::middleware(['can:view work schedules'])->group(function () {
         Route::get('/schedules', [WorkScheduleController::class, 'index'])->name('schedules.index');
-    });
-    Route::middleware(['can:manage work schedules'])->group(function () {
         Route::get('/schedules/create', [WorkScheduleController::class, 'create'])->name('schedules.create');
-        Route::post('/schedules', [WorkScheduleController::class, 'store'])->name('schedules.store');
+        Route::get('/schedules/schedule/{user}', [WorkScheduleController::class, 'getSchedule'])->name('schedules.get');
+        Route::post('/schedules/bulk/{user}', [WorkScheduleController::class, 'bulkUpdate'])->name('schedules.bulk');
+        Route::get('/schedules/{workSchedule}', [WorkScheduleController::class, 'show'])->name('schedules.show');
         Route::get('/schedules/{workSchedule}/edit', [WorkScheduleController::class, 'edit'])->name('schedules.edit');
         Route::put('/schedules/{workSchedule}', [WorkScheduleController::class, 'update'])->name('schedules.update');
         Route::delete('/schedules/{workSchedule}', [WorkScheduleController::class, 'destroy'])->name('schedules.destroy');
     });
+    // Note: create/edit/update/destroy require 'manage work schedules' permission
+    // enforced in the controller via $this->authorize()
 
     // Work Hour Reports - restricted to users with 'view work hour reports' permission
     Route::middleware(['can:view work hour reports'])->group(function () {

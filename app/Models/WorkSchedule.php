@@ -153,18 +153,6 @@ class WorkSchedule extends Model
         return $startTime->addMinutes($this->grace_period_minutes);
     }
 
-    /**
-     * Check if the schedule is valid (start time is before end time)
-     */
-    public function isValidSchedule()
-    {
-        if (!$this->start_time || !$this->end_time) {
-            return false;
-        }
-
-        return $this->start_time->lt($this->end_time);
-    }
-
     // ==========================================
     // STATIC METHODS
     // ==========================================
