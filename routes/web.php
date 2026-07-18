@@ -169,6 +169,8 @@ Route::middleware(['auth'])->group(function () {
 
         Route::get('/pos/receipt/{sale}', [PosController::class, 'showReceipt'])
             ->name('pos.receipt');
+        Route::delete('/pos/sale/{sale}', [PosController::class, 'destroySale'])
+            ->name('pos.sale.destroy');
         Route::get('/pos/receipt/{sale}/download', [PosController::class, 'downloadReceipt'])
             ->name('pos.receipt.download');
     });

@@ -792,7 +792,22 @@ class PosController extends Controller
             ->orderBy('sale_date', 'desc')
             ->get();
 
-        return view('pos.transactions', compact('sales'));
+        $currencySymbol = \App\Models\Setting::get('payment.currency_symbol', '$');
+
+        return view('pos.transactions', compact('sales', 'currencySymbol'));
+    }
+
+    /**
+     * Soft-delete a sale.
+     */
+    public function destroySale(Sale $sale)
+    {
+        $this->authorize('delete pos transactions');
+
+        $sale->delete();
+
+        return redirect()->route('pos.transactions')
+            ->with('success', 'Sale deleted successfully.');
     }
 
 }

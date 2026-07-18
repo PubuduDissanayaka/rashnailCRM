@@ -72,7 +72,7 @@
                                             href="{{ route('pos.receipt', $sale) }}">#{{ $sale->sale_number }}</a>
                                     </h5>
                                 </td>
-                                <td><span data-sort="sort-date">{{ $sale->sale_date->format('M j - M j, Y') }}</span></td>
+                                <td><span data-sort="sort-date">{{ $sale->sale_date->format('M j, Y') }}</span></td>
                                 <td>
                                     <div class="d-flex justify-content-start align-items-center gap-2">
                                         @if($sale->customer)
@@ -116,7 +116,7 @@
                                         @endif
                                     </div>
                                 </td>
-                                <td><span data-sort="sort-amount">{{ \App\Models\Setting::get('payment.currency_symbol', '$') }}{{ number_format($sale->total_amount, 2) }}</span></td>
+                                <td><span data-sort="sort-amount">{{ $currencySymbol }}{{ number_format($sale->total_amount, 2) }}</span></td>
                                 <td>
                                     @if($sale->status == 'completed')
                                     <span data-sort="sort-status" class="badge bg-success-subtle text-success badge-label">Completed</span>
@@ -133,8 +133,14 @@
                                         <a class="btn btn-default btn-icon btn-sm"
                                             href="{{ route('pos.receipt', $sale) }}"><i
                                                 class="ti ti-eye fs-lg"></i></a>
-                                        <a class="btn btn-default btn-icon btn-sm" data-table-delete-row=""
-                                            href="javascript:void(0);"> <i class="ti ti-trash fs-lg"></i></a>
+                                        <a class="btn btn-default btn-icon btn-sm" href="javascript:void(0);"
+                                            onclick="if(confirm('Are you sure you want to delete this sale?')) { document.getElementById('delete-sale-{{ $sale->id }}').submit(); }">
+                                            <i class="ti ti-trash fs-lg"></i>
+                                        </a>
+                                        <form id="delete-sale-{{ $sale->id }}" action="{{ route('pos.sale.destroy', $sale) }}" method="POST" style="display:none;">
+                                            @csrf
+                                            @method('DELETE')
+                                        </form>
                                     </div>
                                 </td>
                             </tr>
