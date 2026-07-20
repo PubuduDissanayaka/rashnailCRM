@@ -116,46 +116,44 @@
             </div>
         </div>
     </div>
-@endsection
 
-@push('modals')
-<!-- Quick Customer Modal -->
-<div class="modal fade" id="quickCustomerModal" tabindex="-1">
-    <div class="modal-dialog modal-sm modal-dialog-centered">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title">New Customer</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+    <!-- Quick Customer Modal -->
+    <div class="modal fade" id="quickCustomerModal" tabindex="-1">
+        <div class="modal-dialog modal-sm modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">New Customer</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <form id="quickCustomerForm">
+                    @csrf
+                    <div class="modal-body">
+                        <div class="mb-2">
+                            <label class="form-label small">First Name *</label>
+                            <input type="text" name="first_name" class="form-control form-control-sm" required>
+                        </div>
+                        <div class="mb-2">
+                            <label class="form-label small">Last Name *</label>
+                            <input type="text" name="last_name" class="form-control form-control-sm" required>
+                        </div>
+                        <div class="mb-2">
+                            <label class="form-label small">Phone *</label>
+                            <input type="tel" name="phone" class="form-control form-control-sm" required>
+                        </div>
+                        <div class="mb-2">
+                            <label class="form-label small">Email</label>
+                            <input type="email" name="email" class="form-control form-control-sm">
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-light btn-sm" data-bs-dismiss="modal">Cancel</button>
+                        <button type="submit" class="btn btn-primary btn-sm"><i class="ti ti-plus me-1"></i> Add Customer</button>
+                    </div>
+                </form>
             </div>
-            <form id="quickCustomerForm">
-                @csrf
-                <div class="modal-body">
-                    <div class="mb-2">
-                        <label class="form-label small">First Name *</label>
-                        <input type="text" name="first_name" class="form-control form-control-sm" required>
-                    </div>
-                    <div class="mb-2">
-                        <label class="form-label small">Last Name *</label>
-                        <input type="text" name="last_name" class="form-control form-control-sm" required>
-                    </div>
-                    <div class="mb-2">
-                        <label class="form-label small">Phone *</label>
-                        <input type="tel" name="phone" class="form-control form-control-sm" required>
-                    </div>
-                    <div class="mb-2">
-                        <label class="form-label small">Email</label>
-                        <input type="email" name="email" class="form-control form-control-sm">
-                    </div>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-light btn-sm" data-bs-dismiss="modal">Cancel</button>
-                    <button type="submit" class="btn btn-primary btn-sm"><i class="ti ti-plus me-1"></i> Add Customer</button>
-                </div>
-            </form>
         </div>
     </div>
-</div>
-@endpush
+@endsection
 
 @section('scripts')
 @vite(['resources/js/pages/form-choice.js'])
