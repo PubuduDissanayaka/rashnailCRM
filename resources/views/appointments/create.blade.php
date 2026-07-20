@@ -115,77 +115,7 @@
     </div>
 @endsection
 
-@section('scripts')
-    @vite(['resources/js/pages/form-choice.js'])
-    <script>
-        // Check if there are success messages to display
-        @if(session('success'))
-            Swal.fire({
-                title: 'Success!',
-                text: '{{ session('success') }}',
-                icon: 'success',
-                confirmButtonClass: 'btn btn-primary'
-            });
-        @endif
-        
-        // Check if there are error messages to display
-        @if(session('error'))
-            Swal.fire({
-                title: 'Error!',
-                text: '{{ session('error') }}',
-                icon: 'error',
-                confirmButtonClass: 'btn btn-primary'
-            });
-        @endif
-    </script>
-    <script>
-        // Quick Customer Creation
-        document.getElementById('quickCustomerForm')?.addEventListener('submit', function (e) {
-            e.preventDefault();
-            const form = this;
-            const btn = form.querySelector('[type="submit"]');
-            btn.disabled = true;
-            btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span>Saving...';
-
-            fetch('{{ route("customers.quick-store") }}', {
-                method: 'POST',
-                headers: { 'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') },
-                body: new FormData(form)
-            })
-            .then(r => r.json())
-            .then(data => {
-                if (data.success || data.id) {
-                    const id = data.id || data.customer?.id;
-                    const name = data.name || data.customer?.name;
-                    const email = data.email || data.customer?.email || '';
-                    // Close modal
-                    const modal = bootstrap.Modal.getInstance(document.getElementById('quickCustomerModal'));
-                    modal?.hide();
-                    form.reset();
-                    // Add new option to Choices.js instance
-                    const select = document.getElementById('customer_id');
-                    if (select.choices) {
-                        select.choices.setChoices([{ value: id, label: name + ' (' + email + ')', selected: true }], 'value', 'label', true);
-                    } else {
-                        const opt = new Option(name + ' (' + email + ')', id, true, true);
-                        select.add(opt);
-                    }
-                    Swal.fire({ title: 'Customer added!', icon: 'success', timer: 1500, showConfirmButton: false });
-                } else {
-                    alert(data.message || 'Failed to create customer.');
-                }
-            })
-            .catch(function (err) {
-                alert('Network error. Please try again.');
-            })
-            .finally(function () {
-                btn.disabled = false;
-                btn.innerHTML = '<i class="ti ti-plus me-1"></i> Add Customer';
-            });
-        });
-    </script>
-@endsection
-
+@push('modals')
 <!-- Quick Customer Modal -->
 <div class="modal fade" id="quickCustomerModal" tabindex="-1">
     <div class="modal-dialog modal-sm modal-dialog-centered">
@@ -222,3 +152,49 @@
         </div>
     </div>
 </div>
+@endpush
+
+@section('scripts')
+@vite(['resources/js/pages/form-choice.js'])
+<script>
+@if(session('success'))
+    Swal.fire({ title: 'Success!', text: '{{ session('success') }}', icon: 'success', confirmButtonClass: 'btn btn-primary' });
+@endif
+@if(session('error'))
+    Swal.fire({ title: 'Error!', text: '{{ session('error') }}', icon: 'error', confirmButtonClass: 'btn btn-primary' });
+@endif
+</script>
+<script>
+document.getElementById('quickCustomerForm')?.addEventListener('submit', function (e) {
+    e.preventDefault();
+    const form = this, btn = form.querySelector('[type="submit"]');
+    btn.disabled = true; btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span>Saving...';
+    fetch('{{ route("customers.quick-store") }}', {
+        method: 'POST',
+        headers: { 'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') },
+        body: new FormData(form)
+    })
+    .then(r => r.json())
+    .then(data => {
+        if (data.success || data.id) {
+            const id = data.id || data.customer?.id;
+            const name = data.name || data.customer?.name;
+            const email = data.email || data.customer?.email || '';
+            bootstrap.Modal.getInstance(document.getElementById('quickCustomerModal'))?.hide();
+            form.reset();
+            const select = document.getElementById('customer_id');
+            if (select.choices) {
+                select.choices.setChoices([{ value: id, label: name + ' (' + email + ')', selected: true }], 'value', 'label', true);
+            } else {
+                select.add(new Option(name + ' (' + email + ')', id, true, true));
+            }
+            Swal.fire({ title: 'Customer added!', icon: 'success', timer: 1500, showConfirmButton: false });
+        } else {
+            alert(data.message || 'Failed to create customer.');
+        }
+    })
+    .catch(() => alert('Network error.'))
+    .finally(() => { btn.disabled = false; btn.innerHTML = '<i class="ti ti-plus me-1"></i> Add Customer'; });
+});
+</script>
+@endsection
