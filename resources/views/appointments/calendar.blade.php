@@ -162,7 +162,7 @@
                                     <select class="form-select" id="event-customer" name="customer_id" required="">
                                         <option value="">Select a customer</option>
                                         @foreach($customers ?? [] as $customer)
-                                            <option value="{{ $customer->id }}">{{ $customer->full_name }}</option>
+                                            <option value="{{ $customer->id }}">{{ $customer->full_name }} — {{ $customer->phone }}</option>
                                         @endforeach
                                     </select>
                                     <div class="invalid-feedback">Please select a valid customer</div>
