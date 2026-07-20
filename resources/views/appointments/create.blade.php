@@ -17,15 +17,21 @@
                             <div class="col-md-6">
                                 <div class="mb-3">
                                     <label for="customer_id" class="form-label">Customer</label>
-                                    <select class="form-select" name="customer_id" id="customer_id" required data-choices data-choices-search-true>
-                                        <option value="">Select Customer</option>
-                                        @foreach($customers as $customer)
-                                        <option value="{{ $customer->id }}" 
-                                            {{ old('customer_id') == $customer->id ? 'selected' : '' }}>
-                                            {{ $customer->name }} ({{ $customer->email }})
-                                        </option>
-                                        @endforeach
-                                    </select>
+                                    <div class="d-flex gap-2">
+                                        <select class="form-select" name="customer_id" id="customer_id" required data-choices data-choices-search-true style="flex:1">
+                                            <option value="">Select Customer</option>
+                                            @foreach($customers as $customer)
+                                            <option value="{{ $customer->id }}" 
+                                                {{ old('customer_id') == $customer->id ? 'selected' : '' }}>
+                                                {{ $customer->name }} ({{ $customer->email }})
+                                            </option>
+                                            @endforeach
+                                        </select>
+                                        <button type="button" class="btn btn-outline-primary btn-sm px-2 flex-shrink-0" 
+                                                title="Add new customer" data-bs-toggle="modal" data-bs-target="#quickCustomerModal">
+                                            <i class="ti ti-plus"></i>
+                                        </button>
+                                    </div>
                                     @error('customer_id')
                                         <span class="text-danger" role="alert">
                                             <small>{{ $message }}</small>
@@ -132,4 +138,87 @@
             });
         @endif
     </script>
+    <script>
+        // Quick Customer Creation
+        document.getElementById('quickCustomerForm')?.addEventListener('submit', function (e) {
+            e.preventDefault();
+            const form = this;
+            const btn = form.querySelector('[type="submit"]');
+            btn.disabled = true;
+            btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span>Saving...';
+
+            fetch('{{ route("customers.quick-store") }}', {
+                method: 'POST',
+                headers: { 'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') },
+                body: new FormData(form)
+            })
+            .then(r => r.json())
+            .then(data => {
+                if (data.success || data.id) {
+                    const id = data.id || data.customer?.id;
+                    const name = data.name || data.customer?.name;
+                    const email = data.email || data.customer?.email || '';
+                    // Close modal
+                    const modal = bootstrap.Modal.getInstance(document.getElementById('quickCustomerModal'));
+                    modal?.hide();
+                    form.reset();
+                    // Add new option to Choices.js instance
+                    const select = document.getElementById('customer_id');
+                    if (select.choices) {
+                        select.choices.setChoices([{ value: id, label: name + ' (' + email + ')', selected: true }], 'value', 'label', true);
+                    } else {
+                        const opt = new Option(name + ' (' + email + ')', id, true, true);
+                        select.add(opt);
+                    }
+                    Swal.fire({ title: 'Customer added!', icon: 'success', timer: 1500, showConfirmButton: false });
+                } else {
+                    alert(data.message || 'Failed to create customer.');
+                }
+            })
+            .catch(function (err) {
+                alert('Network error. Please try again.');
+            })
+            .finally(function () {
+                btn.disabled = false;
+                btn.innerHTML = '<i class="ti ti-plus me-1"></i> Add Customer';
+            });
+        });
+    </script>
 @endsection
+
+<!-- Quick Customer Modal -->
+<div class="modal fade" id="quickCustomerModal" tabindex="-1">
+    <div class="modal-dialog modal-sm modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">New Customer</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form id="quickCustomerForm">
+                @csrf
+                <div class="modal-body">
+                    <div class="mb-2">
+                        <label class="form-label small">First Name *</label>
+                        <input type="text" name="first_name" class="form-control form-control-sm" required>
+                    </div>
+                    <div class="mb-2">
+                        <label class="form-label small">Last Name *</label>
+                        <input type="text" name="last_name" class="form-control form-control-sm" required>
+                    </div>
+                    <div class="mb-2">
+                        <label class="form-label small">Phone *</label>
+                        <input type="tel" name="phone" class="form-control form-control-sm" required>
+                    </div>
+                    <div class="mb-2">
+                        <label class="form-label small">Email</label>
+                        <input type="email" name="email" class="form-control form-control-sm">
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-light btn-sm" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary btn-sm"><i class="ti ti-plus me-1"></i> Add Customer</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
