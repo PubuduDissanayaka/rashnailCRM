@@ -101,6 +101,7 @@
                                 <th data-table-sort="sort-phone">Phone</th>
                                 <th data-table-sort="sort-email">Email</th>
                                 <th data-table-sort="sort-gender">Gender</th>
+                                <th class="text-center">Profile</th>
                                 <th data-table-sort="sort-appointments">Appointments</th>
                                 <th data-table-sort="sort-spent">Total Spent</th>
                                 <th data-table-sort="sort-status">Status</th>
@@ -115,17 +116,10 @@
                                 </td>
                                 <td>
                                     <div class="d-flex align-items-center">
-                                        <div class="position-relative">
-                                            <div class="avatar-sm rounded-circle bg-soft-primary me-2">
-                                                <span class="avatar-title rounded-circle text-uppercase">
-                                                    {{ $customer->initials }}
-                                                </span>
-                                            </div>
-                                            @if($customer->is_profile_complete)
-                                                <span class="position-absolute top-0 start-100 translate-middle p-1 bg-success rounded-circle border border-light" style="width:10px;height:10px" title="Complete profile"></span>
-                                            @else
-                                                <span class="position-absolute top-0 start-100 translate-middle p-1 bg-warning rounded-circle border border-light" style="width:10px;height:10px" title="Incomplete profile"></span>
-                                            @endif
+                                        <div class="avatar-sm rounded-circle bg-soft-primary me-2">
+                                            <span class="avatar-title rounded-circle text-uppercase">
+                                                {{ $customer->initials }}
+                                            </span>
                                         </div>
                                         <div>
                                             <h5 class="fs-base mb-0">
@@ -142,6 +136,17 @@
                                     <span class="badge bg-{{ $customer->gender === 'Female' ? 'danger' : ($customer->gender === 'Male' ? 'primary' : 'secondary') }}-subtle text-{{ $customer->gender === 'Female' ? 'danger' : ($customer->gender === 'Male' ? 'primary' : 'secondary') }}">
                                         {{ $customer->gender ?? 'N/A' }}
                                     </span>
+                                </td>
+                                <td class="text-center">
+                                    @if($customer->is_profile_complete)
+                                        <span class="badge bg-success-subtle text-success px-2 py-1">
+                                            <i class="ti ti-check me-1"></i> Complete
+                                        </span>
+                                    @else
+                                        <span class="badge bg-warning-subtle text-warning px-2 py-1">
+                                            <i class="ti ti-alert-triangle me-1"></i> Incomplete
+                                        </span>
+                                    @endif
                                 </td>
                                 <td data-sort="sort-appointments">{{ $customer->appointments_count }}</td>
                                 <td data-sort="sort-spent">${{ number_format($customer->transactions_sum_amount ?? 0, 2) }}</td>

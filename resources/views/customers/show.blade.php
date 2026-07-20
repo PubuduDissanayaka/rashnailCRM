@@ -95,9 +95,9 @@
                                 <div class="ms-3">
                                     <h5 class="mb-1">{{ $customer->full_name }}
                                         @if($customer->is_profile_complete)
-                                            <span class="badge bg-success-subtle text-success fs-xs ms-1"><i class="ti ti-check me-1"></i>Complete</span>
+                                            <span class="badge bg-success-subtle text-success ms-2"><i class="ti ti-check me-1"></i>Complete</span>
                                         @else
-                                            <span class="badge bg-warning-subtle text-warning fs-xs ms-1"><i class="ti ti-alert-triangle me-1"></i>Incomplete</span>
+                                            <span class="badge bg-warning-subtle text-warning ms-2"><i class="ti ti-alert-triangle me-1"></i>Incomplete</span>
                                         @endif
                                     </h5>
                                     <p class="text-muted mb-0 fs-base">{{ $customer->email }}</p>
@@ -156,6 +156,55 @@
                             <div class="d-flex justify-content-between align-items-center">
                                 <span class="text-muted fs-xs"><i class="ti ti-clock me-1"></i>Joined {{ ($customer->joined_date ?? $customer->created_at)->diffForHumans() }}</span>
                             </div>
+                        </div>
+                    </div>
+
+                    <!-- Profile Status Card -->
+                    <div class="card mt-3 border-0 shadow-none" style="background:#f8f9fa">
+                        <div class="card-body py-3 px-3">
+                            <div class="d-flex align-items-center justify-content-between mb-3">
+                                <h6 class="mb-0 fw-semibold">Profile Status</h6>
+                                @if($customer->is_profile_complete)
+                                    <span class="badge bg-success-subtle text-success px-2 py-1"><i class="ti ti-check me-1"></i>Complete</span>
+                                @else
+                                    <span class="badge bg-warning-subtle text-warning px-2 py-1"><i class="ti ti-alert-triangle me-1"></i>Incomplete</span>
+                                @endif
+                            </div>
+                            <ul class="list-unstyled mb-0 fs-xs">
+                                <li class="d-flex align-items-center mb-1">
+                                    @if(!empty($customer->email))
+                                        <i class="ti ti-check text-success me-1"></i>
+                                    @else
+                                        <i class="ti ti-x text-danger me-1"></i>
+                                    @endif
+                                    <span class="text-muted">Email</span>
+                                </li>
+                                <li class="d-flex align-items-center mb-1">
+                                    @if(!empty($customer->address))
+                                        <i class="ti ti-check text-success me-1"></i>
+                                    @else
+                                        <i class="ti ti-x text-danger me-1"></i>
+                                    @endif
+                                    <span class="text-muted">Address</span>
+                                </li>
+                                <li class="d-flex align-items-center mb-1">
+                                    @if(!empty($customer->gender))
+                                        <i class="ti ti-check text-success me-1"></i>
+                                    @else
+                                        <i class="ti ti-x text-danger me-1"></i>
+                                    @endif
+                                    <span class="text-muted">Gender</span>
+                                </li>
+                                <li class="d-flex align-items-center">
+                                    @if(!empty($customer->date_of_birth))
+                                        <i class="ti ti-check text-success me-1"></i>
+                                    @else
+                                        <i class="ti ti-x text-danger me-1"></i>
+                                    @endif
+                                    <span class="text-muted">Date of Birth</span>
+                                </li>
+                            </ul>
+                            <small class="text-muted mt-2 d-block">Complete = Email + any of Address, Gender, DOB</small>
                         </div>
                     </div>
 
