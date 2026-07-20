@@ -62,7 +62,7 @@ class AppointmentController extends Controller
         $this->authorize('view appointments');
 
         $customers = Customer::orderBy('first_name')->get();
-        $services = Service::where('is_active', true)->whereHas('appointments')->get();
+        $services = Service::where('is_active', true)->get();
         $staff = User::withStaffRole()->get();
 
         $businessHours = Setting::get('business.hours');
