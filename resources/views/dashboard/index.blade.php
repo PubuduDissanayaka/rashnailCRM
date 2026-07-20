@@ -97,6 +97,30 @@
     </div>
 </div>
 
+{{-- ===== QUICK ACTIONS ROW ===== --}}
+<div class="row g-2 mb-3">
+    <div class="col-12">
+        <div class="card border-0 shadow-sm bg-primary bg-gradient text-white">
+            <div class="card-body py-3">
+                <div class="d-flex align-items-center justify-content-between flex-wrap gap-2">
+                    <h5 class="mb-0 fw-semibold text-white"><i class="ti ti-bolt me-1"></i> Quick Actions</h5>
+                    <div class="d-flex gap-2 flex-wrap">
+                        <a href="{{ route('appointments.create') }}" class="btn btn-light btn-sm px-3 fw-semibold">
+                            <i class="ti ti-plus me-1"></i>New Appointment
+                        </a>
+                        <a href="{{ route('customers.create') }}" class="btn btn-light btn-sm px-3 fw-semibold">
+                            <i class="ti ti-user-plus me-1"></i>Add Customer
+                        </a>
+                        <a href="{{ route('pos.index') }}" class="btn btn-warning btn-sm px-3 fw-semibold text-dark">
+                            <i class="ti ti-shopping-cart me-1"></i>New Sale
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
 {{-- ===== CHARTS ROW ===== --}}
 <div class="row g-3 mb-3">
     {{-- Revenue Chart --}}
@@ -131,30 +155,6 @@
                     <div><span class="badge bg-info me-1">&nbsp;</span> In Progress {{ $apptStatusCounts[1] }}</div>
                     <div><span class="badge bg-success me-1">&nbsp;</span> Completed {{ $apptStatusCounts[2] }}</div>
                     <div><span class="badge bg-secondary me-1">&nbsp;</span> Cancelled {{ $apptStatusCounts[3] }}</div>
-                </div>
-            </div>
-        </div>
-    </div>
-</div>
-
-{{-- ===== QUICK ACTIONS ROW ===== --}}
-<div class="row g-2 mb-3">
-    <div class="col-12">
-        <div class="card border-0 shadow-sm bg-primary bg-gradient text-white">
-            <div class="card-body py-3">
-                <div class="d-flex align-items-center justify-content-between flex-wrap gap-2">
-                    <h5 class="mb-0 fw-semibold text-white"><i class="ti ti-bolt me-1"></i> Quick Actions</h5>
-                    <div class="d-flex gap-2 flex-wrap">
-                        <a href="{{ route('appointments.create') }}" class="btn btn-light btn-sm px-3 fw-semibold">
-                            <i class="ti ti-plus me-1"></i>New Appointment
-                        </a>
-                        <a href="{{ route('customers.create') }}" class="btn btn-light btn-sm px-3 fw-semibold">
-                            <i class="ti ti-user-plus me-1"></i>Add Customer
-                        </a>
-                        <a href="{{ route('pos.index') }}" class="btn btn-warning btn-sm px-3 fw-semibold text-dark">
-                            <i class="ti ti-shopping-cart me-1"></i>New Sale
-                        </a>
-                    </div>
                 </div>
             </div>
         </div>
