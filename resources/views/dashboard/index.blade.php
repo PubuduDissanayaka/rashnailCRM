@@ -137,6 +137,30 @@
     </div>
 </div>
 
+{{-- ===== QUICK ACTIONS ROW ===== --}}
+<div class="row g-2 mb-3">
+    <div class="col-12">
+        <div class="card border-0 shadow-sm bg-primary bg-gradient text-white">
+            <div class="card-body py-3">
+                <div class="d-flex align-items-center justify-content-between flex-wrap gap-2">
+                    <h5 class="mb-0 fw-semibold text-white"><i class="ti ti-bolt me-1"></i> Quick Actions</h5>
+                    <div class="d-flex gap-2 flex-wrap">
+                        <a href="{{ route('appointments.create') }}" class="btn btn-light btn-sm px-3 fw-semibold">
+                            <i class="ti ti-plus me-1"></i>New Appointment
+                        </a>
+                        <a href="{{ route('customers.create') }}" class="btn btn-light btn-sm px-3 fw-semibold">
+                            <i class="ti ti-user-plus me-1"></i>Add Customer
+                        </a>
+                        <a href="{{ route('pos.index') }}" class="btn btn-warning btn-sm px-3 fw-semibold text-dark">
+                            <i class="ti ti-shopping-cart me-1"></i>New Sale
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
 {{-- ===== LISTS ROW ===== --}}
 <div class="row g-3 mb-3">
     {{-- Today's Schedule --}}
@@ -278,19 +302,6 @@
             </div>
         </div>
 
-        {{-- Quick Actions --}}
-        <div class="card">
-            <div class="card-header py-2">
-                <h5 class="card-title mb-0 fs-6"><i class="ti ti-bolt me-1 text-warning"></i> Quick Actions</h5>
-            </div>
-            <div class="card-body py-2">
-                <div class="d-grid gap-2">
-                    <a href="{{ route('appointments.create') }}" class="btn btn-primary btn-sm"><i class="ti ti-plus me-1"></i>New Appointment</a>
-                    <a href="{{ route('customers.create') }}" class="btn btn-outline-primary btn-sm"><i class="ti ti-user-plus me-1"></i>Add Customer</a>
-                    <a href="{{ route('pos.index') }}" class="btn btn-success btn-sm"><i class="ti ti-shopping-cart me-1"></i>New Sale</a>
-                </div>
-            </div>
-        </div>
     </div>
 </div>
 
