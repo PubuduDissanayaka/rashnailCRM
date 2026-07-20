@@ -172,20 +172,12 @@
                             </div>
                             <ul class="list-unstyled mb-0 fs-xs">
                                 <li class="d-flex align-items-center mb-1">
-                                    @if(!empty($customer->email))
-                                        <i class="ti ti-check text-success me-1"></i>
-                                    @else
-                                        <i class="ti ti-x text-danger me-1"></i>
-                                    @endif
-                                    <span class="text-muted">Email</span>
+                                    <i class="ti ti-check text-success me-1"></i>
+                                    <span class="text-muted">Name (filled)</span>
                                 </li>
                                 <li class="d-flex align-items-center mb-1">
-                                    @if(!empty($customer->address))
-                                        <i class="ti ti-check text-success me-1"></i>
-                                    @else
-                                        <i class="ti ti-x text-danger me-1"></i>
-                                    @endif
-                                    <span class="text-muted">Address</span>
+                                    <i class="ti ti-check text-success me-1"></i>
+                                    <span class="text-muted">Phone (filled)</span>
                                 </li>
                                 <li class="d-flex align-items-center mb-1">
                                     @if(!empty($customer->gender))
@@ -195,16 +187,8 @@
                                     @endif
                                     <span class="text-muted">Gender</span>
                                 </li>
-                                <li class="d-flex align-items-center">
-                                    @if(!empty($customer->date_of_birth))
-                                        <i class="ti ti-check text-success me-1"></i>
-                                    @else
-                                        <i class="ti ti-x text-danger me-1"></i>
-                                    @endif
-                                    <span class="text-muted">Date of Birth</span>
-                                </li>
                             </ul>
-                            <small class="text-muted mt-2 d-block">Complete = Email + any of Address, Gender, DOB</small>
+                            <small class="text-muted mt-2 d-block">Complete = Name + Phone + Gender</small>
                         </div>
                     </div>
 
