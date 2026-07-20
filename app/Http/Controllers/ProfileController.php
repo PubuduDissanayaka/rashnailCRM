@@ -26,8 +26,9 @@ class ProfileController extends Controller
     public function edit()
     {
         $user = Auth::user();
-
-        return view('users.edit', compact('user'));
+        $phone = $user->phone ?? '';
+        $localPhone = preg_replace('/^(94|\+94)/', '', $phone);
+        return view('users.edit', compact('user', 'localPhone'));
     }
 
     /**

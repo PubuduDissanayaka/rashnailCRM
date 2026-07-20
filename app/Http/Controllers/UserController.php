@@ -106,8 +106,10 @@ class UserController extends Controller
 
         $user->loadMissing('roles');
         $roles = \Spatie\Permission\Models\Role::orderBy('name')->pluck('name');
+        $phone = $user->phone ?? '';
+        $localPhone = preg_replace('/^(94|\+94)/', '', $phone);
 
-        return view('users.edit_user', compact('user', 'roles'));
+        return view('users.edit_user', compact('user', 'roles', 'localPhone'));
     }
 
     /**

@@ -182,8 +182,18 @@
                                         <div class="col-6">
                                             <input type="text" class="form-control form-control-sm" id="qc-last-name" placeholder="Last Name *" maxlength="100">
                                         </div>
-                                        <div class="col-6">
-                                            <input type="tel" class="form-control form-control-sm" id="qc-phone" placeholder="Phone *" maxlength="30">
+                                        <div class="col-3">
+                                            <select class="form-select form-control-sm" id="qc-country-code" style="font-size:.75rem;padding:0.25rem">
+                                                <option value="94">🇱🇰 +94</option>
+                                                <option value="91">🇮🇳 +91</option>
+                                                <option value="1">🇺🇸 +1</option>
+                                                <option value="44">🇬🇧 +44</option>
+                                                <option value="61">🇦🇺 +61</option>
+                                                <option value="971">🇦🇪 +971</option>
+                                            </select>
+                                        </div>
+                                        <div class="col-3">
+                                            <input type="tel" class="form-control form-control-sm" id="qc-phone" placeholder="77 123 4567" maxlength="20">
                                         </div>
                                         <div class="col-6">
                                             <input type="email" class="form-control form-control-sm" id="qc-email" placeholder="Email (optional)">
@@ -308,7 +318,9 @@
         saveBtn?.addEventListener('click', async function () {
             const firstName  = document.getElementById('qc-first-name').value.trim();
             const lastName   = document.getElementById('qc-last-name').value.trim();
-            const phone      = document.getElementById('qc-phone').value.trim();
+            const countryCode = document.getElementById('qc-country-code')?.value || '94';
+            const localPhone = document.getElementById('qc-phone').value.trim();
+            const phone      = countryCode + localPhone.replace(/[^0-9]/g, '');
             const email      = document.getElementById('qc-email').value.trim();
             const joinedDate = document.getElementById('qc-joined-date')?.value || '';
 

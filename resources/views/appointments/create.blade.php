@@ -138,7 +138,17 @@
                         </div>
                         <div class="mb-2">
                             <label class="form-label small">Phone *</label>
-                            <input type="tel" name="phone" class="form-control form-control-sm" required>
+                            <div class="input-group input-group-sm">
+                                <select name="country_code" class="form-select form-control-sm" style="max-width:95px;flex:none" required>
+                                    <option value="94">🇱🇰 +94</option>
+                                    <option value="91">🇮🇳 +91</option>
+                                    <option value="1">🇺🇸 +1</option>
+                                    <option value="44">🇬🇧 +44</option>
+                                    <option value="61">🇦🇺 +61</option>
+                                    <option value="971">🇦🇪 +971</option>
+                                </select>
+                                <input type="tel" name="local_phone" class="form-control form-control-sm" placeholder="77 123 4567" required>
+                            </div>
                         </div>
                         <div class="mb-2">
                             <label class="form-label small">Email</label>
@@ -173,7 +183,16 @@ document.getElementById('quickCustomerForm')?.addEventListener('submit', functio
     fetch('{{ route("customers.quick-store") }}', {
         method: 'POST',
         headers: { 'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') },
-        body: new FormData(form)
+        body: (function() {
+            var fd = new FormData(form);
+            // Combine country_code + local_phone into phone
+            var cc = fd.get('country_code') || '94';
+            var lp = fd.get('local_phone') || '';
+            fd.set('phone', cc + lp.replace(/[^0-9]/g, ''));
+            fd.delete('country_code');
+            fd.delete('local_phone');
+            return fd;
+        })()
     })
     .then(r => r.json())
     .then(data => {

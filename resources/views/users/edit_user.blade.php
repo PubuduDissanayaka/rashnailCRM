@@ -67,7 +67,18 @@
                             <div class="col-md-6">
                                 <div class="mb-3">
                                     <label for="phone" class="form-label">Phone Number</label>
-                                    <input class="form-control" type="text" id="phone" name="phone" value="{{ old('phone', $user->phone) }}">
+                                    <div class="input-group">
+                                        <select name="country_code" id="country_code" class="form-select" style="max-width:100px;flex:none">
+                                            <option value="94">🇱🇰 +94</option>
+                                            <option value="91">🇮🇳 +91</option>
+                                            <option value="1">🇺🇸 +1</option>
+                                            <option value="44">🇬🇧 +44</option>
+                                            <option value="61">🇦🇺 +61</option>
+                                            <option value="971">🇦🇪 +971</option>
+                                        </select>
+                                        <input class="form-control" type="tel" id="local_phone" name="local_phone" value="{{ old('local_phone', $localPhone ?? '') }}" placeholder="77 123 4567">
+                                        <input type="hidden" name="phone" id="phone" value="{{ old('phone', $user->phone ?? '') }}">
+                                    </div>
                                     @error('phone')
                                         <span class="text-danger" role="alert">
                                             <small>{{ $message }}</small>
@@ -136,16 +147,30 @@
                                 </div>
                             </div>
                         </div>
+
                         <div class="text-end">
                             <button class="btn btn-primary" type="submit">Update User</button>
-                            <a href="{{ route('users.index') }}" class="btn btn-secondary">Cancel</a>
                         </div>
-                    </form>
-                </div>
+                    </div>
+                </form>
             </div>
         </div>
     </div>
 @endsection
 
 @section('scripts')
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const form = document.querySelector('#editUserForm, form[action*="users"]');
+    if (form) {
+        form.addEventListener('submit', function() {
+            const cc = document.getElementById('country_code')?.value || '94';
+            const lp = document.getElementById('local_phone')?.value || '';
+            if (lp) {
+                document.getElementById('phone').value = cc + lp.replace(/[^0-9]/g, '');
+            }
+        });
+    }
+});
+</script>
 @endsection
