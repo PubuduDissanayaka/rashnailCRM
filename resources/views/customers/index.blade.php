@@ -7,6 +7,43 @@
     @include('layouts.partials.page-title', ['title' => 'Customer Management'])
 
     <div class="row">
+        @if(isset($stats))
+        <div class="col-xl-3 col-md-6 mb-3">
+            <div class="card border-start border-3 border-primary shadow-none">
+                <div class="card-body d-flex align-items-center gap-3 py-3">
+                    <div class="avatar avatar-md bg-primary-subtle rounded-circle"><i class="ti ti-users fs-18 text-primary"></i></div>
+                    <div><h5 class="mb-0 fw-bold">{{ $stats['total'] }}</h5><small class="text-muted">Total</small></div>
+                </div>
+            </div>
+        </div>
+        <div class="col-xl-3 col-md-6 mb-3">
+            <div class="card border-start border-3 border-info shadow-none">
+                <div class="card-body d-flex align-items-center gap-3 py-3">
+                    <div class="avatar avatar-md bg-info-subtle rounded-circle"><i class="ti ti-calendar-plus fs-18 text-info"></i></div>
+                    <div><h5 class="mb-0 fw-bold">{{ $stats['new_this_month'] }}</h5><small class="text-muted">New This Month</small></div>
+                </div>
+            </div>
+        </div>
+        <div class="col-xl-3 col-md-6 mb-3">
+            <div class="card border-start border-3 border-success shadow-none">
+                <div class="card-body d-flex align-items-center gap-3 py-3">
+                    <div class="avatar avatar-md bg-success-subtle rounded-circle"><i class="ti ti-calendar-check fs-18 text-success"></i></div>
+                    <div><h5 class="mb-0 fw-bold">{{ $stats['active'] }}</h5><small class="text-muted">Active (30d)</small></div>
+                </div>
+            </div>
+        </div>
+        <div class="col-xl-3 col-md-6 mb-3">
+            <div class="card border-start border-3 border-warning shadow-none">
+                <div class="card-body d-flex align-items-center gap-3 py-3">
+                    <div class="avatar avatar-md bg-warning-subtle rounded-circle"><i class="ti ti-alert-triangle fs-18 text-warning"></i></div>
+                    <div><h5 class="mb-0 fw-bold">{{ $stats['incomplete'] }}</h5><small class="text-muted">Incomplete</small></div>
+                </div>
+            </div>
+        </div>
+        @endif
+    </div>
+
+    <div class="row">
         <div class="col-12">
             <div class="card" data-table="" data-table-rows-per-page="10">
                 <div class="card-header border-light justify-content-between">
@@ -36,6 +73,14 @@
                                 <option value="10" selected>10</option>
                                 <option value="15">15</option>
                                 <option value="20">20</option>
+                            </select>
+                        </div>
+                        <!-- Profile Completion Filter -->
+                        <div>
+                            <select class="form-select form-control my-1 my-md-0" onchange="if(this.value) window.location='?profile='+this.value">
+                                <option value="">All Profiles</option>
+                                <option value="complete" {{ request('profile') == 'complete' ? 'selected' : '' }}>Complete</option>
+                                <option value="incomplete" {{ request('profile') == 'incomplete' ? 'selected' : '' }}>Incomplete</option>
                             </select>
                         </div>
                         @can('create customers')
@@ -70,10 +115,17 @@
                                 </td>
                                 <td>
                                     <div class="d-flex align-items-center">
-                                        <div class="avatar-sm rounded-circle bg-soft-primary me-2">
-                                            <span class="avatar-title rounded-circle text-uppercase">
-                                                {{ $customer->initials }}
-                                            </span>
+                                        <div class="position-relative">
+                                            <div class="avatar-sm rounded-circle bg-soft-primary me-2">
+                                                <span class="avatar-title rounded-circle text-uppercase">
+                                                    {{ $customer->initials }}
+                                                </span>
+                                            </div>
+                                            @if($customer->is_profile_complete)
+                                                <span class="position-absolute top-0 start-100 translate-middle p-1 bg-success rounded-circle border border-light" style="width:10px;height:10px" title="Complete profile"></span>
+                                            @else
+                                                <span class="position-absolute top-0 start-100 translate-middle p-1 bg-warning rounded-circle border border-light" style="width:10px;height:10px" title="Incomplete profile"></span>
+                                            @endif
                                         </div>
                                         <div>
                                             <h5 class="fs-base mb-0">

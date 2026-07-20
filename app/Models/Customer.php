@@ -203,6 +203,44 @@ class Customer extends Model
     }
 
     /**
+     * Check if customer profile is complete.
+     * Complete = has email AND at least one of: address, gender, date_of_birth
+     */
+    public function getIsProfileCompleteAttribute(): bool
+    {
+        return !empty($this->email)
+            && (!empty($this->address) || !empty($this->gender) || !empty($this->date_of_birth));
+    }
+
+    /**
+     * Scope: only customers with complete profiles
+     */
+    public function scopeComplete($query)
+    {
+        return $query->whereNotNull('email')
+            ->where(function ($q) {
+                $q->whereNotNull('address')
+                  ->orWhereNotNull('gender')
+                  ->orWhereNotNull('date_of_birth');
+            });
+    }
+
+    /**
+     * Scope: only customers with incomplete profiles
+     */
+    public function scopeIncomplete($query)
+    {
+        return $query->where(function ($q) {
+            $q->whereNull('email')
+              ->orWhere(function ($q2) {
+                  $q2->whereNull('address')
+                     ->whereNull('gender')
+                     ->whereNull('date_of_birth');
+              });
+        });
+    }
+
+    /**
      * Get the phone number in international format for WhatsApp
      */
     public function getWhatsAppPhoneAttribute(): ?string

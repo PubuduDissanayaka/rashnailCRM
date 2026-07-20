@@ -93,7 +93,13 @@
                                     </div>
                                 </div>
                                 <div class="ms-3">
-                                    <h5 class="mb-1">{{ $customer->full_name }}</h5>
+                                    <h5 class="mb-1">{{ $customer->full_name }}
+                                        @if($customer->is_profile_complete)
+                                            <span class="badge bg-success-subtle text-success fs-xs ms-1"><i class="ti ti-check me-1"></i>Complete</span>
+                                        @else
+                                            <span class="badge bg-warning-subtle text-warning fs-xs ms-1"><i class="ti ti-alert-triangle me-1"></i>Incomplete</span>
+                                        @endif
+                                    </h5>
                                     <p class="text-muted mb-0 fs-base">{{ $customer->email }}</p>
                                 </div>
                                 <div class="ms-auto">

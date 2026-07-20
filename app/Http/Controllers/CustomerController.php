@@ -12,14 +12,23 @@ class CustomerController extends Controller
     /**
      * Display a listing of the customers.
      */
-    public function index()
+    public function index(Request $request)
     {
         $this->authorize('view customers');
 
-        $customers = Customer::withCount('appointments')
-            ->withSum('transactions', 'amount')
-            ->latest()
-            ->paginate(10); // Added pagination
+        $query = Customer::withCount('appointments')
+            ->withSum('transactions', 'amount');
+
+        // Profile completion filter
+        if ($request->filled('profile')) {
+            if ($request->profile === 'complete') {
+                $query->complete();
+            } elseif ($request->profile === 'incomplete') {
+                $query->incomplete();
+            }
+        }
+
+        $customers = $query->latest()->paginate(10);
 
         $stats = [
             'total' => Customer::count(),
@@ -27,6 +36,7 @@ class CustomerController extends Controller
             'active' => Customer::whereHas('appointments', function($q) {
                 $q->where('appointment_date', '>=', now()->subDays(30));
             })->count(),
+            'incomplete' => Customer::incomplete()->count(),
         ];
 
         return view('customers.index', compact('customers', 'stats'));
