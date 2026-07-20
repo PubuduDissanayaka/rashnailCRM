@@ -17,8 +17,8 @@
                             <div class="col-md-6">
                                 <div class="mb-3">
                                     <label for="customer_id" class="form-label">Customer</label>
-                                    <div class="d-flex gap-2">
-                                        <select class="form-select" name="customer_id" id="customer_id" required data-choices data-choices-search-true style="flex:1">
+                                    <div class="input-group">
+                                        <select class="form-select" name="customer_id" id="customer_id" required data-choices data-choices-search-true>
                                             <option value="">Select Customer</option>
                                             @foreach($customers as $customer)
                                             <option value="{{ $customer->id }}" 
@@ -27,9 +27,9 @@
                                             </option>
                                             @endforeach
                                         </select>
-                                        <button type="button" class="btn btn-outline-primary btn-sm px-2 flex-shrink-0" 
+                                        <button type="button" class="btn btn-outline-primary" 
                                                 title="Add new customer" data-bs-toggle="modal" data-bs-target="#quickCustomerModal">
-                                            <i class="ti ti-plus"></i>
+                                            <i class="ti ti-plus"></i> New
                                         </button>
                                     </div>
                                     @error('customer_id')
