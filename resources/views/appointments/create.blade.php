@@ -17,19 +17,22 @@
                             <div class="col-md-6">
                                 <div class="mb-3">
                                     <label for="customer_id" class="form-label">Customer</label>
-                                    <div class="input-group">
-                                        <select class="form-select" name="customer_id" id="customer_id" required data-choices data-choices-search-true>
-                                            <option value="">Select Customer</option>
-                                            @foreach($customers as $customer)
-                                            <option value="{{ $customer->id }}" 
-                                                {{ old('customer_id') == $customer->id ? 'selected' : '' }}>
-                                                {{ $customer->name }} ({{ $customer->email }})
-                                            </option>
-                                            @endforeach
-                                        </select>
+                                    <div class="d-flex align-items-stretch gap-1">
+                                        <div style="flex:1;min-width:0">
+                                            <select class="form-select" name="customer_id" id="customer_id" required data-choices data-choices-search-true>
+                                                <option value="">Select Customer</option>
+                                                @foreach($customers as $customer)
+                                                <option value="{{ $customer->id }}" 
+                                                    {{ old('customer_id') == $customer->id ? 'selected' : '' }}>
+                                                    {{ $customer->name }} ({{ $customer->email }})
+                                                </option>
+                                                @endforeach
+                                            </select>
+                                        </div>
                                         <button type="button" class="btn btn-outline-primary" 
+                                                style="white-space:nowrap;display:flex;align-items:center;"
                                                 title="Add new customer" data-bs-toggle="modal" data-bs-target="#quickCustomerModal">
-                                            <i class="ti ti-plus"></i> New
+                                            <i class="ti ti-plus fs-5"></i>
                                         </button>
                                     </div>
                                     @error('customer_id')
