@@ -15,7 +15,7 @@
                 <div class="mb-2">
                     @if($footerWebsite)
                         <a href="{{ $footerWebsite }}" target="_blank" rel="noopener" class="text-muted me-3" title="Website">
-                            <i class="ti ti-world"></i> Website
+                            <i class="ti ti-world"></i>
                         </a>
                     @endif
                     @if($footerFacebook)
