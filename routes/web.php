@@ -573,9 +573,7 @@ Route::middleware(['auth'])->group(function () {
     });
 
     // Search route — requires authentication
-    Route::get('/search', function () {
-        return redirect()->route('dashboard')->with('info', 'Search functionality coming soon.');
-    })->name('search');
+    Route::get('/search', [\App\Http\Controllers\SearchController::class, 'quickSearch'])->name('search');
 
     // Additional routes (placeholder — methods pending implementation)
     // Route::delete('alerts/{alert}', [AlertController::class, 'destroy'])->name('alerts.destroy');

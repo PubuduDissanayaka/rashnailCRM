@@ -136,10 +136,12 @@
         </div> <!-- .d-flex-->
         <div class="d-flex align-items-center gap-2">
             <!-- Search -->
-            <div class="app-search d-none d-xl-flex me-2">
+            <div class="app-search d-none d-xl-flex me-2 position-relative" id="global-search">
                 <input class="form-control topbar-search rounded-pill" name="search" placeholder="Quick Search..."
-                    type="search" />
+                    type="search" autocomplete="off" />
                 <i class="app-search-icon text-muted" data-lucide="search"></i>
+                <!-- Search Results Dropdown -->
+                <div id="search-results" class="dropdown-menu w-100 mt-1 p-2" style="display:none;position:absolute;top:100%;left:0;z-index:9999;max-height:400px;overflow-y:auto"></div>
             </div>
             <!-- POS Terminal Shortcut -->
             @can('view pos')

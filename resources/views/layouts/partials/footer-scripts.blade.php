@@ -24,3 +24,69 @@
 @vite(['resources/js/app.js'])
 
 @yield('scripts')
+
+<!-- Global Quick Search -->
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    const searchInput = document.querySelector('.topbar-search');
+    const resultsDiv = document.getElementById('search-results');
+    if (!searchInput || !resultsDiv) return;
+
+    let debounceTimer = null;
+
+    searchInput.addEventListener('input', function () {
+        clearTimeout(debounceTimer);
+        const q = this.value.trim();
+        if (q.length < 1) {
+            resultsDiv.style.display = 'none';
+            resultsDiv.innerHTML = '';
+            return;
+        }
+        debounceTimer = setTimeout(function () {
+            fetch('/search?q=' + encodeURIComponent(q), {
+                headers: { 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest' }
+            })
+            .then(r => r.json())
+            .then(data => {
+                const items = data.results || [];
+                if (items.length === 0) {
+                    resultsDiv.innerHTML = '<div class="text-muted text-center py-2 fs-xs">No results found</div>';
+                    resultsDiv.style.display = 'block';
+                    return;
+                }
+                let html = '';
+                items.forEach(function (item) {
+                    html += '<a href="' + item.url + '" class="dropdown-item d-flex align-items-center gap-2 px-2 py-1 rounded">'
+                        + '<i class="' + item.icon + ' fs-sm"></i>'
+                        + '<div class="d-flex flex-column">'
+                        + '<span class="fw-semibold fs-xs">' + item.label + '</span>'
+                        + '<small class="text-muted">' + item.sub + '</small>'
+                        + '</div>'
+                        + '<span class="badge bg-light text-muted ms-auto fs-xxs">' + item.type + '</span>'
+                        + '</a>';
+                });
+                resultsDiv.innerHTML = html;
+                resultsDiv.style.display = 'block';
+            })
+            .catch(function () {
+                resultsDiv.style.display = 'none';
+            });
+        }, 300);
+    });
+
+    // Hide on click outside
+    document.addEventListener('click', function (e) {
+        if (!searchInput.closest('#global-search')?.contains(e.target)) {
+            resultsDiv.style.display = 'none';
+        }
+    });
+
+    // Hide on Escape
+    searchInput.addEventListener('keydown', function (e) {
+        if (e.key === 'Escape') {
+            resultsDiv.style.display = 'none';
+            this.blur();
+        }
+    });
+});
+</script>
