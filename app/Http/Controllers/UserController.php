@@ -138,9 +138,9 @@ class UserController extends Controller
             'status' => $request->status,
         ];
 
-        // Only update phone if provided
+        // Only update phone if provided (format for WhatsApp compatibility)
         if ($request->filled('phone')) {
-            $userData['phone'] = $request->phone;
+            $userData['phone'] = \App\Helpers\PhoneHelper::formatForStorage($request->phone);
         }
 
         // Only update password if provided

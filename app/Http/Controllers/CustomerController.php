@@ -138,22 +138,7 @@ class CustomerController extends Controller
      */
     private function formatPhoneNumberForStorage($phoneNumber)
     {
-        if (!$phoneNumber) {
-            return $phoneNumber;
-        }
-
-        // Remove all non-numeric characters (including +, spaces, dashes, parentheses)
-        $phone = preg_replace('/[^0-9]/', '', $phoneNumber);
-
-        // If phone starts with 0, assume it's local (replace with country code)
-        // Example for Sri Lanka: 0771234567 → 94771234567
-        if (strlen($phone) > 0 && $phone[0] === '0') {
-            $countryCode = \App\Models\Setting::get('business.country_code', '94');
-            $phone = $countryCode . substr($phone, 1);
-        }
-
-        // Return pure numbers only (WhatsApp compatible)
-        return $phone;
+        return \App\Helpers\PhoneHelper::formatForStorage($phoneNumber);
     }
 
     /**

@@ -48,7 +48,7 @@ class ProfileController extends Controller
         $updateData = [
             'name' => $request->name,
             'email' => $request->email,
-            'phone' => $request->phone,
+            'phone' => \App\Helpers\PhoneHelper::formatForStorage($request->phone),
         ];
 
         // Only update password if a new one was provided
