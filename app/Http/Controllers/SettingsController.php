@@ -54,7 +54,6 @@ class SettingsController extends Controller
         $validated = $request->validate([
             'group' => 'required|in:business,appointment,notification,payment,attendance,security',
             'settings' => 'nullable|array',
-            'business_hours' => 'nullable|array',
             'payment_methods' => 'nullable|array',
         ]);
 
@@ -65,23 +64,6 @@ class SettingsController extends Controller
                 $type = is_bool($value) ? 'boolean' : (is_numeric($value) ? 'integer' : 'string');
                 Setting::set($key, $value, $type);
             }
-        }
-
-        // Handle specific complex settings
-        if (isset($validated['business_hours'])) {
-            $hours = [];
-            $days = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'];
-
-            foreach ($days as $day) {
-                $dayEnabled = isset($validated['business_hours'][$day]['enabled']) && $validated['business_hours'][$day]['enabled'];
-                $hours[$day] = [
-                    'open' => $dayEnabled ? ($validated['business_hours'][$day]['open'] ?? null) : null,
-                    'close' => $dayEnabled ? ($validated['business_hours'][$day]['close'] ?? null) : null,
-                    'closed' => !$dayEnabled
-                ];
-            }
-
-            Setting::set('business.hours', $hours, 'json');
         }
 
         if (isset($validated['payment_methods'])) {

@@ -286,13 +286,20 @@ function initializeUnsavedChangesWarning() {
 
 /**
  * Initialize business hours toggle functionality
+ *
+ * Toggles the disabled state of the open/close time inputs when a day's
+ * checkbox is toggled — clears values on disabled days.  Does NOT touch
+ * the name attribute so the blade template's correct nested names survive.
+ *
+ * When a day is unchecked and its inputs are disabled, the browser omits
+ * them from the submission automatically (disabled inputs aren't sent),
+ * so we rely on the hidden-in-php `enabled=0` field for unchecked days.
  */
 function initializeBusinessHoursToggle() {
     const dayCheckboxes = document.querySelectorAll('.day-enabled');
 
     dayCheckboxes.forEach(checkbox => {
         checkbox.addEventListener('change', function () {
-            // Update the name attribute of the time inputs based on checkbox state
             const dayId = this.id.replace('_enabled', '');
             const openInput = document.getElementById(`${dayId}_open`);
             const closeInput = document.getElementById(`${dayId}_close`);
@@ -300,23 +307,18 @@ function initializeBusinessHoursToggle() {
             if (this.checked) {
                 openInput.disabled = false;
                 closeInput.disabled = false;
-                // Set the name attribute to ensure values are submitted when checked
-                openInput.name = `business_hours[${dayId}][open]`;
-                closeInput.name = `business_hours[${dayId}][close]`;
             } else {
                 openInput.disabled = true;
                 closeInput.disabled = true;
-                // Clear the name attribute to prevent values from being submitted when unchecked
-                openInput.name = '';
-                closeInput.name = '';
-                // Clear values when unchecked
                 openInput.value = '';
                 closeInput.value = '';
             }
         });
 
-        // Trigger change event on page load to set initial state
-        checkbox.dispatchEvent(new Event('change'));
+        // Do NOT trigger change on page load — the blade template already
+        // sets the correct disabled state and name attributes.  Dispatching
+        // a change event here would override time-input name attributes
+        // (the old bug) or clear values on page load.
     });
 }
 

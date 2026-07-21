@@ -273,16 +273,6 @@
     <script>
         // Initialize Choices.js for the dropdowns in the appointment modal
         // Business hours data (from settings)
-        @php
-            $businessHours = $business['business.hours'] ?? [
-                'monday' => ['open' => '09:00', 'close' => '18:00', 'closed' => false],
-                'tuesday' => ['open' => '09:00', 'close' => '18:00', 'closed' => false],
-                'wednesday' => ['open' => '09:00', 'close' => '18:00', 'closed' => false],
-                'thursday' => ['open' => '09:00', 'close' => '18:00', 'closed' => false],
-                'friday' => ['open' => '09:00', 'close' => '18:00', 'closed' => false],
-                'saturday' => ['open' => '10:00', 'close' => '16:00', 'closed' => false],
-                'sunday' => ['open' => null, 'close' => null, 'closed' => true]];
-        @endphp
         window.businessHours = @json($businessHours);
         window.quickCustomerUrl = '{{ route('customers.quick-store') }}';
         window.csrfToken = '{{ csrf_token() }}';

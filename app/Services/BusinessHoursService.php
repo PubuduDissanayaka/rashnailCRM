@@ -105,6 +105,31 @@ class BusinessHoursService
     }
 
     /**
+     * Get the weekly schedule in the simple open/close/closed shape used by
+     * appointment booking and POS (the same schedule configured in
+     * Settings > Business > Weekly Schedule).
+     */
+    public function getWeeklyHoursForBooking(): array
+    {
+        $config = $this->getConfig();
+        $days = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'];
+
+        $hours = [];
+        foreach ($days as $day) {
+            $dayConfig = $config['business_hours'][$day] ?? null;
+            $enabled = $dayConfig['enabled'] ?? false;
+
+            $hours[$day] = [
+                'open' => $enabled ? ($dayConfig['open'] ?? null) : null,
+                'close' => $enabled ? ($dayConfig['close'] ?? null) : null,
+                'closed' => !$enabled,
+            ];
+        }
+
+        return $hours;
+    }
+
+    /**
      * Get business hours for a specific date
      */
     public function getHoursForDate(CarbonInterface $date): ?array

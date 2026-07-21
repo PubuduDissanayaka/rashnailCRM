@@ -9,9 +9,9 @@ use App\Models\Service;
 use App\Models\ServicePackage;
 use App\Models\User;
 use App\Models\Setting;
+use App\Services\BusinessHoursService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\DB;
 use Carbon\Carbon;
 
 class AppointmentController extends Controller
@@ -65,7 +65,7 @@ class AppointmentController extends Controller
         $services = Service::where('is_active', true)->get();
         $staff = User::withStaffRole()->get();
 
-        $businessHours = Setting::get('business.hours');
+        $businessHours = app(BusinessHoursService::class)->getWeeklyHoursForBooking();
 
         // Stats
         $stats = [
@@ -159,8 +159,8 @@ class AppointmentController extends Controller
                 ->with('error', 'This staff member already has an appointment at this time, with potential overlap.');
         }
 
-        // Check business hours using first service for timing
-        if (!$this->isWithinBusinessHours($appointmentDate, $primaryServiceId)) {
+        // Check business hours using the total duration of all selected services
+        if (!$this->isWithinBusinessHours($appointmentDate, $totalDuration)) {
             return redirect()->back()
                 ->withInput()
                 ->with('error', 'Appointment time must be within business hours and duration must fit before closing time.');
@@ -260,8 +260,8 @@ class AppointmentController extends Controller
                 ->with('error', 'This staff member already has an appointment at this time, with potential overlap.');
         }
 
-        // Check business hours
-        if (!$this->isWithinBusinessHours($appointmentDate, $primaryServiceId)) {
+        // Check business hours using the total duration of all selected services
+        if (!$this->isWithinBusinessHours($appointmentDate, $totalDuration)) {
             return redirect()->back()
                 ->withInput()
                 ->with('error', 'Appointment time must be within business hours and duration must fit before closing time.');
@@ -390,9 +390,8 @@ class AppointmentController extends Controller
             ]);
         }
 
-        // Check business hours
-        $primaryServiceId = $appointment->services->first()?->id ?? $appointment->service_id;
-        if (!$this->isWithinBusinessHours($appointmentDate, $primaryServiceId)) {
+        // Check business hours using the total duration of all selected services
+        if (!$this->isWithinBusinessHours($appointmentDate, $duration)) {
             return response()->json([
                 'success' => false,
                 'message' => 'Appointment time must be within business hours and duration must fit before closing time.'
@@ -453,8 +452,8 @@ class AppointmentController extends Controller
             ]);
         }
 
-        // Check business hours
-        if (!$this->isWithinBusinessHours($appointmentDate, $primaryServiceId)) {
+        // Check business hours using the total duration of all selected services
+        if (!$this->isWithinBusinessHours($appointmentDate, $totalDuration)) {
             return response()->json([
                 'success' => false,
                 'message' => 'Appointment time must be within business hours and duration must fit before closing time.'
@@ -522,8 +521,8 @@ class AppointmentController extends Controller
             ]);
         }
 
-        // Check business hours
-        if (!$this->isWithinBusinessHours($appointmentDate, $primaryServiceId)) {
+        // Check business hours using the total duration of all selected services
+        if (!$this->isWithinBusinessHours($appointmentDate, $totalDuration)) {
             return response()->json([
                 'success' => false,
                 'message' => 'Appointment time must be within business hours and duration must fit before closing time.'
@@ -558,25 +557,17 @@ class AppointmentController extends Controller
     }
 
     /**
-     * Check if the appointment time is within business hours and duration fits before closing time
+     * Check if the appointment time is within business hours and the total
+     * duration of all selected services fits before closing time.
+     *
+     * Business hours are sourced from BusinessHoursService, which reflects
+     * the Weekly Schedule configured in Settings > Business — the same
+     * schedule used for staff attendance, so there is a single source of
+     * truth for "when are we open".
      */
-    private function isWithinBusinessHours(Carbon $appointmentDate, $serviceId = null)
+    private function isWithinBusinessHours(Carbon $appointmentDate, int $durationMinutes = 60)
     {
-        // Get business hours from settings
-        $businessHours = Setting::get('business.hours');
-
-        if (!$businessHours) {
-            // Default hours
-            $businessHours = [
-                'monday' => ['open' => '09:00', 'close' => '18:00', 'closed' => false],
-                'tuesday' => ['open' => '09:00', 'close' => '18:00', 'closed' => false],
-                'wednesday' => ['open' => '09:00', 'close' => '18:00', 'closed' => false],
-                'thursday' => ['open' => '09:00', 'close' => '18:00', 'closed' => false],
-                'friday' => ['open' => '09:00', 'close' => '18:00', 'closed' => false],
-                'saturday' => ['open' => '10:00', 'close' => '16:00', 'closed' => false],
-                'sunday' => ['open' => null, 'close' => null, 'closed' => true],
-            ];
-        }
+        $businessHours = app(BusinessHoursService::class)->getWeeklyHoursForBooking();
 
         $dayOfWeek = strtolower($appointmentDate->format('l'));
         $appointmentTime = $appointmentDate->format('H:i');
@@ -598,10 +589,7 @@ class AppointmentController extends Controller
             return false;
         }
 
-        $service = Service::find($serviceId);
-        $duration = $service ? $service->duration : 60;
-
-        $appointmentEndTime = $appointmentDate->copy()->addMinutes($duration);
+        $appointmentEndTime = $appointmentDate->copy()->addMinutes($durationMinutes);
         $endTimeString = $appointmentEndTime->format('H:i');
 
         // Allow ending exactly at closing time
@@ -646,36 +634,40 @@ class AppointmentController extends Controller
     private function hasConflict($userId, Carbon $startDateTime, $duration, $excludeId = null)
     {
         $bufferTime = Setting::get('appointment.buffer_time', 15);
-        
-        $endDateTime = $startDateTime->copy()->addMinutes($duration);
-        
-        // Add buffer
+
         $startWithBuffer = $startDateTime->copy()->subMinutes($bufferTime);
-        $endWithBuffer = $endDateTime->copy()->addMinutes($bufferTime);
+        $endWithBuffer = $startDateTime->copy()->addMinutes($duration + $bufferTime);
 
-        $query = Appointment::where('user_id', $userId)
+        // Pull candidate appointments for this staff member in a window wide
+        // enough to catch any existing appointment that could still be running
+        // (no appointment is expected to run longer than 24 hours).
+        $query = Appointment::with('services', 'service')
+            ->where('user_id', $userId)
             ->where('status', '!=', 'cancelled')
-            ->where(function ($q) use ($startWithBuffer, $endWithBuffer, $bufferTime) {
-                // Check if any existing appointment overlaps with the new one
-                $q->whereBetween('appointment_date', [$startWithBuffer, $endWithBuffer])
-                  ->orWhere(function ($sub) use ($startWithBuffer, $bufferTime) {
-                      // Check for appointments that start before the new one but end after it starts
-                      // We need to calculate the end time of existing appointments dynamically
-                      $sub->where('appointment_date', '<=', $startWithBuffer)
-                          ->whereRaw(
-                              DB::connection()->getDriverName() === 'sqlite'
-                                  ? "datetime(appointment_date, '+' || COALESCE((SELECT duration FROM services WHERE id = appointments.service_id), 60) || ' minutes') > ?"
-                                  : 'DATE_ADD(appointment_date, INTERVAL COALESCE((SELECT duration FROM services WHERE id = appointments.service_id), 60) + ? MINUTE) > ?',
-                              [$bufferTime * 2, $startWithBuffer]
-                          );
-                  });
-            });
-
+            ->whereBetween('appointment_date', [
+                $startWithBuffer->copy()->subDay(),
+                $endWithBuffer,
+            ]);
 
         if ($excludeId) {
             $query->where('id', '!=', $excludeId);
         }
 
-        return $query->exists();
+        foreach ($query->get() as $existing) {
+            // Use the total duration across all of the existing appointment's
+            // services (via the pivot table), not just its primary service —
+            // otherwise multi-service appointments under-report their real end time.
+            $existingDuration = $existing->services->sum(fn($s) => ($s->duration ?? 60) * ($s->pivot->quantity ?? 1))
+                ?: ($existing->service->duration ?? 60);
+
+            $existingStartWithBuffer = $existing->appointment_date->copy()->subMinutes($bufferTime);
+            $existingEndWithBuffer = $existing->appointment_date->copy()->addMinutes($existingDuration + $bufferTime);
+
+            if ($startWithBuffer->lt($existingEndWithBuffer) && $existingStartWithBuffer->lt($endWithBuffer)) {
+                return true;
+            }
+        }
+
+        return false;
     }
 }

@@ -30,16 +30,9 @@ class PosController extends Controller
             ->get();
         $staff = User::withStaffRole()->get();
 
-        // Get business hours from settings
-        $businessHours = Setting::get('business.hours', [
-            'monday' => ['open' => '09:00', 'close' => '18:00', 'closed' => false],
-            'tuesday' => ['open' => '09:00', 'close' => '18:00', 'closed' => false],
-            'wednesday' => ['open' => '09:00', 'close' => '18:00', 'closed' => false],
-            'thursday' => ['open' => '09:00', 'close' => '18:00', 'closed' => false],
-            'friday' => ['open' => '09:00', 'close' => '18:00', 'closed' => false],
-            'saturday' => ['open' => '10:00', 'close' => '16:00', 'closed' => false],
-            'sunday' => ['open' => null, 'close' => null, 'closed' => true],
-        ]);
+        // Get business hours from settings (the Weekly Schedule configured in
+        // Settings > Business — the single source of truth for booking hours)
+        $businessHours = app(\App\Services\BusinessHoursService::class)->getWeeklyHoursForBooking();
 
         // Get POS-specific settings
         $currencySymbol = Setting::get('payment.currency_symbol', '$');
