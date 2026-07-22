@@ -217,12 +217,12 @@ class AppointmentCalendar {
         this.choices.customer?.removeActiveItems();
         this.choices.staff?.removeActiveItems();
 
-        // Pre-fill date/time with the current time rounded up to the next 30-min slot
-        // so the business-hours check on service-change doesn't fire against an empty field.
+        // Pre-fill date/time with the current time (rounded DOWN to the nearest
+        // 30-min slot — avoids rolling past 59 min into the next hour and
+        // accidentally showing midnight when it's actually late evening).
         const now = new Date();
         const mins = now.getMinutes();
-        const roundTo = 30;
-        const rounded = Math.ceil(mins / roundTo) * roundTo;
+        const rounded = Math.floor(mins / 30) * 30; // 0 or 30, never 60
         now.setMinutes(rounded, 0, 0);
         const pad = n => String(n).padStart(2, '0');
         document.getElementById('event-date-time').value =
