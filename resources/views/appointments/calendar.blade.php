@@ -277,9 +277,9 @@
         window.businessHours = @json($businessHours);
         window.quickCustomerUrl = '{{ route('customers.quick-store') }}';
         window.csrfToken = '{{ csrf_token() }}';
-        window.cancelPolicy = @json(\App\Models\Setting::get('appointment.cancellation_policy'));
-        window.cancelHours = @json((int) \App\Models\Setting::get('appointment.cancellation_hours', 24));
-        window.defaultDuration = @json((int) \App\Models\Setting::get('appointment.default_duration', 60));
+        window.cancelPolicy = @json($cancelPolicy);
+        window.cancelHours = @json($cancelHours);
+        window.defaultDuration = @json($defaultDuration);
     </script>
     <script>
     (function () {

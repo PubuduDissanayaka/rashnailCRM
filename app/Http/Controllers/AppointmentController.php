@@ -67,6 +67,11 @@ class AppointmentController extends Controller
 
         $businessHours = app(BusinessHoursService::class)->getWeeklyHoursForBooking();
 
+        // Settings for calendar JS
+        $cancelPolicy = Setting::get('appointment.cancellation_policy');
+        $cancelHours = (int) Setting::get('appointment.cancellation_hours', 24);
+        $defaultDuration = (int) Setting::get('appointment.default_duration', 60);
+
         // Stats
         $stats = [
             'total' => Appointment::today()->count(),
@@ -75,7 +80,10 @@ class AppointmentController extends Controller
             'completed' => Appointment::today()->where('status', 'completed')->count(),
         ];
 
-        return view('appointments.calendar', compact('customers', 'services', 'staff', 'businessHours', 'stats'));
+        return view('appointments.calendar', compact(
+            'customers', 'services', 'staff', 'businessHours', 'stats',
+            'cancelPolicy', 'cancelHours', 'defaultDuration'
+        ));
     }
 
     /**
@@ -205,8 +213,9 @@ class AppointmentController extends Controller
 
         $appointment->load(['customer', 'user', 'service', 'transaction', 'services']);
         $currencySymbol = Setting::get('payment.currency_symbol', '$');
+        $cancelPolicy = Setting::get('appointment.cancellation_policy');
 
-        return view('appointments.show', compact('appointment', 'currencySymbol'));
+        return view('appointments.show', compact('appointment', 'currencySymbol', 'cancelPolicy'));
     }
 
     /**
