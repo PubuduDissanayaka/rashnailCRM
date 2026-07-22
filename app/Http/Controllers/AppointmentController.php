@@ -380,7 +380,21 @@ class AppointmentController extends Controller
 
         $service = $appointment->service;
         $duration = $appointment->services->sum(fn($s) => ($s->duration ?? 60) * ($s->pivot->quantity ?? 1)) ?: ($service->duration ?? 60);
-        $appointmentDate = Carbon::parse($validated['appointment_date']);
+
+        // The JS drag-drop sends an ISO-8601 string in UTC (e.g.
+        // "2026-07-27T08:00:00.000Z").  Convert to the app's timezone
+        // so the business-hours check compares against local time
+        // (e.g. 13:30 Colombo, not 08:00 UTC).
+        $appointmentDate = Carbon::parse($validated['appointment_date'])
+            ->setTimezone(config('app.timezone'));
+
+        // Reject if dragged to a past date
+        if ($appointmentDate->isPast()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Appointment cannot be rescheduled to a past date or time.'
+            ]);
+        }
 
         // Check for conflicts
         if ($this->hasConflict($appointment->user_id, $appointmentDate, $duration, $appointment->id)) {
@@ -398,8 +412,8 @@ class AppointmentController extends Controller
             ]);
         }
 
-        $appointment->update(['appointment_date' => $validated['appointment_date']]);
-        
+        $appointment->update(['appointment_date' => $appointmentDate]);
+
         // Reload for fresh data
         $appointment->refresh();
         $appointment->load(['customer', 'user', 'service', 'services']);
@@ -614,7 +628,7 @@ class AppointmentController extends Controller
         }
 
         // Check minimum advance notice
-        if ($appointmentDate->diffInHours(now(), false) < $minHours) {
+        if ($appointmentDate->diffInHours(now(), true) < $minHours) {
             abort(422, __('Appointments must be booked at least :hours hours in advance.', ['hours' => $minHours]));
         }
 
