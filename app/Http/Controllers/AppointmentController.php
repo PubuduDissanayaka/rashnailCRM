@@ -636,14 +636,40 @@ class AppointmentController extends Controller
                     ]);
                 }
 
-                // Send customer confirmation (via notification service)
+                // Send customer confirmation email directly
                 if (Setting::get('notification.customer_confirmation', true) && $appointment->customer?->email) {
-                    $notifService->sendToUser($appointment->user, 'appointment_confirmation', [
-                        'title' => 'Appointment Confirmed',
-                        'message' => "Your appointment on {$appointment->appointment_date->format('M d, Y h:i A')} has been confirmed.",
-                        'customer_email' => $appointment->customer->email,
-                        'appointment_id' => $appointment->id,
-                    ]);
+                    try {
+                        $fromAddress = Setting::get('notification.email_address', config('mail.from.address'));
+                        $fromName = Setting::get('business.name', config('mail.from.name'));
+                        $signature = Setting::get('notification.email_signature', '');
+
+                        $servicesList = $appointment->services->pluck('name')->implode(', ') ?: ($appointment->service?->name ?? 'N/A');
+                        $dateStr = $appointment->appointment_date->format('l, F j, Y');
+                        $timeStr = $appointment->appointment_date->format('g:i A');
+                        $staffName = $appointment->user?->name ?? 'N/A';
+
+                        \Illuminate\Support\Facades\Mail::mailer('dynamic_smtp')
+                            ->send([], [], function (\Illuminate\Mail\Message $message) use ($appointment, $fromAddress, $fromName, $signature, $servicesList, $dateStr, $timeStr, $staffName) {
+                                $html = '<h2>Appointment Confirmed</h2>'
+                                    . '<p>Dear ' . e($appointment->customer->name) . ',</p>'
+                                    . '<p>Your appointment has been confirmed:</p>'
+                                    . '<ul>'
+                                    . '<li><strong>Date:</strong> ' . $dateStr . '</li>'
+                                    . '<li><strong>Time:</strong> ' . $timeStr . '</li>'
+                                    . '<li><strong>Service:</strong> ' . e($servicesList) . '</li>'
+                                    . '<li><strong>Staff:</strong> ' . e($staffName) . '</li>'
+                                    . '</ul>'
+                                    . ($signature ? '<p>' . nl2br(e($signature)) . '</p>' : '');
+
+                                $message->from($fromAddress, $fromName)
+                                    ->to($appointment->customer->email)
+                                    ->subject('Appointment Confirmed - ' . Setting::get('business.name', 'Rash Nail Lounge'))
+                                    ->replyTo($fromAddress)
+                                    ->setBody($html, 'text/html');
+                            });
+                    } catch (\Throwable $e) {
+                        \Illuminate\Support\Facades\Log::warning('Failed to send customer confirmation email: ' . $e->getMessage());
+                    }
                 }
             }
 
