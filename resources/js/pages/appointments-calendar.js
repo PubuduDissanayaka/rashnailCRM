@@ -216,6 +216,18 @@ class AppointmentCalendar {
         this.choices.service?.removeActiveItems();
         this.choices.customer?.removeActiveItems();
         this.choices.staff?.removeActiveItems();
+
+        // Pre-fill date/time with the current time rounded up to the next 30-min slot
+        // so the business-hours check on service-change doesn't fire against an empty field.
+        const now = new Date();
+        const mins = now.getMinutes();
+        const roundTo = 30;
+        const rounded = Math.ceil(mins / roundTo) * roundTo;
+        now.setMinutes(rounded, 0, 0);
+        const pad = n => String(n).padStart(2, '0');
+        document.getElementById('event-date-time').value =
+            `${now.getFullYear()}-${pad(now.getMonth()+1)}-${pad(now.getDate())}T${pad(now.getHours())}:${pad(now.getMinutes())}`;
+
         this.modal.show();
     }
 
@@ -556,12 +568,21 @@ class AppointmentCalendar {
                     const date = new Date(dateTimeValue);
                     const vals = self.choices.service.getValue(true);
                     const ids = Array.isArray(vals) ? vals : [vals];
+                    // Show a subtle inline hint below the services field instead of
+                    // an interruptive modal — the submit handler does the real validation.
+                    const hint = document.getElementById('business-hours-hint') || (function () {
+                        const el = document.createElement('div');
+                        el.id = 'business-hours-hint';
+                        el.className = 'form-text text-warning mt-1';
+                        document.getElementById('event-service')
+                            ?.closest('.mb-2')
+                            ?.appendChild(el);
+                        return el;
+                    })();
                     if (!self.isWithinBusinessHours(date, ids.length ? ids : null)) {
-                        Swal.fire({
-                            icon: 'warning',
-                            title: 'Time/Duration Issue',
-                            text: 'The total duration of selected services does not fit before closing time. Please select an earlier time slot.'
-                        });
+                        hint.textContent = '⚠ Service duration exceeds closing time — choose an earlier slot or shorter services.';
+                    } else {
+                        hint.textContent = '';
                     }
                 }
             });

@@ -88,7 +88,7 @@
                                 <div class="mb-3">
                                     <label for="appointment_date" class="form-label">Date & Time</label>
                                     <input type="datetime-local" class="form-control" name="appointment_date" id="appointment_date" 
-                                           value="{{ old('appointment_date') }}" required>
+                                           value="{{ old('appointment_date', now()->timezone(config('app.timezone'))->format('Y-m-d\TH:i')) }}" required>
                                     @error('appointment_date')
                                         <span class="text-danger" role="alert">
                                             <small>{{ $message }}</small>
