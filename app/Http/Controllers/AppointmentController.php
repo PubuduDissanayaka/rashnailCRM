@@ -314,14 +314,16 @@ class AppointmentController extends Controller
     {
         $this->authorize('delete appointments');
 
-        // Check cancellation deadline
-        $cancelHours = (int) Setting::get('appointment.cancellation_hours', 24);
-        if ($appointment->appointment_date->diffInHours(now(), true) < $cancelHours) {
-            $error = __('Appointments must be cancelled at least :hours hours in advance.', ['hours' => $cancelHours]);
-            if ($request->wantsJson()) {
-                return response()->json(['success' => false, 'message' => $error], 422);
+        // Check cancellation deadline (admins bypass)
+        if (!auth()->user()->can('manage system')) {
+            $cancelHours = (int) Setting::get('appointment.cancellation_hours', 24);
+            if ($appointment->appointment_date->diffInHours(now(), true) < $cancelHours) {
+                $error = __('Appointments must be cancelled at least :hours hours in advance.', ['hours' => $cancelHours]);
+                if ($request->wantsJson()) {
+                    return response()->json(['success' => false, 'message' => $error], 422);
+                }
+                return redirect()->back()->with('error', $error);
             }
-            return redirect()->back()->with('error', $error);
         }
 
         $appointment->delete();
