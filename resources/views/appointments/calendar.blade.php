@@ -220,7 +220,7 @@
                                     <select class="form-select" id="event-service" name="service_ids[]" required="" multiple>
                                         <option value="">Select services</option>
                                         @foreach($services ?? [] as $service)
-                                            <option value="{{ $service->id }}">{{ $service->name }}</option>
+                                            <option value="{{ $service->id }}">{{ $service->name }} ({{ $service->duration }} min)</option>
                                         @endforeach
                                     </select>
                                     <div class="invalid-feedback">Please select at least one service</div>

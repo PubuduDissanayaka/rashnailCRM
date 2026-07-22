@@ -53,15 +53,29 @@ class AppointmentCalendar {
 
         // Multi-service: extendedProps.service holds comma-separated names
         const serviceStr = this.selectedEvent.extendedProps.service || '';
-        const serviceId = this.selectedEvent.extendedProps.service_id; // primary
+        const serviceId = this.selectedEvent.extendedProps.service_id; // primary (fallback)
+        const serviceIds = this.selectedEvent.extendedProps.service_ids || (serviceId ? [serviceId] : []);
         const customerId = this.selectedEvent.extendedProps.customer_id;
         const staffId = this.selectedEvent.extendedProps.user_id;
         const status = this.selectedEvent.extendedProps.status || 'scheduled';
         const notes = this.selectedEvent.extendedProps.notes || '';
 
         // Set values using Choices instances if available
-        if (serviceId) {
-            this.setChoicesValue('event-service', serviceId.toString());
+        // Pre-select ALL of the appointment's services, not just the primary one —
+        // otherwise editing an appointment silently drops any extra services on save.
+        if (serviceIds.length) {
+            const stringIds = serviceIds.map(id => id.toString());
+            if (this.choices.service) {
+                // setChoiceByValue adds to the current selection rather than replacing it,
+                // so clear out whatever was left over from the last appointment opened.
+                this.choices.service.removeActiveItems();
+                this.choices.service.setChoiceByValue(stringIds);
+            } else {
+                const el = document.getElementById('event-service');
+                if (el) {
+                    Array.from(el.options).forEach(o => { o.selected = stringIds.includes(o.value); });
+                }
+            }
         }
         this.setChoicesValue('event-customer', customerId);
         this.setChoicesValue('event-staff', staffId);
@@ -199,9 +213,9 @@ class AppointmentCalendar {
         this.btnDeleteEvent.style.display = "none";
         this.modalTitle.textContent = 'Create New Appointment';
         document.getElementById('appointment-id').value = '';
-        this.setChoicesValue('event-service', '');
-        this.setChoicesValue('event-customer', '');
-        this.setChoicesValue('event-staff', '');
+        this.choices.service?.removeActiveItems();
+        this.choices.customer?.removeActiveItems();
+        this.choices.staff?.removeActiveItems();
         this.modal.show();
     }
 
@@ -223,10 +237,9 @@ class AppointmentCalendar {
             dateTimeField.value = `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
         }
 
+        this.choices.service?.removeActiveItems();
         if (info.service_id) {
             this.setChoicesValue('event-service', info.service_id);
-        } else {
-            this.setChoicesValue('event-service', '');
         }
 
         this.modal.show();

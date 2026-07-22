@@ -343,6 +343,7 @@ class Appointment extends Model
     {
         $serviceNames = $this->services->pluck('name')->implode(', ');
         $firstService = $this->services->first() ?? $this->service;
+        $serviceIds = $this->services->pluck('id')->all() ?: ($this->service_id ? [$this->service_id] : []);
         $duration = $this->services->sum(fn($s) => $s->duration * ($s->pivot->quantity ?? 1)) ?: ($this->service?->duration ?? 60);
 
         return [
@@ -365,6 +366,7 @@ class Appointment extends Model
                 'customer_id' => $this->customer_id,
                 'user_id' => $this->user_id,
                 'service_id' => $firstService?->id,
+                'service_ids' => $serviceIds,
             ],
         ];
     }
