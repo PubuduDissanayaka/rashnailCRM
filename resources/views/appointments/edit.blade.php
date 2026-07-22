@@ -11,7 +11,7 @@
         <div class="col-12">
             <div class="card">
                 <div class="card-body">
-                    <form method="POST" action="{{ route('appointments.update', $appointment->slug) }}">
+                    <form method="POST" action="{{ route('appointments.update', $appointment->slug) }}" id="appointment-form">
                         @csrf
                         @method('PUT')
                         <div class="row">
@@ -153,5 +153,26 @@
                 confirmButtonClass: 'btn btn-primary'
             });
         @endif
+    </script>
+    <script>
+    // Client-side validation for advance booking notice
+    document.getElementById('appointment-form')?.addEventListener('submit', function (e) {
+        const dtVal = document.getElementById('appointment_date')?.value;
+        if (!dtVal) return;
+        const apptTime = new Date(dtVal);
+        const now = new Date();
+        const minHours = 2;
+        const diffMs = apptTime.getTime() - now.getTime();
+        const diffHours = diffMs / (1000 * 60 * 60);
+        if (diffHours < minHours) {
+            e.preventDefault();
+            Swal.fire({
+                icon: 'error',
+                title: 'Too Soon',
+                text: 'Appointments must be booked at least ' + minHours + ' hours in advance.',
+                confirmButtonClass: 'btn btn-primary'
+            });
+        }
+    });
     </script>
 @endsection
