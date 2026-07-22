@@ -92,6 +92,17 @@ class AppointmentCalendar {
 
         // Update button text
         document.getElementById('btn-save-event').textContent = 'Update';
+
+        // Show cancellation deadline hint
+        const hint = document.getElementById('cancel-policy-hint');
+        if (hint) {
+            const apptDate = new Date(this.selectedEvent.start);
+            const cancelHours = window.cancelHours || 24;
+            const deadline = new Date(apptDate.getTime() - cancelHours * 60 * 60 * 1000);
+            hint.textContent = 'Cancel by ' + deadline.toLocaleString(undefined, {
+                month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit'
+            }) + ' (' + cancelHours + 'h before)';
+        }
     }
 
     // Helper method to set value in Choices.js dropdown
@@ -146,7 +157,8 @@ class AppointmentCalendar {
     // Get total duration from selected services (multi-select support)
     getTotalDuration(serviceIds) {
         const serviceElement = document.getElementById('event-service');
-        if (!serviceElement) return 60;
+        const fallback = window.defaultDuration || 60;
+        if (!serviceElement) return fallback;
         const ids = Array.isArray(serviceIds) ? serviceIds : (serviceIds ? [serviceIds] : []);
         let total = 0;
         ids.forEach(id => {
@@ -156,7 +168,7 @@ class AppointmentCalendar {
                 if (match) total += parseInt(match[1]);
             }
         });
-        return total || 60;
+        return total || fallback;
     }
 
     // Helper method to check if a date/time is within business hours and duration fits

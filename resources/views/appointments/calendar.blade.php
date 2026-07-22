@@ -255,6 +255,7 @@
                         </div>
                         <div class="d-flex flex-wrap align-items-center gap-2">
                             <button class="btn btn-danger" id="btn-delete-event" type="button">Delete</button>
+                            <span class="text-muted small me-auto" id="cancel-policy-hint" style="font-size:0.75rem;"></span>
                             <button class="btn btn-light ms-auto" data-bs-dismiss="modal" type="button">Close</button>
                             <button class="btn btn-primary" id="btn-save-event" type="submit">Save</button>
                         </div>
@@ -276,6 +277,9 @@
         window.businessHours = @json($businessHours);
         window.quickCustomerUrl = '{{ route('customers.quick-store') }}';
         window.csrfToken = '{{ csrf_token() }}';
+        window.cancelPolicy = @json(Setting::get('appointment.cancellation_policy'));
+        window.cancelHours = @json((int) Setting::get('appointment.cancellation_hours', 24));
+        window.defaultDuration = @json((int) Setting::get('appointment.default_duration', 60));
     </script>
     <script>
     (function () {

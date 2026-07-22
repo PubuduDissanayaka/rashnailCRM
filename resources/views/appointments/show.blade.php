@@ -181,6 +181,15 @@
                                     </a>
                                 </div>
                             </div>
+
+                            <!-- Cancellation Policy -->
+                            @php $cancelPolicy = Setting::get('appointment.cancellation_policy'); @endphp
+                            @if($cancelPolicy)
+                            <div class="mt-3 pt-3 border-top">
+                                <label class="form-label text-muted small">Cancellation Policy</label>
+                                <p class="text-muted small mb-0"><i class="ti ti-info-circle me-1"></i>{{ $cancelPolicy }}</p>
+                            </div>
+                            @endif
                         </div>
                     </div>
                 </div>
