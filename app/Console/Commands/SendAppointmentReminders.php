@@ -54,6 +54,12 @@ class SendAppointmentReminders extends Command
             return 0;
         }
 
+        // Check if customer reminders are enabled
+        if (!Setting::get('notification.customer_reminder', true)) {
+            $this->warn('Customer reminders are disabled (notification.customer_reminder = false). Skipping reminders.');
+            return 0;
+        }
+
         $reminderHours = (int) ($this->option('hours') ?? Setting::get('notification.reminder_hours', 24));
         $isDryRun = $this->option('dry-run');
 

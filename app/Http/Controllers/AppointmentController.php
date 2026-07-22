@@ -200,6 +200,8 @@ class AppointmentController extends Controller
         }
         $appointment->services()->sync($pivotData);
 
+        $this->dispatchAppointmentNotifications($appointment, 'created');
+
         return redirect()->route('appointments.calendar')
             ->with('success', 'Appointment created successfully.');
     }
@@ -325,6 +327,10 @@ class AppointmentController extends Controller
                 return redirect()->back()->with('error', $error);
             }
         }
+
+        // Load fresh relations for notification dispatch before deleting
+        $appointment->load(['customer', 'user']);
+        $this->dispatchAppointmentNotifications($appointment, 'cancelled');
 
         $appointment->delete();
 
@@ -601,6 +607,7 @@ class AppointmentController extends Controller
         $appointment->services()->sync($pivotData);
 
         $appointment->load(['customer', 'user', 'service', 'services']);
+        $this->dispatchAppointmentNotifications($appointment, 'created');
 
         return response()->json([
             'success' => true,
@@ -610,8 +617,55 @@ class AppointmentController extends Controller
     }
 
     /**
+     * Dispatch appointment notifications based on settings.
+     */
+    private function dispatchAppointmentNotifications(Appointment $appointment, string $event = 'created'): void
+    {
+        try {
+            $notifService = app(\App\Services\NotificationService::class);
+
+            if ($event === 'created') {
+                // Notify staff of new appointment
+                if (Setting::get('notification.staff_new_appointment', true) && $appointment->user) {
+                    $notifService->sendToUser($appointment->user, 'appointment_new', [
+                        'title' => 'New Appointment',
+                        'message' => "New appointment with {$appointment->customer?->name} on {$appointment->appointment_date->format('M d, Y h:i A')}.",
+                        'appointment_id' => $appointment->id,
+                        'customer_name' => $appointment->customer?->name,
+                        'appointment_date' => $appointment->appointment_date->toDateTimeString(),
+                    ]);
+                }
+
+                // Send customer confirmation (via notification service)
+                if (Setting::get('notification.customer_confirmation', true) && $appointment->customer?->email) {
+                    $notifService->sendToUser($appointment->user, 'appointment_confirmation', [
+                        'title' => 'Appointment Confirmed',
+                        'message' => "Your appointment on {$appointment->appointment_date->format('M d, Y h:i A')} has been confirmed.",
+                        'customer_email' => $appointment->customer->email,
+                        'appointment_id' => $appointment->id,
+                    ]);
+                }
+            }
+
+            if ($event === 'cancelled') {
+                // Notify staff of cancellation
+                if (Setting::get('notification.staff_cancellation', true) && $appointment->user) {
+                    $notifService->sendToUser($appointment->user, 'appointment_cancelled', [
+                        'title' => 'Appointment Cancelled',
+                        'message' => "Appointment with {$appointment->customer?->name} on {$appointment->appointment_date->format('M d, Y h:i A')} has been cancelled.",
+                        'appointment_id' => $appointment->id,
+                        'customer_name' => $appointment->customer?->name,
+                    ]);
+                }
+            }
+        } catch (\Throwable $e) {
+            // Log but never break the request for a notification failure
+            \Illuminate\Support\Facades\Log::warning('Failed to dispatch appointment notification: ' . $e->getMessage());
+        }
+    }
+
+    /**
      * Check if the appointment time is within business hours and the total
-     * duration of all selected services fits before closing time.
      *
      * Business hours are sourced from BusinessHoursService, which reflects
      * the Weekly Schedule configured in Settings > Business — the same
