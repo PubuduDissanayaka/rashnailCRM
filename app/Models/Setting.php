@@ -120,7 +120,7 @@ class Setting extends Model
             Cache::forget("setting.{$setting->key}");
         });
 
-        foreach(['business', 'appointment', 'notification', 'payment', 'attendance', 'security'] as $group) {
+        foreach(['business', 'appointment', 'notification', 'payment', 'attendance', 'security', 'pos'] as $group) {
             Cache::forget("settings.group.{$group}");
         }
     }

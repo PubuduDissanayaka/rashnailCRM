@@ -40,6 +40,9 @@ _customization_backups/
 _bmad/config.user.toml
 _bmad/custom/config.user.toml
 
+# Graphify knowledge graph (generated)
+/graphify-out/
+
 # OS artifacts
 .DS_Store
 Thumbs.db

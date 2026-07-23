@@ -52,7 +52,7 @@ class SettingsController extends Controller
         $this->authorize('manage system');
 
         $validated = $request->validate([
-            'group' => 'required|in:business,appointment,notification,payment,attendance,security',
+            'group' => 'required|in:business,appointment,notification,payment,attendance,security,pos',
             'settings' => 'nullable|array',
             'payment_methods' => 'nullable|array',
         ]);
