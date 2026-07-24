@@ -10,9 +10,12 @@ use App\Models\Service;
 use App\Models\ServicePackage;
 use App\Models\Setting;
 use App\Models\User;
+use App\Mail\SaleReceipt;
 use App\Services\CouponService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Storage;
 
 class PosController extends Controller
@@ -788,6 +791,357 @@ class PosController extends Controller
         $currencySymbol = \App\Models\Setting::get('payment.currency_symbol', '$');
 
         return view('pos.transactions', compact('sales', 'currencySymbol'));
+    }
+
+    /**
+     * Show POS terminal with existing sale data loaded for editing.
+     */
+    public function edit(Sale $sale)
+    {
+        $this->authorize('edit pos transactions');
+
+        $sale->load(['customer', 'user', 'items.sellable', 'payments', 'saleCoupons']);
+
+        // Same data as index()
+        $customers = Customer::orderBy('first_name')->get();
+        $services = Service::where('is_active', true)->get();
+        $servicePackages = ServicePackage::where('is_active', true)->get();
+        $staff = User::withStaffRole()->get();
+        $businessHours = app(\App\Services\BusinessHoursService::class)->getWeeklyHoursForBooking();
+        $currencySymbol = Setting::get('payment.currency_symbol', '$');
+        $paymentMethods = Setting::get('payment.methods', ['cash', 'card']);
+        $taxRate = Setting::get('payment.tax_rate', 0);
+        $posSettings = [
+            'currencySymbol' => Setting::get('payment.currency_symbol', '$'),
+            'currencyCode' => Setting::get('payment.currency_code', 'USD'),
+            'taxRate' => Setting::get('payment.tax_rate', 0),
+            'businessName' => Setting::get('business.name', 'Business'),
+            'businessTagline' => Setting::get('business.tagline', ''),
+            'businessLogo' => Setting::get('business.logo') ? Storage::url(Setting::get('business.logo')) : null,
+            'businessAddress' => Setting::get('business.address', ''),
+            'quickAmountsMode' => Setting::get('payment.pos.quick_amounts_mode', 'smart'),
+            'quickAmountsFixed' => Setting::get('payment.pos.quick_amounts_fixed', [20, 50, 100]),
+            'quickAmountsPercentages' => Setting::get('payment.pos.quick_amounts_percentages', [105, 110, 120]),
+            'soundEnabled' => Setting::get('payment.pos.enable_sound_effects', true),
+            'maxPaymentAmount' => Setting::get('payment.pos.max_payment_amount', 100000),
+            'requireReference' => [
+                'card' => Setting::get('payment.pos.require_reference_card', true),
+                'check' => Setting::get('payment.pos.require_reference_check', true),
+                'bank_transfer' => Setting::get('payment.pos.require_reference_bank_transfer', true),
+                'mobile' => Setting::get('payment.pos.require_reference_mobile', true),
+            ],
+        ];
+
+        // Build recyclable cart items from the sale's items
+        $editCart = $sale->items->map(function ($item) {
+            return [
+                'id' => (string) $item->sellable_id,
+                'type' => $item->sellable_type === \App\Models\Service::class ? 'service' : 'package',
+                'name' => $item->item_name,
+                'price' => (float) $item->unit_price,
+                'quantity' => $item->quantity,
+            ];
+        })->values();
+
+        // Detect discount type from stored values
+        $editDiscountType = 'fixed';
+        $editDiscountAmount = (float) $sale->discount_amount;
+        if ($editDiscountAmount > 0 && $sale->subtotal > 0) {
+            $pct = ($editDiscountAmount / $sale->subtotal) * 100;
+            if (abs($pct - round($pct)) < 0.01) {
+                $editDiscountType = 'percent';
+                $editDiscountAmount = round($pct);
+            }
+        }
+
+        // Coupon data
+        $editCoupons = $sale->saleCoupons->map(function ($sc) {
+            return [
+                'id' => $sc->coupon_id,
+                'code' => $sc->coupon?->code ?? '',
+                'discount_amount' => (float) $sc->discount_amount,
+            ];
+        })->values();
+
+        $editSale = [
+            'id' => $sale->id,
+            'sale_number' => $sale->sale_number,
+            'customer_id' => $sale->customer_id,
+            'staff_id' => $sale->user_id,
+            'cart' => $editCart,
+            'discount_type' => $editDiscountType,
+            'discount_amount' => $editDiscountAmount,
+            'applied_coupons' => $editCoupons,
+            'notes' => $sale->notes,
+            'subtotal' => (float) $sale->subtotal,
+            'tax_amount' => (float) $sale->tax_amount,
+            'total_amount' => (float) $sale->total_amount,
+        ];
+
+        return view('pos.index', compact(
+            'customers', 'services', 'servicePackages', 'staff',
+            'businessHours', 'currencySymbol', 'paymentMethods',
+            'taxRate', 'posSettings', 'editSale'
+        ));
+    }
+
+    /**
+     * Update an existing sale — replace items, recalculate totals, adjust payments.
+     */
+    public function update(Request $request, Sale $sale)
+    {
+        $this->authorize('edit pos transactions');
+
+        // Same validation as store()
+        $availableMethods = Setting::get('payment.methods', ['cash', 'card']) ?? ['cash', 'card'];
+        if (!is_array($availableMethods)) $availableMethods = ['cash', 'card'];
+        $hasSplitPayments = $request->has('payments') && is_array($request->payments) && count($request->payments) > 0;
+
+        $validated = $request->validate([
+            'customer_id' => 'nullable|exists:customers,id',
+            'staff_id' => 'nullable|exists:users,id',
+            'items' => 'required|array|min:1|max:100',
+            'items.*.type' => 'required|in:service,package',
+            'items.*.id' => 'required|integer|min:1',
+            'items.*.quantity' => 'required|integer|min:1|max:999',
+            'items.*.price' => 'nullable|numeric|min:0|max:999999',
+            'payments' => 'required_if:payment_method,null|array|min:1|max:10',
+            'payments.*.method' => 'required|in:' . implode(',', $availableMethods),
+            'payments.*.amount' => 'required|numeric|min:0.01|max:' . Setting::get('payment.pos.max_payment_amount', 100000),
+            'payments.*.reference' => 'nullable|string|max:100|regex:/^[A-Za-z0-9\-_#]+$/',
+            'payments.*.notes' => 'nullable|string|max:500',
+            'payment_method' => 'required_without:payments|nullable|in:' . implode(',', $availableMethods),
+            'amount_received' => 'required_without:payments|nullable|numeric|min:0',
+            'payment_reference' => 'nullable|string|max:100|regex:/^[A-Za-z0-9\-_#]+$/',
+            'payment_notes' => 'nullable|string|max:500',
+            'discount_amount' => 'nullable|numeric|min:0',
+            'discount_type' => 'nullable|in:fixed,percent',
+            'coupon_discount_amount' => 'nullable|numeric|min:0',
+            'applied_coupons' => 'nullable|array',
+            'applied_coupons.*.id' => 'required|integer|exists:coupons,id',
+            'applied_coupons.*.code' => 'required|string|max:50',
+            'applied_coupons.*.discount_amount' => 'required|numeric|min:0',
+            'notes' => 'nullable|string|max:1000',
+        ]);
+
+        DB::beginTransaction();
+
+        try {
+            $taxRate = Setting::get('payment.tax_rate', 0);
+            if ($taxRate < 0 || $taxRate > 100) {
+                throw new \Exception('Invalid tax rate configuration');
+            }
+            $taxRateDecimal = $taxRate / 100;
+
+            // Recalculate totals
+            $subtotal = 0;
+            foreach ($request->items as $item) {
+                if ($item['type'] === 'service') {
+                    $service = Service::where('id', $item['id'])->where('is_active', true)->first();
+                    if (!$service) {
+                        throw new \Exception('Service with ID ' . $item['id'] . ' does not exist or is not active');
+                    }
+                    $price = isset($item['price']) ? $item['price'] : $service->price;
+                } else {
+                    $package = ServicePackage::where('id', $item['id'])->where('is_active', true)->first();
+                    if (!$package) {
+                        throw new \Exception('Package with ID ' . $item['id'] . ' does not exist or is not active');
+                    }
+                    $price = isset($item['price']) ? $item['price'] : $package->price;
+                }
+                if ($price < 0) throw new \Exception('Item price cannot be negative');
+                $subtotal += ($price * $item['quantity']);
+            }
+
+            // Discount
+            $discountAmount = 0;
+            if ($request->has('discount_amount') && $request->discount_amount > 0) {
+                if ($request->discount_type === 'percent') {
+                    $discountAmount = $subtotal * ($request->discount_amount / 100);
+                } else {
+                    $discountAmount = $request->discount_amount;
+                }
+            }
+
+            $couponDiscountAmount = $request->input('coupon_discount_amount', 0);
+            if ($couponDiscountAmount < 0) throw new \Exception('Coupon discount amount cannot be negative');
+
+            $taxableAmount = max(0, $subtotal - $discountAmount - $couponDiscountAmount);
+            $taxAmount = $taxableAmount * $taxRateDecimal;
+            $totalAmount = $taxableAmount + $taxAmount;
+
+            $totalReceived = $hasSplitPayments
+                ? array_sum(array_column($request->payments, 'amount'))
+                : $request->amount_received;
+
+            if ($totalReceived < $totalAmount) {
+                throw new \Exception('Total payment amount is less than total amount. Required: ' . number_format($totalAmount, 2) . ', Received: ' . number_format($totalReceived, 2));
+            }
+
+            $changeAmount = max(0, $totalReceived - $totalAmount);
+            $userId = $request->staff_id ?? auth()->id();
+
+            if ($request->staff_id) {
+                $staffUser = User::find($request->staff_id);
+                if (!$staffUser) throw new \Exception('Selected staff member does not exist');
+                if (!$staffUser->hasAnyRole(['administrator', 'staff'])) {
+                    throw new \Exception('Selected user is not authorized as staff member');
+                }
+            }
+
+            // --- Clear old data ---
+            // Remove old items (service package sales cascade)
+            $sale->items()->delete();
+            // Remove old payments
+            $sale->payments()->delete();
+            // Remove old coupon redemptions and sale_coupon links
+            $sale->couponRedemptions()->delete();
+            $sale->saleCoupons()->delete();
+
+            // --- Update sale record ---
+            $sale->update([
+                'customer_id' => $request->customer_id,
+                'user_id' => $userId,
+                'subtotal' => $subtotal,
+                'tax_amount' => $taxAmount,
+                'discount_amount' => $discountAmount,
+                'coupon_discount_amount' => $couponDiscountAmount,
+                'applied_coupon_ids' => array_column($request->input('applied_coupons', []), 'id'),
+                'total_amount' => $totalAmount,
+                'amount_paid' => $totalReceived,
+                'change_amount' => $changeAmount,
+                'status' => 'completed',
+                'notes' => $request->notes,
+            ]);
+
+            // --- Recreate coupon redemptions ---
+            if ($request->has('applied_coupons') && !empty($request->applied_coupons)) {
+                foreach ($request->applied_coupons as $couponData) {
+                    $coupon = \App\Models\Coupon::find($couponData['id']);
+                    if (!$coupon) throw new \Exception('Coupon with ID ' . $couponData['id'] . ' not found');
+
+                    $redemption = \App\Models\CouponRedemption::create([
+                        'coupon_id' => $coupon->id,
+                        'sale_id' => $sale->id,
+                        'customer_id' => $request->customer_id,
+                        'redeemed_by_user_id' => auth()->id(),
+                        'discount_amount' => $couponData['discount_amount'],
+                        'redeemed_at' => now(),
+                        'ip_address' => $request->ip(),
+                        'user_agent' => $request->userAgent(),
+                    ]);
+
+                    \App\Models\SaleCoupon::create([
+                        'sale_id' => $sale->id,
+                        'coupon_id' => $coupon->id,
+                        'coupon_redemption_id' => $redemption->id,
+                        'discount_amount' => $couponData['discount_amount'],
+                    ]);
+                }
+            }
+
+            // --- Recreate sale items ---
+            foreach ($request->items as $item) {
+                if ($item['type'] === 'service') {
+                    $service = Service::where('id', $item['id'])->where('is_active', true)->first();
+                    $unitPrice = isset($item['price']) ? $item['price'] : $service->price;
+                    $itemName = $service->name;
+                } else {
+                    $package = ServicePackage::where('id', $item['id'])->where('is_active', true)->first();
+                    $unitPrice = isset($item['price']) ? $item['price'] : $package->price;
+                    $itemName = $package->name;
+                }
+
+                $lineTotal = $unitPrice * $item['quantity'];
+
+                $saleItem = $sale->items()->create([
+                    'sellable_type' => $item['type'] === 'service' ? Service::class : ServicePackage::class,
+                    'sellable_id' => $item['id'],
+                    'item_name' => $itemName,
+                    'quantity' => $item['quantity'],
+                    'unit_price' => $unitPrice,
+                    'discount_amount' => 0,
+                    'tax_amount' => ($unitPrice * $item['quantity']) * $taxRateDecimal,
+                    'line_total' => $lineTotal,
+                ]);
+
+                if ($item['type'] === 'package') {
+                    $package = ServicePackage::where('id', $item['id'])->where('is_active', true)->first();
+                    $saleItem->servicePackageSales()->create([
+                        'service_package_id' => $item['id'],
+                        'sessions_used' => 0,
+                        'sessions_remaining' => $package->session_count,
+                        'expires_at' => now()->addDays($package->validity_days),
+                        'status' => 'active',
+                    ]);
+                }
+            }
+
+            // --- Recreate payments ---
+            if ($hasSplitPayments) {
+                foreach ($request->payments as $pmt) {
+                    $sale->payments()->create([
+                        'payment_method' => $pmt['method'],
+                        'amount' => $pmt['amount'],
+                        'reference_number' => $pmt['reference'] ?? null,
+                        'notes' => $pmt['notes'] ?? null,
+                        'payment_date' => now(),
+                    ]);
+                }
+            } else {
+                $sale->payments()->create([
+                    'payment_method' => $request->payment_method,
+                    'amount' => $request->amount_received,
+                    'reference_number' => $request->payment_reference ?? null,
+                    'notes' => $request->payment_notes ?? null,
+                    'payment_date' => now(),
+                ]);
+            }
+
+            // Refresh the loaded relationships
+            $sale->load(['items', 'payments']);
+
+            DB::commit();
+
+            // Try sending receipt email
+            if ($request->customer_id && isset($sale->customer->email) && $sale->customer->email) {
+                try {
+                    $provider = $this->getActiveEmailProvider();
+                    if ($provider) {
+                        $this->configureMailerForProvider($provider);
+                        Mail::mailer('dynamic_smtp')
+                            ->to($sale->customer->email)
+                            ->send(new SaleReceipt($sale));
+                    }
+                } catch (\Exception $e) {
+                    \Log::error('Failed to send POS receipt email: ' . $e->getMessage());
+                }
+            }
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Sale updated successfully.',
+                'sale_id' => $sale->id,
+                'sale_number' => $sale->sale_number,
+                'total_received' => $totalReceived,
+                'change_amount' => $changeAmount,
+                'payment_count' => $hasSplitPayments ? count($request->payments) : 1,
+            ]);
+        } catch (\Exception $e) {
+            DB::rollback();
+            \Log::error('POS Update Error: ' . $e->getMessage(), [
+                'sale_id' => $sale->id,
+                'user_id' => auth()->id(),
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
+                'request_data' => $request->all(),
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Error updating sale: ' . $e->getMessage(),
+            ], 500);
+        }
     }
 
     /**

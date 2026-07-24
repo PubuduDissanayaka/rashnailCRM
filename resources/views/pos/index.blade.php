@@ -142,7 +142,17 @@ select.form-select-sm { font-size: 0.8rem; }
 @endsection
 
 @section('content')
-@include('layouts.partials.page-title', ['title' => 'Point of Sale', 'subtitle' => 'Process sales and manage transactions'])
+@include('layouts.partials.page-title', [
+    'title' => isset($editSale) ? 'Edit Sale #' . $editSale['sale_number'] : 'Point of Sale',
+    'subtitle' => isset($editSale) ? 'Modify sale items, customer, and payment' : 'Process sales and manage transactions'
+])
+
+@if(isset($editSale))
+<div class="alert alert-info py-2 mb-2 d-flex align-items-center justify-content-between">
+    <span><i class="ti ti-edit-circle me-1"></i> Editing Sale <strong>#{{ $editSale['sale_number'] }}</strong> — changes will update the existing record</span>
+    <a href="{{ route('pos.transactions') }}" class="btn btn-sm btn-outline-secondary">Cancel</a>
+</div>
+@endif
 
 <div class="pos-grid">
     {{-- ========== SERVICES COLUMN ========== --}}
@@ -297,7 +307,11 @@ select.form-select-sm { font-size: 0.8rem; }
 
                 {{-- Buttons --}}
                 <button class="btn btn-success btn-sm w-100 mb-1" id="complete-sale-btn">
-                    Complete Sale (<span id="btn-total">{{ $currencySymbol }}0.00</span>)
+                    @if(isset($editSale))
+                        <i class="ti ti-device-floppy me-1"></i> Update Sale (<span id="btn-total">{{ $currencySymbol }}0.00</span>)
+                    @else
+                        Complete Sale (<span id="btn-total">{{ $currencySymbol }}0.00</span>)
+                    @endif
                 </button>
                 <div class="btn-group w-100">
                     <button class="btn btn-light btn-sm" id="hold-btn"><i class="ti ti-clock-pause me-1"></i>Hold</button>
@@ -478,5 +492,8 @@ select.form-select-sm { font-size: 0.8rem; }
 window.businessHours = @json($businessHours);
 window.posSettings = @json($posSettings);
 window.currencySymbol = "{{ $currencySymbol }}";
+@if(isset($editSale))
+window.editSale = @json($editSale);
+@endif
 </script>
 @endsection

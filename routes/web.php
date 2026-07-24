@@ -169,6 +169,10 @@ Route::middleware(['auth'])->group(function () {
 
         Route::get('/pos/receipt/{sale}', [PosController::class, 'showReceipt'])
             ->name('pos.receipt');
+        Route::get('/pos/sale/{sale}/edit', [PosController::class, 'edit'])
+            ->name('pos.sale.edit');
+        Route::match(['put', 'patch'], '/pos/sale/{sale}', [PosController::class, 'update'])
+            ->name('pos.sale.update');
         Route::delete('/pos/sale/{sale}', [PosController::class, 'destroySale'])
             ->name('pos.sale.destroy');
         Route::get('/pos/receipt/{sale}/download', [PosController::class, 'downloadReceipt'])

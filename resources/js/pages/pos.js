@@ -6,6 +6,14 @@
     'use strict';
 
     // ============================
+    // EDIT MODE
+    // ============================
+    const ED = window.editSale || null;
+    const isEditMode = ED !== null;
+    const editSaleId = isEditMode ? ED.id : null;
+    const editApiUrl = isEditMode ? '/pos/sale/' + editSaleId : '/pos/sale';
+
+    // ============================
     // STATE
     // ============================
     const CS = window.currencySymbol || 'Rs.';
@@ -789,9 +797,11 @@
             this.disabled = true;
             this.innerHTML = '<i class="ti ti-loader-2 animate-spin me-1"></i>Processing...';
 
+            const method = isEditMode ? 'PUT' : 'POST';
+
             try {
-                const res = await fetch('/pos/sale', {
-                    method: 'POST',
+                const res = await fetch(editApiUrl, {
+                    method: method,
                     headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': csrf, 'X-Requested-With': 'XMLHttpRequest' },
                     body: JSON.stringify(data)
                 });
@@ -802,15 +812,20 @@
                     let pmtsHtml = '';
                     if (paymentsData.length > 0) {
                         pmtsHtml = '<hr class="my-1"><div class="small text-start px-2">' +
-                            paymentsData.map(p => `<div class="d-flex justify-content-between"><span class="text-capitalize">${p.method}</span><span>${CS}${p.amount.toFixed(2)}</span></div>`).join('') +
+                            paymentsData.map(function(p) { return '<div class="d-flex justify-content-between"><span class="text-capitalize">' + p.method + '</span><span>' + CS + p.amount.toFixed(2) + '</span></div>'; }).join('') +
                             '</div>';
                     }
+                    var msgTitle = isEditMode ? 'Sale Updated!' : 'Sale Completed!';
+                    var cancelBtnText = isEditMode ? 'Back to Transactions' : 'Close';
                     Swal.fire({
-                        icon: 'success', title: 'Sale Completed!',
-                        html: `<p>Sale #${result.sale_number || result.sale_id}</p><p class="fs-4 fw-bold text-success">Change: ${CS}${result.change_amount.toFixed(2)}</p>${pmtsHtml}`,
+                        icon: 'success', title: msgTitle,
+                        html: '<p>' + (isEditMode ? 'Sale' : 'Sale') + ' #' + (result.sale_number || result.sale_id) + '</p><p class="fs-4 fw-bold text-success">Change: ' + CS + (result.change_amount || 0).toFixed(2) + '</p>' + pmtsHtml,
                         showConfirmButton: true, showCancelButton: true,
-                        confirmButtonText: 'View Receipt', cancelButtonText: 'Close'
-                    }).then(r => { if (r.isConfirmed && result.sale_id) window.open('/pos/receipt/' + result.sale_id, '_blank'); });
+                        confirmButtonText: 'View Receipt', cancelButtonText: cancelBtnText
+                    }).then(function(r) {
+                        if (r.isConfirmed && result.sale_id) window.location.href = '/pos/receipt/' + result.sale_id;
+                        else if (isEditMode && r.dismiss === Swal.DismissReason.cancel) window.location.href = '/pos/transactions';
+                    });
                     clearCart();
                 } else {
                     toast(result.message || 'Sale failed', 'error');
@@ -928,6 +943,73 @@
         if (pmEl && typeof bootstrap !== 'undefined') {
             try { payModalInstance = new bootstrap.Modal(pmEl, { backdrop: 'static', keyboard: false }); } catch(e) { console.warn('Modal init:', e); }
         }
+
+        // ============================
+        // EDIT MODE — LOAD SALE DATA
+        // ============================
+        if (isEditMode && ED) {
+            // Load cart items
+            if (ED.cart && ED.cart.length > 0) {
+                cart = ED.cart.map(function(item) {
+                    return {
+                        id: item.id,
+                        type: item.type,
+                        name: item.name,
+                        price: parseFloat(item.price) || 0,
+                        quantity: parseInt(item.quantity) || 1,
+                    };
+                });
+            }
+
+            // Set customer
+            if (ED.customer_id && customerSelect) {
+                customerSelect.value = ED.customer_id;
+                // Trigger Choices.js update if available
+                if (customerSelect.choices) {
+                    customerSelect.choices.setChoiceByValue([String(ED.customer_id)]);
+                }
+                // Dispatch change to update any listeners
+                customerSelect.dispatchEvent(new Event('change', { bubbles: true }));
+            }
+
+            // Set staff
+            if (ED.staff_id && staffSelect) {
+                staffSelect.value = ED.staff_id;
+                if (staffSelect.choices) {
+                    staffSelect.choices.setChoiceByValue([String(ED.staff_id)]);
+                }
+                staffSelect.dispatchEvent(new Event('change', { bubbles: true }));
+            }
+
+            // Set discount
+            discountType = ED.discount_type || 'fixed';
+            discountAmount = parseFloat(ED.discount_amount) || 0;
+            if (discountInput) discountInput.value = discountAmount || '';
+            if (discountLabel) discountLabel.textContent = discountType === 'fixed' ? CS : '%';
+
+            // Set coupons
+            if (ED.applied_coupons && ED.applied_coupons.length > 0) {
+                appliedCoupons = ED.applied_coupons.map(function(c) {
+                    return { id: c.id, code: c.code, discount_amount: parseFloat(c.discount_amount) || 0 };
+                });
+                if (couponFb) {
+                    var totalCoupDisc = appliedCoupons.reduce(function(s, c) { return s + c.discount_amount; }, 0);
+                    couponFb.innerHTML = '<span class="text-success">✅ ' + appliedCoupons.length + ' coupon(s) applied: -' + CS + totalCoupDisc.toFixed(2) + '</span>';
+                }
+            }
+
+            // Set notes
+            if (ED.notes && saleNotes) saleNotes.value = ED.notes;
+
+            // Render cart with loaded data
+            renderCart();
+
+            // Disable hold button in edit mode (no concept of holding an edit)
+            if (holdBtn) holdBtn.style.display = 'none';
+
+            console.log('POS edit mode: Sale #' + editSaleId + ' loaded ✅');
+        }
+
         console.log('POS initialized ✅');
     });
 

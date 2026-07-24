@@ -42,7 +42,7 @@ class RoleSeeder extends Seeder
 
         // ── POS permissions ───────────────────────────────────
         $this->seed([
-            'view pos', 'create pos transactions', 'manage pos',
+            'view pos', 'create pos transactions', 'edit pos transactions', 'manage pos',
         ]);
 
         // ── User management permissions ───────────────────────
@@ -124,7 +124,7 @@ class RoleSeeder extends Seeder
             'edit service packages', 'delete service packages',
             // Transactions & POS
             'process transactions', 'view transactions', 'delete transactions',
-            'view pos', 'create pos transactions', 'manage pos',
+            'view pos', 'create pos transactions', 'edit pos transactions', 'manage pos',
             // Users & Staff
             'view users', 'create users', 'edit users', 'delete users',
             // Attendance

@@ -133,6 +133,9 @@
                                         <a class="btn btn-default btn-icon btn-sm"
                                             href="{{ route('pos.receipt', $sale) }}"><i
                                                 class="ti ti-eye fs-lg"></i></a>
+                                        <a class="btn btn-default btn-icon btn-sm"
+                                            href="{{ route('pos.sale.edit', $sale) }}"><i
+                                                class="ti ti-edit fs-lg"></i></a>
                                         <a class="btn btn-default btn-icon btn-sm" href="javascript:void(0);"
                                             onclick="if(confirm('Are you sure you want to delete this sale?')) { document.getElementById('delete-sale-{{ $sale->id }}').submit(); }">
                                             <i class="ti ti-trash fs-lg"></i>
