@@ -1,0 +1,1 @@
+document.addEventListener("DOMContentLoaded",function(){const n=document.querySelectorAll(".needs-validation");Array.from(n).forEach(function(t){t.addEventListener("submit",function(e){t.checkValidity()||(e.preventDefault(),e.stopPropagation()),t.classList.add("was-validated")},!1)})});
