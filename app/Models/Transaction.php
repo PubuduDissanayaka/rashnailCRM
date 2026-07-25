@@ -5,6 +5,13 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
+/**
+ * @deprecated v2.0 — Legacy model. No controller or route uses this.
+ *             Kept for Customer::transactions() and Appointment::transaction()
+ *             ORM relationship references. The POS system uses Sale / Payment / Refund
+ *             for transaction tracking. This model is no longer actively maintained
+ *             and may be removed in a future version.
+ */
 class Transaction extends Model
 {
     use HasFactory;

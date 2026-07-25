@@ -25,7 +25,8 @@ class Payment extends Model
     // Accessors
     public function getFormattedAmountAttribute()
     {
-        return '$' . number_format($this->amount, 2);
+        $symbol = Setting::get('payment.currency_symbol', '$');
+        return $symbol . number_format($this->amount, 2);
     }
 
     // Scopes

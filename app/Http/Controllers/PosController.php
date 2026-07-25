@@ -14,6 +14,7 @@ use App\Mail\SaleReceipt;
 use App\Services\CouponService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Storage;
@@ -82,7 +83,9 @@ class PosController extends Controller
      */
     public function store(Request $request)
     {
-        $this->authorize('create pos transactions');
+        if (!Gate::any(['create pos transactions', 'process transactions'])) {
+            abort(403, 'Unauthorized action.');
+        }
 
         // Get available payment methods from settings
         $availableMethods = Setting::get('payment.methods', ['cash', 'card']) ?? ['cash', 'card'];
@@ -1149,7 +1152,9 @@ class PosController extends Controller
      */
     public function destroySale(Sale $sale)
     {
-        $this->authorize('delete pos transactions');
+        if (!Gate::any(['delete pos transactions', 'delete transactions'])) {
+            abort(403, 'Unauthorized action.');
+        }
 
         $sale->delete();
 
