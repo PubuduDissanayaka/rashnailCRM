@@ -79,6 +79,10 @@ class SettingsController extends Controller
             $this->handleFileUpload($request, 'favicon', 'business.favicon');
         }
 
+        if ($request->hasFile('invoice_logo')) {
+            $this->handleFileUpload($request, 'invoice_logo', 'business.invoice_logo');
+        }
+
         if ($request->hasFile('auth_bg_image')) {
             $this->handleFileUpload($request, 'auth_bg_image', 'business.auth_bg_image');
         } elseif ($request->input('settings.business.auth_bg_image_remove') === '1') {

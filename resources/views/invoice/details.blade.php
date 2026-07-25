@@ -21,12 +21,8 @@
                             <!-- Header -->
                             <div class="d-flex align-items-center justify-content-between mb-3 border-bottom pb-3">
                                 <div class="auth-brand mb-0">
-                                    @if($businessLogo)
-                                    <img alt="logo" height="28" src="{{ Storage::url($businessLogo) }}" />
-                                    @else
-                                    <a class="logo-dark" href="{{ url('/') }}">
-                                        <img alt="logo" height="24" src="/images/logo-black.png" />
-                                    </a>
+                                    @if($invoiceLogo)
+                                    <img alt="Invoice Logo" height="28" src="{{ Storage::url($invoiceLogo) }}" />
                                     @endif
                                 </div>
                                 <div class="text-end">

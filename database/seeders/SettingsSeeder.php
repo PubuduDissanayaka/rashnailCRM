@@ -24,6 +24,7 @@ class SettingsSeeder extends Seeder
             ['key' => 'business.zip', 'value' => '00300', 'type' => 'string', 'group' => 'business', 'description' => 'ZIP or postal code', 'order' => 11],
             ['key' => 'business.timezone', 'value' => 'Asia/Colombo', 'type' => 'string', 'group' => 'business', 'description' => 'Business timezone', 'order' => 12],
             ['key' => 'business.about', 'value' => 'Premium nail salon offering exceptional services', 'type' => 'text', 'group' => 'business', 'description' => 'About business description', 'order' => 13],
+            ['key' => 'business.invoice_logo', 'value' => null, 'type' => 'file', 'group' => 'business', 'description' => 'Separate logo shown on invoices (leave blank to show no logo)', 'order' => 14],
 
             // Social Media
             ['key' => 'business.social.facebook', 'value' => null, 'type' => 'string', 'group' => 'business', 'description' => 'Facebook page URL', 'order' => 20],

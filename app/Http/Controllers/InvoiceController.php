@@ -41,12 +41,12 @@ class InvoiceController extends Controller
         $businessAddress = Setting::get('business.address', '');
         $businessPhone = Setting::get('business.phone', '');
         $businessEmail = Setting::get('business.email', '');
-        $businessLogo = Setting::get('business.logo');
+        $invoiceLogo = Setting::get('business.invoice_logo');
 
         return view('invoice.details', compact(
             'invoice', 'currencySymbol',
             'businessName', 'businessAddress', 'businessPhone',
-            'businessEmail', 'businessLogo'
+            'businessEmail', 'invoiceLogo'
         ));
     }
 
