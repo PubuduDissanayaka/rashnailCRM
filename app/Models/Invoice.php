@@ -127,4 +127,14 @@ class Invoice extends Model
 
         return $invoiceNumber;
     }
+
+    /**
+     * Preview the next invoice number without incrementing the counter.
+     */
+    public static function generateInvoiceNumberPreview(): string
+    {
+        $prefix = Setting::get('payment.invoice_prefix', 'INV');
+        $nextNumber = Setting::get('payment.next_invoice_number', 1);
+        return sprintf('%s-%s-%05d', $prefix, date('Y'), $nextNumber);
+    }
 }

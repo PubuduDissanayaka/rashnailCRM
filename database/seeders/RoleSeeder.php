@@ -40,6 +40,11 @@ class RoleSeeder extends Seeder
             'process transactions', 'view transactions', 'delete transactions',
         ]);
 
+        // ── Invoice permissions ────────────────────────────
+        $this->seed([
+            'view invoices', 'create invoices', 'edit invoices', 'delete invoices',
+        ]);
+
         // ── POS permissions ───────────────────────────────────
         $this->seed([
             'view pos', 'create pos transactions', 'edit pos transactions', 'manage pos',
@@ -125,6 +130,8 @@ class RoleSeeder extends Seeder
             // Transactions & POS
             'process transactions', 'view transactions', 'delete transactions',
             'view pos', 'create pos transactions', 'edit pos transactions', 'manage pos',
+            // Invoices
+            'view invoices', 'create invoices', 'edit invoices', 'delete invoices',
             // Users & Staff
             'view users', 'create users', 'edit users', 'delete users',
             // Attendance

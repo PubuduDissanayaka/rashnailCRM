@@ -18,6 +18,7 @@ use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\ProviderController;
 use App\Http\Controllers\TemplateController;
 use App\Http\Controllers\NotificationLogController;
+use App\Http\Controllers\InvoiceController;
 use App\Http\Controllers\BroadcastController;
 use App\Http\Controllers\NotificationSettingController;
 use App\Http\Controllers\Inventory\SupplyController;
@@ -177,6 +178,35 @@ Route::middleware(['auth'])->group(function () {
             ->name('pos.sale.destroy');
         Route::get('/pos/receipt/{sale}/download', [PosController::class, 'downloadReceipt'])
             ->name('pos.receipt.download');
+    });
+
+    // Invoice routes
+    Route::middleware(['auth', 'can:view invoices'])->group(function () {
+        Route::get('/invoices', [InvoiceController::class, 'index'])
+            ->name('invoices.index');
+
+        Route::get('/invoices/{invoice}', [InvoiceController::class, 'show'])
+            ->name('invoices.show');
+
+        Route::get('/sales/{sale}/invoice', [InvoiceController::class, 'createFromSale'])
+            ->middleware('can:create invoices')
+            ->name('invoices.create-from-sale');
+
+        Route::post('/sales/{sale}/invoice', [InvoiceController::class, 'storeFromSale'])
+            ->middleware('can:create invoices')
+            ->name('invoices.store-from-sale');
+
+        Route::post('/invoices/{invoice}/mark-paid', [InvoiceController::class, 'markPaid'])
+            ->middleware('can:edit invoices')
+            ->name('invoices.mark-paid');
+
+        Route::post('/invoices/{invoice}/mark-sent', [InvoiceController::class, 'markSent'])
+            ->middleware('can:edit invoices')
+            ->name('invoices.mark-sent');
+
+        Route::delete('/invoices/{invoice}', [InvoiceController::class, 'destroy'])
+            ->middleware('can:delete invoices')
+            ->name('invoices.destroy');
     });
 
     // Coupon management routes — gated by granular coupon permissions

@@ -130,33 +130,35 @@ class Sale extends Model
         return $payment;
     }
 
-    public function generateInvoice()
+    public function generateInvoice(?array $customerDetailsOverride = null, ?string $dueDate = null, ?string $terms = null, ?string $notes = null)
     {
         if ($this->invoice) {
             return $this->invoice;
         }
 
         $invoiceNumber = $this->generateInvoiceNumber();
-        $customerDetails = $this->customer ? [
+        $customerDetails = $customerDetailsOverride ?? ($this->customer ? [
             'name' => $this->customer->full_name,
             'email' => $this->customer->email,
             'phone' => $this->customer->phone,
             'address' => $this->customer->address,
-        ] : [];
+        ] : []);
 
         return $this->invoice()->create([
             'invoice_number' => $invoiceNumber,
             'customer_id' => $this->customer_id,
             'customer_details' => $customerDetails,
             'invoice_date' => now(),
-            'due_date' => now()->addDays(30),
+            'due_date' => $dueDate ? \Carbon\Carbon::parse($dueDate) : now()->addDays(30),
             'subtotal' => $this->subtotal,
             'tax_amount' => $this->tax_amount,
-            'discount_amount' => $this->discount_amount,
+            'discount_amount' => $this->discount_amount + ($this->coupon_discount_amount ?? 0),
             'total_amount' => $this->total_amount,
             'amount_paid' => $this->amount_paid,
             'balance_due' => $this->balance_due,
             'status' => $this->is_paid ? 'paid' : 'sent',
+            'terms' => $terms,
+            'notes' => $notes,
         ]);
     }
 

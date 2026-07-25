@@ -690,6 +690,21 @@
                     <span>Download PDF</span>
                 </a>
 
+                <!-- Invoice Button -->
+                @can('create invoices')
+                @if($sale->invoice)
+                <a href="{{ route('invoices.show', $sale->invoice) }}" class="action-btn btn-info" aria-label="View invoice">
+                    <i class="ti ti-file-invoice"></i>
+                    <span>View Invoice</span>
+                </a>
+                @else
+                <a href="{{ route('invoices.create-from-sale', $sale) }}" class="action-btn btn-info" aria-label="Generate invoice">
+                    <i class="ti ti-file-invoice"></i>
+                    <span>Create Invoice</span>
+                </a>
+                @endif
+                @endcan
+
                 <!-- WhatsApp Button (Conditional) -->
                 @if($sale->customer && $sale->customer->phone)
                 <button onclick="sendWhatsApp()" class="action-btn btn-whatsapp" id="whatsapp-btn" aria-label="Send via WhatsApp">

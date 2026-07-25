@@ -180,6 +180,16 @@
             </li>
             @endcan
 
+            {{-- Invoices --}}
+            @can('view invoices')
+            <li class="side-nav-item">
+                <a class="side-nav-link" href="{{ route('invoices.index') }}">
+                    <span class="menu-icon"><i data-lucide="file-invoice"></i></span>
+                    <span class="menu-text">Invoices</span>
+                </a>
+            </li>
+            @endcan
+
             {{-- Expenses --}}
             @can('expenses.view')
             <li class="side-nav-item">

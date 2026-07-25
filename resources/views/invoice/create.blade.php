@@ -1,198 +1,171 @@
-@extends('layouts.vertical', ['title' => 'Create Invoice'])
+@extends('layouts.vertical', ['title' => 'Generate Invoice from Sale'])
 
 @section('css')
-    
 @endsection
 
 @section('content')
-    @include('layouts.partials/page-title', ['subtitle' => 'Invoices', 'title' => 'Create Invoice'])
+    @include('layouts.partials/page-title', ['subtitle' => 'Invoices', 'title' => 'Generate Invoice'])
 
     <div class="row justify-content-center">
         <div class="col-xxl-12">
             <div class="row">
                 <div class="col-xl-9">
                     <div class="card">
-                        <form>
-                            <div class="card-body p-4">
-                                <!-- Invoice Header with Currency Selector -->
-                                <div class="d-flex justify-content-between align-items-center mb-4">
-                                    <!-- Logo Upload -->
-                                    <div class="border rounded position-relative d-flex text-center align-items-center justify-content-between px-2"
-                                        style="height: 60px; width: 260px;">
-                                        <label class="position-absolute top-0 start-0 end-0 bottom-0"
-                                            for="invoiceLogo"></label>
-                                        <input accept="image/*" class="d-none" id="invoiceLogo"
-                                            onchange="previewImage(event)" type="file" />
-                                        <img alt="Company Logo" height="28" id="preview"
-                                            src="/images/logo-black.png" />
-                                        <i class="ti ti-upload fs-xxl text-muted" role="button"></i>
-                                    </div>
-                                    <!-- Invoice Number + Currency -->
-                                    <div class="text-end">
-                                        <div class="row g-2 align-items-center">
-                                            <div class="col-auto">
-                                                <label class="form-label fw-semibold" for="invoiceNumber">Invoice #</label>
-                                                <input class="form-control" id="invoiceNumber" placeholder="e.g. INV-0001"
-                                                    type="text" />
-                                            </div>
-                                            <div class="col-auto">
-                                                <label class="form-label fw-semibold" for="currency">Currency</label>
-                                                <select class="form-select" id="currency">
-                                                    <option selected="" value="USD">USD ($)</option>
-                                                    <option value="EUR">EUR (€)</option>
-                                                    <option value="GBP">GBP (£)</option>
-                                                    <option value="INR">INR (₹)</option>
-                                                    <option value="JPY">JPY (¥)</option>
-                                                    <option value="AUD">AUD (A$)</option>
-                                                    <option value="CAD">CAD (C$)</option>
-                                                    <option value="CNY">CNY (¥)</option>
-                                                </select>
-                                            </div>
-                                        </div>
-                                    </div>
+                        <div class="card-body p-4">
+                            <div class="d-flex align-items-center justify-content-between mb-4">
+                                <div>
+                                    <h5 class="mb-1">Sale #{{ $sale->sale_number }}</h5>
+                                    <p class="text-muted mb-0 fs-sm">
+                                        {{ $sale->created_at->format('M d, Y H:i') }}
+                                        —
+                                        @if($sale->customer)
+                                        Customer: <strong>{{ $sale->customer->full_name }}</strong>
+                                        @else
+                                        <em>Walk-in Customer</em>
+                                        @endif
+                                        @if($sale->user) | Staff: {{ $sale->user->name }} @endif
+                                    </p>
                                 </div>
-                                <!-- Dates & Payment -->
-                                <div class="row">
-                                    <div class="col-md-4">
-                                        <label class="form-label" for="invoiceDate">Invoice Date</label>
-                                        <input class="form-control" data-date-format="d M, Y" data-provider="flatpickr"
-                                            id="invoiceDate" placeholder="Select Date" type="text" />
-                                    </div>
-                                    <div class="col-md-4">
-                                        <label class="form-label" for="dueDate">Due Date</label>
-                                        <input class="form-control" data-date-format="d M, Y" data-provider="flatpickr"
-                                            id="dueDate" placeholder="Select Date" type="text" />
-                                    </div>
-                                    <div class="col-md-4">
-                                        <label class="form-label" for="paymentMethod">Payment Method</label>
-                                        <select class="form-select" id="paymentMethod">
-                                            <option value="">Select</option>
-                                            <option>Credit / Debit Card</option>
-                                            <option>Bank Transfer</option>
-                                            <option>PayPal</option>
-                                            <option>UPI (GPay)</option>
-                                            <option>Cash</option>
-                                        </select>
-                                    </div>
+                                <div class="text-end">
+                                    <span class="badge bg-success-subtle text-success fs-sm">{{ ucfirst($sale->status) }}</span>
                                 </div>
-                                <!-- Billing and Shipping -->
-                                <div class="row mt-4">
-                                    <!-- Billing -->
-                                    <div class="col-md-6">
-                                        <label class="form-label">Billing Address</label>
-                                        <input class="form-control mb-2" placeholder="Name" type="text" />
-                                        <textarea class="form-control mb-2" placeholder="Address" rows="3"></textarea>
-                                        <div class="input-group">
-                                            <select class="form-select" style="max-width: 120px;">
-                                                <option value="+1">+1 (US)</option>
-                                                <option selected="" value="+44">+44 (UK)</option>
-                                                <option value="+91">+91 (IN)</option>
-                                                <option value="+61">+61 (AU)</option>
-                                                <option value="+971">+971 (UAE)</option>
-                                                <!-- Add more as needed -->
-                                            </select>
-                                            <input class="form-control" placeholder="Phone Number" type="text" />
-                                        </div>
-                                    </div>
-                                    <!-- Shipping -->
-                                    <div class="col-md-6">
-                                        <label class="form-label">Shipping Address</label>
-                                        <input class="form-control mb-2" placeholder="Name" type="text" />
-                                        <textarea class="form-control mb-2" placeholder="Address" rows="3"></textarea>
-                                        <div class="input-group">
-                                            <select class="form-select" style="max-width: 120px;">
-                                                <option value="+1">+1 (US)</option>
-                                                <option selected="" value="+44">+44 (UK)</option>
-                                                <option value="+91">+91 (IN)</option>
-                                                <option value="+61">+61 (AU)</option>
-                                                <option value="+971">+971 (UAE)</option>
-                                                <!-- Add more as needed -->
-                                            </select>
-                                            <input class="form-control" placeholder="Phone Number" type="text" />
-                                        </div>
-                                    </div>
-                                </div>
-                                <!-- Product Table -->
-                                <div class="table-responsive mt-4">
+                            </div>
+
+                            <form method="POST" action="{{ route('invoices.store-from-sale', $sale) }}">
+                                @csrf
+
+                                <!-- Items Table -->
+                                <div class="table-responsive">
                                     <table class="table table-bordered table-nowrap text-center align-middle">
                                         <thead class="bg-light align-middle bg-opacity-25 thead-sm">
                                             <tr class="text-uppercase fs-xxs">
                                                 <th>#</th>
-                                                <th class="text-start">Item Description</th>
+                                                <th class="text-start">Item</th>
                                                 <th>Qty</th>
                                                 <th>Unit Price</th>
-                                                <th>Amount</th>
-                                                <th>Action</th>
+                                                <th class="text-end">Total</th>
                                             </tr>
                                         </thead>
-                                        <tbody id="invoice-items">
+                                        <tbody>
+                                            @foreach($sale->items as $idx => $item)
                                             <tr>
-                                                <td>1</td>
-                                                <td><input class="form-control" placeholder="Description"
-                                                        type="text" /></td>
-                                                <td><input class="form-control" placeholder="1" type="number" /></td>
-                                                <td><input class="form-control" placeholder="0.00" type="number" /></td>
-                                                <td><input class="form-control" placeholder="0.00" type="number" /></td>
-                                                <td><button class="btn btn-sm btn-danger" type="button">×</button></td>
+                                                <td>{{ $idx + 1 }}</td>
+                                                <td class="text-start">
+                                                    <strong>{{ $item->item_name }}</strong>
+                                                </td>
+                                                <td>{{ $item->quantity }}</td>
+                                                <td>{{ $currencySymbol }}{{ number_format($item->unit_price, 2) }}</td>
+                                                <td class="text-end">{{ $currencySymbol }}{{ number_format($item->line_total, 2) }}</td>
                                             </tr>
+                                            @endforeach
                                         </tbody>
                                     </table>
-                                    <button class="btn btn-primary mt-2" type="button"><i class="ti ti-plus"></i> Add
-                                        Item</button>
                                 </div>
+
                                 <!-- Totals -->
-                                <div class="row justify-content-end mt-4">
-                                    <div class="col-md-4">
-                                        <table class="table table-borderless">
-                                            <tr>
-                                                <td class="text-end">Subtotal</td>
-                                                <td><input class="form-control" id="subtotal" placeholder="0.00"
-                                                        type="number" /></td>
-                                            </tr>
-                                            <tr>
-                                                <td class="text-end">Tax (%)</td>
-                                                <td><input class="form-control" id="tax" placeholder="0.00"
-                                                        type="number" /></td>
-                                            </tr>
-                                            <tr>
-                                                <td class="text-end">Discount</td>
-                                                <td><input class="form-control" id="discount" placeholder="0.00"
-                                                        type="number" /></td>
-                                            </tr>
-                                            <tr class="fw-bold">
-                                                <td class="text-end">Total</td>
-                                                <td><input class="form-control" id="total" placeholder="0.00"
-                                                        readonly="" type="number" /></td>
-                                            </tr>
-                                        </table>
+                                <div class="d-flex justify-content-end mt-3">
+                                    <table class="table w-auto table-borderless text-end mb-0">
+                                        <tr>
+                                            <td class="fw-medium">Invoice #</td>
+                                            <td><strong>{{ $nextInvoiceNumber }}</strong></td>
+                                        </tr>
+                                        <tr>
+                                            <td class="fw-medium">Subtotal</td>
+                                            <td>{{ $currencySymbol }}{{ number_format($sale->subtotal, 2) }}</td>
+                                        </tr>
+                                        @if(($sale->discount_amount + ($sale->coupon_discount_amount ?? 0)) > 0)
+                                        <tr>
+                                            <td class="fw-medium">Discount</td>
+                                            <td class="text-danger">- {{ $currencySymbol }}{{ number_format($sale->discount_amount + ($sale->coupon_discount_amount ?? 0), 2) }}</td>
+                                        </tr>
+                                        @endif
+                                        @if($sale->tax_amount > 0)
+                                        <tr>
+                                            <td class="fw-medium">Tax</td>
+                                            <td>{{ $currencySymbol }}{{ number_format($sale->tax_amount, 2) }}</td>
+                                        </tr>
+                                        @endif
+                                        <tr class="border-top fs-5 fw-bold">
+                                            <td>Total</td>
+                                            <td>{{ $currencySymbol }}{{ number_format($sale->total_amount, 2) }}</td>
+                                        </tr>
+                                    </table>
+                                </div>
+
+                                <!-- Form Fields -->
+                                <div class="row mt-4">
+                                    <div class="col-md-6">
+                                        <label class="form-label fw-semibold" for="due_date">Due Date</label>
+                                        <input type="date" class="form-control" id="due_date" name="due_date"
+                                            value="{{ old('due_date', now()->addDays(30)->format('Y-m-d')) }}">
+                                        <div class="form-text">Leave blank for 30 days from today</div>
                                     </div>
                                 </div>
-                                <!-- Notes -->
-                                <div class="mt-4">
-                                    <label class="form-label" for="invoiceNote">Additional Notes</label>
-                                    <textarea class="form-control" id="invoiceNote" placeholder="e.g. Thank you for your business!" rows="3"></textarea>
+
+                                <div class="row mt-3">
+                                    <div class="col-md-6">
+                                        <label class="form-label fw-semibold" for="terms">Payment Terms</label>
+                                        <input type="text" class="form-control" id="terms" name="terms"
+                                            value="{{ old('terms', 'Payment due within 30 days') }}"
+                                            placeholder="e.g. Net 30">
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label class="form-label fw-semibold" for="notes">Additional Notes</label>
+                                        <textarea class="form-control" id="notes" name="notes" rows="1"
+                                            placeholder="Thank you for your business!">{{ old('notes') }}</textarea>
+                                    </div>
                                 </div>
-                            </div>
-                        </form>
-                    </div> <!-- end card-->
-                </div> <!-- end col-9-->
+
+                                <div class="mt-4 d-flex gap-2">
+                                    <button type="submit" class="btn btn-primary">
+                                        <i class="ti ti-file-invoice me-1"></i> Generate Invoice
+                                    </button>
+                                    <a href="{{ route('pos.receipt', $sale) }}" class="btn btn-light">
+                                        <i class="ti ti-arrow-left me-1"></i> Back to Receipt
+                                    </a>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+
                 <div class="col-xl-3 d-print-none">
                     <div class="card card-top-sticky">
                         <div class="card-body">
-                            <div class="justify-content-center d-flex flex-column gap-2">
-                                <a class="btn btn-light" href="javascript: void(0);"><i class="ti ti-eye me-1"></i>
-                                    Preview</a>
-                                <a class="btn btn-light" href="javascript: void(0);"><i class="ti ti-download me-1"></i>
-                                    Download</a>
-                                <a class="btn btn-danger btn-lg" href="javascript: void(0);"><i
-                                        class="ti ti-send me-1"></i> Send</a>
+                            <h6 class="fw-semibold mb-2">Sale Summary</h6>
+                            <div class="d-flex justify-content-between fs-sm mb-1">
+                                <span class="text-muted">Sale #</span>
+                                <span>{{ $sale->sale_number }}</span>
                             </div>
-                        </div> <!-- end card-body-->
-                    </div> <!-- end card-->
-                </div> <!-- end col-9-->
-            </div> <!-- end row-->
-        </div> <!-- end col-10-->
-    </div> <!-- end row-->
+                            <div class="d-flex justify-content-between fs-sm mb-1">
+                                <span class="text-muted">Date</span>
+                                <span>{{ $sale->created_at->format('M d, Y') }}</span>
+                            </div>
+                            <div class="d-flex justify-content-between fs-sm mb-1">
+                                <span class="text-muted">Items</span>
+                                <span>{{ $sale->items->count() }}</span>
+                            </div>
+                            <div class="d-flex justify-content-between fs-sm fw-bold border-top pt-1 mt-1">
+                                <span>Total</span>
+                                <span>{{ $currencySymbol }}{{ number_format($sale->total_amount, 2) }}</span>
+                            </div>
+                            <hr>
+                            <h6 class="fw-semibold mb-2">Payments</h6>
+                            @foreach($sale->payments as $pmt)
+                            <div class="d-flex justify-content-between fs-sm mb-1">
+                                <span class="text-capitalize text-muted">{{ $pmt->payment_method }}</span>
+                                <span>{{ $currencySymbol }}{{ number_format($pmt->amount, 2) }}</span>
+                            </div>
+                            @endforeach
+                            @if($sale->payments->isEmpty())
+                            <p class="text-muted fs-sm mb-0">No payments recorded</p>
+                            @endif
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
 @endsection
 
 @section('scripts')

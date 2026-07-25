@@ -121,6 +121,16 @@
                                         'Manage' => ['manage pos', 'process transactions', 'delete transactions'],
                                     ],
                                 ],
+                                'Invoices' => [
+                                    'icon' => 'ti ti-file-invoice',
+                                    'color' => '#0891b2',
+                                    'crud' => [
+                                        'View' => ['view invoices'],
+                                        'Create' => ['create invoices'],
+                                        'Edit' => ['edit invoices'],
+                                        'Delete' => ['delete invoices'],
+                                    ],
+                                ],
                                 'Users & Roles' => [
                                     'icon' => 'ti ti-user-cog',
                                     'color' => '#dc2626',
