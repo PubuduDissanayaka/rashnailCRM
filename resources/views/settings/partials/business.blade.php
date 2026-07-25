@@ -227,31 +227,6 @@
                 </div>
             </div>
         </div>
-        
-        <div class="row">
-            <div class="col-12">
-                <h5 class="mt-2 mb-3">
-                    <i class="ti ti-file-invoice me-1 text-primary"></i> Invoice Branding
-                </h5>
-                <p class="text-muted small mb-3">This logo appears on invoices generated from POS sales. Leave blank to show no logo on invoices.</p>
-            </div>
-            <div class="col-md-6">
-                <div class="mb-3">
-                    <label for="invoice_logo" class="form-label">Invoice Logo</label>
-                    <input type="file" class="form-control" id="invoice_logo" name="invoice_logo" accept="image/*">
-                    <div class="form-text">Recommended: 200x60px. Separate from system logo.</div>
-                    @if($business['business.invoice_logo'] ?? null)
-                        <div class="mt-2">
-                            <label class="form-label">Current Invoice Logo:</label>
-                            <div>
-                                <img src="{{ Storage::url($business['business.invoice_logo']) }}" alt="Invoice Logo" 
-                                     style="max-height: 60px; max-width: 200px;">
-                            </div>
-                        </div>
-                    @endif
-                </div>
-            </div>
-        </div>
 
         <div class="row">
             <div class="col-12">

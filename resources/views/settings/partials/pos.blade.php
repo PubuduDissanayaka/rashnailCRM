@@ -1,5 +1,5 @@
 <div class="tab-pane" id="pos-tab" role="tabpanel">
-    <form id="pos-settings-form" action="{{ route('settings.update') }}" method="POST">
+    <form id="pos-settings-form" action="{{ route('settings.update') }}" method="POST" enctype="multipart/form-data">
         @csrf
         @method('PUT')
         <input type="hidden" name="group" value="pos">
@@ -62,6 +62,29 @@
                            {{ (old('settings.pos.auto_apply_discount', $pos['pos.auto_apply_discount'] ?? '0') == '1') ? 'checked' : '' }}>
                     <label class="form-check-label" for="auto_apply_discount">Auto-recall held sales on login</label>
                     <div class="form-text">If a held sale exists for this user, show a prompt on POS load</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="row mt-3">
+            <div class="col-12">
+                <h5 class="mb-3"><i class="ti ti-file-invoice me-1 text-primary"></i> Invoice Branding</h5>
+                <p class="text-muted small mb-3">This logo appears on invoices generated from POS sales. Leave blank to show no logo on invoices.</p>
+            </div>
+            <div class="col-md-6">
+                <div class="mb-3">
+                    <label for="invoice_logo" class="form-label">Invoice Logo</label>
+                    <input type="file" class="form-control" id="invoice_logo" name="invoice_logo" accept="image/*">
+                    <div class="form-text">Recommended: 200x60px. Separate from system logo.</div>
+                    @if(isset($pos['business.invoice_logo']) && $pos['business.invoice_logo'])
+                        <div class="mt-2">
+                            <label class="form-label">Current Invoice Logo:</label>
+                            <div>
+                                <img src="{{ Storage::url($pos['business.invoice_logo']) }}" alt="Invoice Logo" 
+                                     style="max-height: 60px; max-width: 200px;">
+                            </div>
+                        </div>
+                    @endif
                 </div>
             </div>
         </div>
