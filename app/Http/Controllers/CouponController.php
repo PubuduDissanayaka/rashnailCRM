@@ -638,4 +638,40 @@ class CouponController extends Controller
     {
         return $this->bulkStore($request);
     }
+
+    /**
+     * Coupon report/stats for POS — returns JSON.
+     * GET /api/coupons/report
+     */
+    public function report()
+    {
+        $this->authorize('view pos');
+
+        $today = now()->startOfDay();
+        $currencySymbol = \App\Models\Setting::get('payment.currency_symbol', '$');
+
+        $stats = [
+            'active_coupons' => Coupon::active()->count(),
+            'expired_coupons' => Coupon::expired()->count(),
+            'total_redemptions_all' => \App\Models\CouponRedemption::count(),
+            'redemptions_today' => \App\Models\CouponRedemption::where('redeemed_at', '>=', $today)->count(),
+            'discount_given_today' => (float) \App\Models\CouponRedemption::where('redeemed_at', '>=', $today)->sum('discount_amount'),
+            'currency_symbol' => $currencySymbol,
+            'top_coupons' => \App\Models\Coupon::withCount('redemptions')
+                ->orderBy('redemptions_count', 'desc')
+                ->limit(5)
+                ->get()
+                ->map(fn ($c) => [
+                    'id' => $c->id,
+                    'code' => $c->code,
+                    'name' => $c->name,
+                    'redemptions_count' => $c->redemptions_count,
+                ]),
+        ];
+
+        return response()->json([
+            'success' => true,
+            'data' => $stats,
+        ]);
+    }
 }
