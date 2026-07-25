@@ -784,7 +784,9 @@ class PosController extends Controller
      */
     public function transactions()
     {
-        $this->authorize('view pos');
+        if (!Gate::any(['view pos', 'view transactions'])) {
+            abort(403, 'Unauthorized action.');
+        }
 
         // Return all sales - let custom-table.js handle filtering/pagination
         $sales = Sale::with(['customer', 'user', 'items'])
@@ -801,7 +803,9 @@ class PosController extends Controller
      */
     public function edit(Sale $sale)
     {
-        $this->authorize('edit pos transactions');
+        if (!Gate::any(['edit pos transactions', 'manage pos'])) {
+            abort(403, 'Unauthorized action.');
+        }
 
         $sale->load(['customer', 'user', 'items.sellable', 'payments', 'saleCoupons']);
 
@@ -893,7 +897,9 @@ class PosController extends Controller
      */
     public function update(Request $request, Sale $sale)
     {
-        $this->authorize('edit pos transactions');
+        if (!Gate::any(['edit pos transactions', 'manage pos'])) {
+            abort(403, 'Unauthorized action.');
+        }
 
         // Same validation as store()
         $availableMethods = Setting::get('payment.methods', ['cash', 'card']) ?? ['cash', 'card'];
@@ -1152,7 +1158,7 @@ class PosController extends Controller
      */
     public function destroySale(Sale $sale)
     {
-        if (!Gate::any(['delete pos transactions', 'delete transactions'])) {
+        if (!Gate::any(['delete pos transactions', 'delete transactions', 'manage pos'])) {
             abort(403, 'Unauthorized action.');
         }
 

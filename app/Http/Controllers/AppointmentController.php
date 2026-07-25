@@ -12,6 +12,7 @@ use App\Models\Setting;
 use App\Services\BusinessHoursService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Gate;
 use Carbon\Carbon;
 
 class AppointmentController extends Controller
@@ -21,7 +22,9 @@ class AppointmentController extends Controller
      */
     public function index(Request $request)
     {
-        $this->authorize('view appointments');
+        if (!Gate::any(['view appointments', 'manage all appointments'])) {
+            abort(403);
+        }
 
         $query = Appointment::with(['customer', 'user', 'service', 'services'])
             ->orderBy('appointment_date', 'desc');
@@ -59,7 +62,9 @@ class AppointmentController extends Controller
      */
     public function calendar()
     {
-        $this->authorize('view appointments');
+        if (!Gate::any(['view appointments', 'manage all appointments'])) {
+            abort(403);
+        }
 
         $customers = Customer::orderBy('first_name')->get();
         $services = Service::where('is_active', true)->get();
@@ -91,7 +96,9 @@ class AppointmentController extends Controller
      */
     public function getCalendarEvents(Request $request)
     {
-        $this->authorize('view appointments');
+        if (!Gate::any(['view appointments', 'manage all appointments'])) {
+            abort(403);
+        }
 
         $query = Appointment::with(['customer', 'user', 'service', 'services']);
 
@@ -125,7 +132,9 @@ class AppointmentController extends Controller
      */
     public function create()
     {
-        $this->authorize('create appointments');
+        if (!Gate::any(['create appointments', 'manage all appointments'])) {
+            abort(403);
+        }
 
         $customers = Customer::orderBy('first_name')->get();
         $services = Service::where('is_active', true)->get();
@@ -140,7 +149,9 @@ class AppointmentController extends Controller
      */
     public function store(Request $request)
     {
-        $this->authorize('create appointments');
+        if (!Gate::any(['create appointments', 'manage all appointments'])) {
+            abort(403);
+        }
 
         $validated = $request->validate([
             'customer_id' => 'required|exists:customers,id',
@@ -211,7 +222,9 @@ class AppointmentController extends Controller
      */
     public function show(Appointment $appointment)
     {
-        $this->authorize('view appointments');
+        if (!Gate::any(['view appointments', 'manage all appointments'])) {
+            abort(403);
+        }
 
         $appointment->load(['customer', 'user', 'service', 'transaction', 'services']);
         $currencySymbol = Setting::get('payment.currency_symbol', '$');
@@ -225,7 +238,9 @@ class AppointmentController extends Controller
      */
     public function edit(Appointment $appointment)
     {
-        $this->authorize('edit appointments');
+        if (!Gate::any(['edit appointments', 'manage all appointments'])) {
+            abort(403);
+        }
 
         if (!$appointment->canBeModified()) {
             return redirect()->route('appointments.show', $appointment->slug)
@@ -245,7 +260,9 @@ class AppointmentController extends Controller
      */
     public function update(Request $request, Appointment $appointment)
     {
-        $this->authorize('edit appointments');
+        if (!Gate::any(['edit appointments', 'manage all appointments'])) {
+            abort(403);
+        }
 
         if (!$appointment->canBeModified()) {
             return redirect()->route('appointments.show', $appointment->slug)
@@ -314,7 +331,9 @@ class AppointmentController extends Controller
      */
     public function destroy(Appointment $appointment, Request $request)
     {
-        $this->authorize('delete appointments');
+        if (!Gate::any(['delete appointments', 'manage all appointments'])) {
+            abort(403);
+        }
 
         // Check cancellation deadline (admins bypass)
         if (!auth()->user()->can('manage system')) {
@@ -350,7 +369,9 @@ class AppointmentController extends Controller
      */
     public function updateStatus(Request $request, Appointment $appointment)
     {
-        $this->authorize('edit appointments');
+        if (!Gate::any(['edit appointments', 'manage all appointments'])) {
+            abort(403);
+        }
 
         $validated = $request->validate([
             'status' => 'required|in:scheduled,in_progress,completed,cancelled'
@@ -375,7 +396,9 @@ class AppointmentController extends Controller
      */
     public function checkAvailability(Request $request)
     {
-        $this->authorize('view appointments');
+        if (!Gate::any(['view appointments', 'manage all appointments'])) {
+            abort(403);
+        }
 
         $validated = $request->validate([
             'staff_id' => 'required|exists:users,id',
@@ -400,7 +423,9 @@ class AppointmentController extends Controller
      */
     public function updateDatetime(Appointment $appointment, Request $request)
     {
-        $this->authorize('edit appointments');
+        if (!Gate::any(['edit appointments', 'manage all appointments'])) {
+            abort(403);
+        }
 
         if (!$appointment->canBeModified()) {
             return response()->json([
@@ -465,7 +490,9 @@ class AppointmentController extends Controller
      */
     public function updateViaAjax(Appointment $appointment, Request $request)
     {
-        $this->authorize('edit appointments');
+        if (!Gate::any(['edit appointments', 'manage all appointments'])) {
+            abort(403);
+        }
 
         \Illuminate\Support\Facades\Log::info('UpdateViaAjax: appt id ' . $appointment->id . ' status: ' . $appointment->status . ' canBeModified: ' . ($appointment->canBeModified() ? 'true' : 'false'));
 
@@ -548,7 +575,9 @@ class AppointmentController extends Controller
      */
     public function createViaAjax(Request $request)
     {
-        $this->authorize('create appointments');
+        if (!Gate::any(['create appointments', 'manage all appointments'])) {
+            abort(403);
+        }
 
         $validated = $request->validate([
             'title' => 'required|string|max:255',

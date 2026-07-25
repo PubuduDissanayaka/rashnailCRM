@@ -11,6 +11,7 @@ use App\Services\AttendanceService;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Gate;
 
 class AttendanceController extends Controller
 {
@@ -158,7 +159,9 @@ class AttendanceController extends Controller
      */
     public function dashboard()
     {
-        $this->authorize('manage attendances');
+        if (!Gate::any(['manage attendances', 'view attendances', 'edit attendances'])) {
+            abort(403);
+        }
 
         // Get today's attendance stats
         $today = today();
@@ -194,7 +197,9 @@ class AttendanceController extends Controller
      */
     public function showDate($date)
     {
-        $this->authorize('manage attendances');
+        if (!Gate::any(['manage attendances', 'view attendances', 'edit attendances'])) {
+            abort(403);
+        }
 
         $date = Carbon::parse($date);
         $attendances = Attendance::with('user')
@@ -210,7 +215,9 @@ class AttendanceController extends Controller
      */
     public function showStaff(User $user, Request $request)
     {
-        $this->authorize('manage attendances');
+        if (!Gate::any(['manage attendances', 'view attendances', 'edit attendances'])) {
+            abort(403);
+        }
 
         $year = $request->input('year', date('Y'));
         $month = $request->input('month', date('n'));
@@ -228,7 +235,9 @@ class AttendanceController extends Controller
      */
     public function createManual()
     {
-        $this->authorize('manage attendances');
+        if (!Gate::any(['manage attendances', 'view attendances', 'edit attendances'])) {
+            abort(403);
+        }
 
         $staffMembers = User::withStaffRole()->get();
 
@@ -240,7 +249,9 @@ class AttendanceController extends Controller
      */
     public function storeManual(Request $request)
     {
-        $this->authorize('manage attendances');
+        if (!Gate::any(['manage attendances', 'view attendances', 'edit attendances'])) {
+            abort(403);
+        }
 
         $request->validate([
             'user_id' => 'required|exists:users,id',
@@ -296,7 +307,9 @@ class AttendanceController extends Controller
      */
     public function editManual(Attendance $attendance)
     {
-        $this->authorize('manage attendances');
+        if (!Gate::any(['manage attendances', 'view attendances', 'edit attendances'])) {
+            abort(403);
+        }
 
         $staffMembers = User::withStaffRole()->get();
 
@@ -308,7 +321,9 @@ class AttendanceController extends Controller
      */
     public function updateManual(Request $request, Attendance $attendance)
     {
-        $this->authorize('manage attendances');
+        if (!Gate::any(['manage attendances', 'view attendances', 'edit attendances'])) {
+            abort(403);
+        }
 
         $request->validate([
             'user_id' => 'required|exists:users,id',
@@ -369,7 +384,9 @@ class AttendanceController extends Controller
      */
     public function destroy(Request $request, Attendance $attendance)
     {
-        $this->authorize('manage attendances');
+        if (!Gate::any(['manage attendances', 'view attendances', 'edit attendances'])) {
+            abort(403);
+        }
 
         $date = $attendance->date;
         $userId = $attendance->user_id;
@@ -436,7 +453,9 @@ class AttendanceController extends Controller
      */
     public function import(Request $request)
     {
-        $this->authorize('manage attendances');
+        if (!Gate::any(['manage attendances', 'view attendances', 'edit attendances'])) {
+            abort(403);
+        }
 
         $request->validate([
             'file' => 'required|file|mimes:xlsx,xls,csv',
@@ -459,7 +478,9 @@ class AttendanceController extends Controller
      */
     public function report(Request $request)
     {
-        $this->authorize('manage attendances');
+        if (!Gate::any(['manage attendances', 'view attendances', 'edit attendances'])) {
+            abort(403);
+        }
 
         $startDate = $request->input('start_date', today()->startOfMonth()->format('Y-m-d'));
         $endDate = $request->input('end_date', today()->format('Y-m-d'));
@@ -526,7 +547,9 @@ class AttendanceController extends Controller
      */
     public function staff(Request $request)
     {
-        $this->authorize('manage attendances');
+        if (!Gate::any(['manage attendances', 'view attendances', 'edit attendances'])) {
+            abort(403);
+        }
 
         $staffId = $request->input('staff_id');
         $startDate = $request->input('start_date', today()->startOfMonth()->format('Y-m-d'));
@@ -602,7 +625,9 @@ class AttendanceController extends Controller
      */
     public function export(Request $request)
     {
-        $this->authorize('manage attendances');
+        if (!Gate::any(['manage attendances', 'view attendances', 'edit attendances'])) {
+            abort(403);
+        }
 
         $request->validate([
             'start_date' => 'required|date',
@@ -819,7 +844,9 @@ class AttendanceController extends Controller
      */
     public function approve(Attendance $attendance)
     {
-        $this->authorize('manage attendances');
+        if (!Gate::any(['manage attendances', 'view attendances', 'edit attendances'])) {
+            abort(403);
+        }
 
         $user = auth()->user();
 
@@ -858,7 +885,9 @@ class AttendanceController extends Controller
      */
     public function reject(Attendance $attendance, Request $request)
     {
-        $this->authorize('manage attendances');
+        if (!Gate::any(['manage attendances', 'view attendances', 'edit attendances'])) {
+            abort(403);
+        }
 
         $request->validate([
             'reason' => 'required|string|max:500'
@@ -895,7 +924,9 @@ class AttendanceController extends Controller
      */
     public function auditLogs(Attendance $attendance)
     {
-        $this->authorize('manage attendances');
+        if (!Gate::any(['manage attendances', 'view attendances', 'edit attendances'])) {
+            abort(403);
+        }
 
         $logs = $attendance->auditLogs()
             ->with('user')
@@ -913,7 +944,9 @@ class AttendanceController extends Controller
      */
     public function viewRecord(Attendance $attendance)
     {
-        $this->authorize('manage attendances');
+        if (!Gate::any(['manage attendances', 'view attendances', 'edit attendances'])) {
+            abort(403);
+        }
 
         $attendance->load(['user', 'auditLogs.user', 'breaks']);
 
@@ -964,7 +997,9 @@ class AttendanceController extends Controller
      */
     public function datatableStaff(Request $request)
     {
-        $this->authorize('manage attendances');
+        if (!Gate::any(['manage attendances', 'view attendances', 'edit attendances'])) {
+            abort(403);
+        }
 
         // Get filter parameters
         $staffId = $request->input('staff_id');
