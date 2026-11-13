@@ -504,6 +504,10 @@ select.form-select-sm { font-size: 0.8rem; }
 window.businessHours = @json($businessHours);
 window.posSettings = @json($posSettings);
 window.currencySymbol = "{{ $currencySymbol }}";
+// Endpoint used by pos.js — resolved from the router so it cannot go stale
+window.posRoutes = {
+    quickCustomer: "{{ route('pos.customers.store') }}",
+};
 @if(isset($editSale))
 window.editSale = @json($editSale);
 @endif

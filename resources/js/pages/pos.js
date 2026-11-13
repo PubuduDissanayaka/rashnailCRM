@@ -19,6 +19,13 @@ import Choices from 'choices.js';
     // STATE
     // ============================
     const CS = window.currencySymbol || 'Rs.';
+
+    // ============================
+    // ENDPOINTS — resolved from the router in the Blade view
+    // ============================
+    const ROUTES = window.posRoutes || {};
+    const QUICK_CUSTOMER_URL = ROUTES.quickCustomer || '/pos/customers';
+
     let cart = [];
     let discountType = 'fixed';
     let discountAmount = 0;
@@ -981,16 +988,16 @@ import Choices from 'choices.js';
 
             try {
                 const csrf = document.querySelector('meta[name="csrf-token"]')?.content;
-                const res = await fetch('/customers/quick-add', {
+                const res = await fetch(QUICK_CUSTOMER_URL, {
                     method: 'POST',
-                    headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': csrf, 'X-Requested-With': 'XMLHttpRequest' },
+                    headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': csrf, 'X-Requested-With': 'XMLHttpRequest', 'Accept': 'application/json' },
                     body: JSON.stringify({
                         first_name: custFname?.value, last_name: custLname?.value,
                         phone: custPhone?.value, email: custEmail?.value
                     })
                 });
-                const data = await res.json();
-                if (data.success) {
+                const data = await res.json().catch(() => ({}));
+                if (res.ok && data.success) {
                     // Add to select
                     const opt = document.createElement('option');
                     opt.value = data.customer.id;
@@ -1005,8 +1012,22 @@ import Choices from 'choices.js';
                     toast('Customer added');
                     custForm.reset();
                 } else {
+                    // Friendly, field-level messages — never a raw HTTP/route error
+                    const errs = data.errors || {};
+                    let messages = Object.values(errs).flat().filter(Boolean);
+                    if (!messages.length) {
+                        messages = [data.message || 'We could not save this customer. Please check the details and try again.'];
+                    }
                     custErr.classList.remove('d-none');
-                    custErrList.innerHTML = Object.values(data.errors || { 'error': [data.message || 'Failed'] }).map(e => `<li>${e}</li>`).join('');
+                    custErrList.innerHTML = messages.map(function (m) {
+                        // textContent first so any markup in a server message is escaped
+                        const div = document.createElement('div');
+                        div.textContent = m;
+                        return '<li>' + div.innerHTML + '</li>';
+                    }).join('');
+                    if (!res.ok && res.status === 419) {
+                        toast('Your session expired — reload the page and try again', 'error');
+                    }
                 }
             } catch (e) { toast('Failed to save customer', 'error'); }
             custSaveBtn.disabled = false;
