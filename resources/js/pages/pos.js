@@ -86,7 +86,7 @@ import Choices from 'choices.js';
                     includeScore: true,
                     threshold: 0.3,
                     ignoreLocation: true,
-                    minMatchCharLength: 2,
+                    minMatchCharLength: 1,
                 },
                 // Name, stored phone (9477...), local phone (077...) and the last 9 digits
                 searchFields: [
