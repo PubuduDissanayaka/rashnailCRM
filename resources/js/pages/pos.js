@@ -80,7 +80,23 @@ import Choices from 'choices.js';
 
         if (customerSelect && !customerSelect.choices) {
             customerChoices = new Choices(customerSelect, Object.assign({}, baseConfig, {
-                searchPlaceholderValue: 'Search customer...',
+                searchPlaceholderValue: 'Search name or mobile...',
+                // Keep the fuzzy match tight: exact/prefix hits first, no digit soup
+                fuseOptions: {
+                    includeScore: true,
+                    threshold: 0.3,
+                    ignoreLocation: true,
+                    minMatchCharLength: 2,
+                },
+                // Name, stored phone (9477...), local phone (077...) and the last 9 digits
+                searchFields: [
+                    'label',
+                    'value',
+                    'labelDescription',
+                    'customProperties.search',
+                    'customProperties.phone',
+                    'customProperties.local_phone',
+                ],
                 noResultsText: 'No customers found',
                 noChoicesText: 'No customers to choose from',
             }));
@@ -98,11 +114,35 @@ import Choices from 'choices.js';
         }
     }
 
+    // Same phone forms the Blade options expose: 94771234567 / 0771234567 / 771234567
+    function phoneSearchVariants(rawPhone) {
+        const digits = String(rawPhone || '').replace(/[^0-9]/g, '');
+        if (!digits) return { phone: '', local: '', search: '' };
+        const local = digits.length > 9 ? '0' + digits.slice(-9) : digits;
+        return {
+            phone: digits,
+            local: local,
+            search: [digits, local, digits.slice(-9)].join(' '),
+        };
+    }
+
     // Keeps the Choices dropdown in sync when options are added programmatically
-    function syncChoicesOptions(selectEl, choicesInstance, optionEl) {
+    function syncChoicesOptions(selectEl, choicesInstance, optionEl, phone) {
         if (choicesInstance && optionEl) {
+            const ph = phoneSearchVariants(phone);
+            const item = { value: optionEl.value, label: optionEl.text, selected: true };
+            if (ph.phone) {
+                item.labelDescription = ph.local;
+                item.customProperties = {
+                    phone: ph.phone,
+                    local_phone: ph.local,
+                    search: ph.search,
+                };
+                optionEl.dataset.labelDescription = ph.local;
+                optionEl.dataset.customProperties = JSON.stringify(item.customProperties);
+            }
             choicesInstance.setChoices(
-                [{ value: optionEl.value, label: optionEl.text, selected: true }],
+                [item],
                 'value',
                 'label',
                 false // append, do not replace the existing list
@@ -957,8 +997,8 @@ import Choices from 'choices.js';
                     opt.text = data.customer.first_name + ' ' + data.customer.last_name;
                     if (customerSelect) {
                         customerSelect.appendChild(opt);
-                        // Reflect the new customer inside the searchable dropdown
-                        syncChoicesOptions(customerSelect, customerChoices, opt);
+                        // Reflect the new customer (and its mobile) inside the searchable dropdown
+                        syncChoicesOptions(customerSelect, customerChoices, opt, data.customer.phone);
                     }
                     const modal = bootstrap.Modal.getInstance(document.getElementById('customerModal'));
                     if (modal) modal.hide();

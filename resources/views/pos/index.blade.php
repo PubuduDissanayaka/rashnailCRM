@@ -138,6 +138,9 @@
 .empty-state { text-align: center; padding: 2rem 1rem; color: #adb5bd; }
 .empty-state .empty-icon { font-size: 2.5rem; margin-bottom: 0.5rem; }
 select.form-select-sm { font-size: 0.8rem; }
+
+/* Mobile number shown under the customer name inside the searchable dropdown */
+.choices__description { display: block; font-size: 0.7rem; line-height: 1.2; color: #868e96; margin-top: 1px; }
 </style>
 @endsection
 
@@ -237,7 +240,16 @@ select.form-select-sm { font-size: 0.8rem; }
                     <select class="form-select form-select-sm" id="customer-select" data-choices data-choices-search-true>
                         <option value="">Walk-in Customer</option>
                         @foreach($customers as $c)
-                        <option value="{{ $c->id }}">{{ $c->first_name }} {{ $c->last_name }}</option>
+                        @php
+                            // Stored format is country-code only (e.g. 94771234567); build the
+                            // local 0-prefixed form so staff can search either way.
+                            $custDigits = preg_replace('/[^0-9]/', '', (string) $c->phone);
+                            $custLocal  = strlen($custDigits) > 9 ? '0' . substr($custDigits, -9) : $custDigits;
+                            $custSearch = trim($custDigits . ' ' . $custLocal . ' ' . substr($custDigits, -9));
+                        @endphp
+                        <option value="{{ $c->id }}"
+                                data-label-description="{{ $custLocal }}"
+                                data-custom-properties='@json(['phone' => $custDigits, 'local_phone' => $custLocal, 'search' => $custSearch])'>{{ $c->first_name }} {{ $c->last_name }}</option>
                         @endforeach
                     </select>
                 </div>
