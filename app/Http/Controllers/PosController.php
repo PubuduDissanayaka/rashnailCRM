@@ -498,15 +498,31 @@ class PosController extends Controller
                 'required',
                 'string',
                 function (string $attribute, $value, \Closure $fail) {
-                    $existing = Customer::where('phone', $value)->first();
-                    if ($existing) {
-                        $fail(sprintf(
-                            'Mobile %s is already saved for %s. Choose %s from the Customer list instead of adding a new customer.',
-                            $this->localPhone($value),
-                            $existing->full_name,
-                            $existing->first_name
-                        ));
+                    // withTrashed(): the phone unique index still holds soft-deleted customers,
+                    // so a removed record is the usual reason a number is "already taken".
+                    $existing = Customer::withTrashed()->where('phone', $value)->first();
+                    if (!$existing) {
+                        return;
                     }
+
+                    $display = $this->localPhone($value);
+
+                    if ($existing->trashed()) {
+                        $fail(sprintf(
+                            'Mobile %s was used by a customer record that has been removed (%s). Ask the manager to restore that customer, or enter a different number.',
+                            $display,
+                            $existing->full_name
+                        ));
+
+                        return;
+                    }
+
+                    $fail(sprintf(
+                        'Mobile %s is already saved for %s. Choose %s from the Customer list instead of adding a new customer.',
+                        $display,
+                        $existing->full_name,
+                        $existing->first_name
+                    ));
                 },
             ],
             'email' => 'nullable|email|unique:customers',
@@ -565,9 +581,9 @@ class PosController extends Controller
             if ($e->getCode() === '23000' && str_contains($e->getMessage(), 'customers_phone_unique')) {
                 return response()->json([
                     'success' => false,
-                    'message' => 'That mobile number was just saved for another customer. Search the Customer list for it and pick them.',
+                    'message' => 'That mobile number is already on another customer record (possibly one that was removed). Search the Customer list for it, or ask the manager to restore the removed customer.',
                     'errors' => [
-                        'phone' => ['That mobile number was just saved for another customer. Search the Customer list and pick them.'],
+                        'phone' => ['That mobile number is already on another customer record (possibly one that was removed). Search the Customer list for it, or ask the manager to restore the removed customer.'],
                     ],
                 ], 422);
             }
