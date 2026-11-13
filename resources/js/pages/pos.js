@@ -2,6 +2,8 @@
  * POS Terminal — Mobile-First
  * Rash Nail Lounge CRM
  */
+import Choices from 'choices.js';
+
 (function () {
     'use strict';
 
@@ -58,6 +60,59 @@
     const clearBtn = document.getElementById('clear-btn');
     const customerSelect = document.getElementById('customer-select');
     const staffSelect = document.getElementById('staff-select');
+
+    // ============================
+    // SEARCHABLE DROPDOWNS (Choices.js)
+    // ============================
+    let customerChoices = null;
+    let staffChoices = null;
+
+    function initSearchableSelects() {
+        if (typeof Choices === 'undefined') return;
+
+        const baseConfig = {
+            searchEnabled: true,
+            shouldSort: false,
+            searchResultLimit: 100,
+            itemSelectText: '',
+            allowHTML: false,
+        };
+
+        if (customerSelect && !customerSelect.choices) {
+            customerChoices = new Choices(customerSelect, Object.assign({}, baseConfig, {
+                searchPlaceholderValue: 'Search customer...',
+                noResultsText: 'No customers found',
+                noChoicesText: 'No customers to choose from',
+            }));
+            // Expose the instance the way the rest of this file expects it
+            customerSelect.choices = customerChoices;
+        }
+
+        if (staffSelect && !staffSelect.choices) {
+            staffChoices = new Choices(staffSelect, Object.assign({}, baseConfig, {
+                searchPlaceholderValue: 'Search staff...',
+                noResultsText: 'No staff found',
+                noChoicesText: 'No staff to choose from',
+            }));
+            staffSelect.choices = staffChoices;
+        }
+    }
+
+    // Keeps the Choices dropdown in sync when options are added programmatically
+    function syncChoicesOptions(selectEl, choicesInstance, optionEl) {
+        if (choicesInstance && optionEl) {
+            choicesInstance.setChoices(
+                [{ value: optionEl.value, label: optionEl.text, selected: true }],
+                'value',
+                'label',
+                false // append, do not replace the existing list
+            );
+        }
+        if (selectEl) {
+            selectEl.value = optionEl ? optionEl.value : selectEl.value;
+            selectEl.dispatchEvent(new Event('change', { bubbles: true }));
+        }
+    }
 
     // Mobile
     const cartBar = document.getElementById('cart-bar');
@@ -900,7 +955,11 @@
                     const opt = document.createElement('option');
                     opt.value = data.customer.id;
                     opt.text = data.customer.first_name + ' ' + data.customer.last_name;
-                    if (customerSelect) { customerSelect.appendChild(opt); customerSelect.value = data.customer.id; }
+                    if (customerSelect) {
+                        customerSelect.appendChild(opt);
+                        // Reflect the new customer inside the searchable dropdown
+                        syncChoicesOptions(customerSelect, customerChoices, opt);
+                    }
                     const modal = bootstrap.Modal.getInstance(document.getElementById('customerModal'));
                     if (modal) modal.hide();
                     toast('Customer added');
@@ -932,6 +991,9 @@
     // INIT
     // ============================
     document.addEventListener('DOMContentLoaded', function() {
+        // Searchable Customer / Staff dropdowns — must run before edit-mode prefill
+        initSearchableSelects();
+
         renderCart();
         // Show desktop cart on large screens
         if (window.innerWidth >= 992) {

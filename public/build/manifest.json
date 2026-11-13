@@ -1620,10 +1620,13 @@
     ]
   },
   "resources/js/pages/pos.js": {
-    "file": "assets/pos-DdOVjeh3.js",
+    "file": "assets/pos-B1IqMsMW.js",
     "name": "pos",
     "src": "resources/js/pages/pos.js",
-    "isEntry": true
+    "isEntry": true,
+    "imports": [
+      "_choices-PN3yYAsG.js"
+    ]
   },
   "resources/js/pages/provider-test-connection.js": {
     "file": "assets/provider-test-connection-W7ywTGPE.js",
