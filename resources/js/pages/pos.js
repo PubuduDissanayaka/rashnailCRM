@@ -979,12 +979,57 @@ import Choices from 'choices.js';
     // ============================
     // CUSTOMER QUICK ADD
     // ============================
+    // Show a readable, bulleted reason list inside the modal (never a raw HTTP/SQL string)
+    function showCustomerErrors(messages, focusTarget) {
+        if (!custErr || !custErrList) return;
+        custErrList.innerHTML = messages.map(function (m) {
+            // textContent first so any markup in a server message is escaped
+            const div = document.createElement('div');
+            div.textContent = m;
+            return '<li>' + div.innerHTML + '</li>';
+        }).join('');
+        custErr.classList.remove('d-none');
+        custErr.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        if (focusTarget) focusTarget.focus();
+    }
+
+    // Catch the obvious mistakes before a round trip, in the same words the server uses
+    function validateCustomerForm(values) {
+        const messages = [];
+        if (!values.first_name) messages.push("Please enter the customer's first name.");
+        if (!values.last_name) messages.push("Please enter the customer's last name.");
+        if (!values.phoneRaw) {
+            messages.push("Please enter the customer's mobile number.");
+        } else if (values.phoneDigits.length < 9 || values.phoneDigits.length > 12) {
+            messages.push('That mobile number looks ' + (values.phoneDigits.length < 9 ? 'too short' : 'too long') + ' — enter the full number, for example 077 123 4567.');
+        }
+        if (values.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(values.email)) {
+            messages.push('That email address does not look right — check it, or leave the field blank.');
+        }
+        return messages;
+    }
+
     if (custForm) {
         custForm.addEventListener('submit', async function (e) {
             e.preventDefault();
+
+            const values = {
+                first_name: (custFname?.value || '').trim(),
+                last_name: (custLname?.value || '').trim(),
+                phoneRaw: (custPhone?.value || '').trim(),
+                phoneDigits: (custPhone?.value || '').replace(/[^0-9]/g, ''),
+                email: (custEmail?.value || '').trim(),
+            };
+
+            custErr?.classList.add('d-none');
+            const clientErrors = validateCustomerForm(values);
+            if (clientErrors.length) {
+                showCustomerErrors(clientErrors, !values.first_name ? custFname : (!values.last_name ? custLname : custPhone));
+                return;
+            }
+
             custSaveBtn.disabled = true;
             custSaveBtn.innerHTML = '<i class="ti ti-loader-2 animate-spin me-1"></i>Saving...';
-            custErr.classList.add('d-none');
 
             try {
                 const csrf = document.querySelector('meta[name="csrf-token"]')?.content;
@@ -992,8 +1037,8 @@ import Choices from 'choices.js';
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': csrf, 'X-Requested-With': 'XMLHttpRequest', 'Accept': 'application/json' },
                     body: JSON.stringify({
-                        first_name: custFname?.value, last_name: custLname?.value,
-                        phone: custPhone?.value, email: custEmail?.value
+                        first_name: values.first_name, last_name: values.last_name,
+                        phone: values.phoneRaw, email: values.email || null
                     })
                 });
                 const data = await res.json().catch(() => ({}));
@@ -1012,24 +1057,21 @@ import Choices from 'choices.js';
                     toast('Customer added');
                     custForm.reset();
                 } else {
-                    // Friendly, field-level messages — never a raw HTTP/route error
+                    // Friendly, field-level messages — never a raw HTTP/route/SQL error
                     const errs = data.errors || {};
                     let messages = Object.values(errs).flat().filter(Boolean);
                     if (!messages.length) {
-                        messages = [data.message || 'We could not save this customer. Please check the details and try again.'];
+                        messages = [data.message || 'We could not save this customer. Check the details and try again.'];
                     }
-                    custErr.classList.remove('d-none');
-                    custErrList.innerHTML = messages.map(function (m) {
-                        // textContent first so any markup in a server message is escaped
-                        const div = document.createElement('div');
-                        div.textContent = m;
-                        return '<li>' + div.innerHTML + '</li>';
-                    }).join('');
-                    if (!res.ok && res.status === 419) {
+                    const duplicatePhone = !!errs.phone;
+                    showCustomerErrors(messages, duplicatePhone ? custPhone : null);
+                    if (res.status === 419) {
                         toast('Your session expired — reload the page and try again', 'error');
                     }
                 }
-            } catch (e) { toast('Failed to save customer', 'error'); }
+            } catch (err) {
+                showCustomerErrors(['We could not reach the server, so the customer was not saved. Check the internet connection and try again.']);
+            }
             custSaveBtn.disabled = false;
             custSaveBtn.innerHTML = '<i class="ti ti-check me-1"></i>Save';
         });

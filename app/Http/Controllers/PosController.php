@@ -481,17 +481,44 @@ class PosController extends Controller
      */
     public function storeCustomer(Request $request)
     {
-        // Authorization: Same as regular customer creation
+        // Authorization: needs the 'create customers' permission
         $this->authorize('create customers');
 
-        // Validate request
+        // Normalise the mobile BEFORE validating: the table stores 94714335456, staff type
+        // 0714335456. Unique checks must compare the value we are about to write.
+        if ($request->filled('phone')) {
+            $request->merge(['phone' => $this->formatPhoneNumberForStorage((string) $request->input('phone'))]);
+        }
+
+        // Validate request — messages are written for counter staff, not developers
         $validated = $request->validate([
             'first_name' => 'required|string|max:255',
             'last_name' => 'required|string|max:255',
-            'phone' => 'required|string|unique:customers',
+            'phone' => [
+                'required',
+                'string',
+                function (string $attribute, $value, \Closure $fail) {
+                    $existing = Customer::where('phone', $value)->first();
+                    if ($existing) {
+                        $fail(sprintf(
+                            'Mobile %s is already saved for %s. Choose %s from the Customer list instead of adding a new customer.',
+                            $this->localPhone($value),
+                            $existing->full_name,
+                            $existing->first_name
+                        ));
+                    }
+                },
+            ],
             'email' => 'nullable|email|unique:customers',
             'gender' => 'nullable|in:male,female,other,prefer_not_to_say',
             'joined_date' => 'nullable|date|before_or_equal:today',
+        ], [
+            'first_name.required' => "Please enter the customer's first name.",
+            'last_name.required' => "Please enter the customer's last name.",
+            'phone.required' => "Please enter the customer's mobile number.",
+            'email.email' => "That email address does not look right — check it and try again.",
+            'email.unique' => 'That email is already saved for another customer. Leave it blank or use a different address.',
+            'joined_date.before_or_equal' => 'The joined date cannot be in the future.',
         ]);
 
         try {
@@ -531,14 +558,59 @@ class PosController extends Controller
                     'email' => $customer->email,
                 ]
             ], 201);
+        } catch (\Illuminate\Database\QueryException $e) {
+            \Log::error('Quick add customer DB error: ' . $e->getMessage());
+
+            // Someone saved the same mobile between validation and insert
+            if ($e->getCode() === '23000' && str_contains($e->getMessage(), 'customers_phone_unique')) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'That mobile number was just saved for another customer. Search the Customer list for it and pick them.',
+                    'errors' => [
+                        'phone' => ['That mobile number was just saved for another customer. Search the Customer list and pick them.'],
+                    ],
+                ], 422);
+            }
+
+            // Never surface SQL to the counter — say what happened in plain words
+            return response()->json([
+                'success' => false,
+                'message' => 'We could not save this customer right now. The details were not lost — try again, and tell the manager if it keeps happening.',
+                'errors' => [
+                    'error' => ['We could not save this customer right now. Try again, and tell the manager if it keeps happening.'],
+                ],
+            ], 500);
         } catch (\Exception $e) {
             \Log::error('Quick add customer error: ' . $e->getMessage());
 
             return response()->json([
                 'success' => false,
-                'message' => 'Failed to create customer: ' . $e->getMessage()
+                'message' => 'We could not save this customer right now. Try again, and tell the manager if it keeps happening.',
+                'errors' => [
+                    'error' => ['We could not save this customer right now. Try again, and tell the manager if it keeps happening.'],
+                ],
             ], 500);
         }
+    }
+
+    /**
+     * Display form of a stored number: 94714335456 -> 0714335456
+     */
+    private function localPhone($phone)
+    {
+        $digits = preg_replace('/[^0-9]/', '', (string) $phone);
+
+        if ($digits === '') {
+            return '';
+        }
+
+        $countryCode = Setting::get('business.country_code', '94');
+
+        if (strlen($digits) > 9 && str_starts_with($digits, $countryCode)) {
+            return '0' . substr($digits, strlen($countryCode));
+        }
+
+        return $digits;
     }
 
     /**

@@ -95,6 +95,11 @@ class CustomerController extends Controller
     {
         $this->authorize('create customers');
 
+        // Normalise BEFORE validating so 'unique' compares the value we store
+        if ($request->filled('local_phone')) {
+            $request->merge(['phone' => $this->formatPhoneNumberForStorage($request->country_code . $request->local_phone)]);
+        }
+
         $request->validate([
             'first_name' => 'required|string|max:255',
             'last_name' => 'required|string|max:255',
@@ -107,6 +112,10 @@ class CustomerController extends Controller
             'gender' => 'nullable|in:'.implode(',', ['male', 'female', 'other', 'prefer_not_to_say']),
             'address' => 'nullable|string|max:500',
             'notes' => 'nullable|string|max:1000',
+        ], [
+            'local_phone.required' => "Please enter the customer's mobile number.",
+            'phone.unique' => 'That mobile number is already saved for another customer. Open that customer instead of adding a new one.',
+            'email.unique' => 'That email is already saved for another customer.',
         ]);
 
         // Prepare the validated data from request
@@ -244,6 +253,11 @@ class CustomerController extends Controller
     {
         $this->authorize('edit customers');
 
+        // Normalise BEFORE validating so 'unique' compares the value we store
+        if ($request->filled('local_phone')) {
+            $request->merge(['phone' => $this->formatPhoneNumberForStorage($request->country_code . $request->local_phone)]);
+        }
+
         $request->validate([
             'first_name' => 'required|string|max:255',
             'last_name' => 'required|string|max:255',
@@ -256,6 +270,10 @@ class CustomerController extends Controller
             'gender' => 'nullable|in:'.implode(',', ['male', 'female', 'other', 'prefer_not_to_say']),
             'address' => 'nullable|string|max:500',
             'notes' => 'nullable|string|max:1000',
+        ], [
+            'local_phone.required' => "Please enter the customer's mobile number.",
+            'phone.unique' => 'That mobile number is already saved for another customer. Use a different number or open that customer.',
+            'email.unique' => 'That email is already saved for another customer.',
         ]);
 
         // Prepare the validated data from request
