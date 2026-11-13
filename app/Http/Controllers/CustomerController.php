@@ -296,24 +296,33 @@ class CustomerController extends Controller
     }
 
     /**
-     * Remove the specified customer.
+     * Remove the specified customer — permanently.
      */
     public function destroy(Customer $customer)
     {
         $this->authorize('delete customers');
 
-        // Check for pending appointments
+        // Live bookings block deletion — cancel or complete them first
         $pendingCount = $customer->appointments()
             ->whereIn('status', ['scheduled', 'in_progress'])
             ->count();
 
         if ($pendingCount > 0) {
-            return redirect()->back()->with('error', "Cannot delete customer with {$pendingCount} pending appointments.");
+            return redirect()->back()->with('error', "Cannot delete this customer — they still have {$pendingCount} pending appointment(s). Cancel or complete those first.");
         }
 
-        $customer->delete();
+        $appointmentCount = $customer->appointments()->count();
+        $name = $customer->full_name;
 
-        return redirect()->route('customers.index')
-            ->with('success', 'Customer deleted successfully.');
+        // Permanent delete. A soft-deleted row kept its mobile in the unique index, which then
+        // blocked re-adding the same number and surfaced as a duplicate-key error at the till.
+        $customer->forceDelete();
+
+        $message = "{$name} was deleted permanently.";
+        if ($appointmentCount > 0) {
+            $message .= " Their {$appointmentCount} past appointment(s) were removed with them.";
+        }
+
+        return redirect()->route('customers.index')->with('success', $message);
     }
 }

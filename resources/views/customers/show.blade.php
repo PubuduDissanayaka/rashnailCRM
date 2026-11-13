@@ -459,18 +459,21 @@
 
         // Function to confirm customer deletion
         function confirmDeleteCustomer(customerId, customerName) {
+            const safeName = String(customerName).replace(/[&<>"']/g, function (c) {
+                return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
+            });
             Swal.fire({
-                title: 'Confirm Deletion',
-                text: `Are you sure you want to delete customer "${customerName}"?`,
+                title: 'Delete customer permanently?',
+                html: `<div class="text-start">This removes <strong>${safeName}</strong> for good:<ul class="mt-2 mb-0 ps-3"><li>The customer record is deleted — it cannot be restored.</li><li>Past appointments for this customer are removed with them.</li><li>Sales history is kept, but no longer linked to this customer.</li></ul></div>`,
                 icon: 'warning',
                 showCancelButton: true,
-                confirmButtonColor: '#3085d6',
-                cancelButtonColor: '#d33',
-                confirmButtonText: 'Yes, delete it!',
+                confirmButtonColor: '#d33',
+                cancelButtonColor: '#6c757d',
+                confirmButtonText: 'Yes, delete permanently',
                 cancelButtonText: 'Cancel',
                 buttonsStyling: false,
                 customClass: {
-                    confirmButton: 'btn btn-primary me-2',
+                    confirmButton: 'btn btn-danger me-2',
                     cancelButton: 'btn btn-secondary'
                 }
             }).then((result) => {
