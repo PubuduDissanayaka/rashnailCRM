@@ -207,6 +207,15 @@ import Choices from 'choices.js';
         try { payModalInstance = new bootstrap.Modal(payModal, { backdrop: 'static', keyboard: false }); } catch (e) {}
     }
 
+    // Close the payment modal from any handler — never rely on a handler-local variable
+    function hidePaymentModal() {
+        try {
+            const el = document.getElementById('payModal');
+            const inst = payModalInstance || (el && typeof bootstrap !== 'undefined' ? bootstrap.Modal.getInstance(el) : null);
+            if (inst) inst.hide();
+        } catch (e) { console.warn('Could not close payment modal:', e); }
+    }
+
     // ============================
     // HELPERS
     // ============================
@@ -574,6 +583,8 @@ import Choices from 'choices.js';
             let modalInstance = null;
             try { modalInstance = bootstrap.Modal.getInstance(pmEl) || new bootstrap.Modal(pmEl, { backdrop: 'static', keyboard: false }); } catch(e) {}
             if (!modalInstance) { toast('Payment system error', 'error'); return; }
+            // Keep the module-level handle in sync — the confirm handler closes it after a sale
+            payModalInstance = modalInstance;
 
             // Copy totals — re-query DOM to ensure fresh references
             const pmTotalEl = document.getElementById('pm-total');
@@ -896,32 +907,46 @@ import Choices from 'choices.js';
                 _token: csrf
             };
 
-            this.disabled = true;
-            this.innerHTML = '<i class="ti ti-loader-2 animate-spin me-1"></i>Processing...';
+            const btn = this;
+            btn.disabled = true;
+            btn.innerHTML = '<i class="ti ti-loader-2 animate-spin me-1"></i>Processing...';
 
             const method = isEditMode ? 'PUT' : 'POST';
 
             try {
-                const res = await fetch(editApiUrl, {
-                    method: method,
-                    headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': csrf, 'X-Requested-With': 'XMLHttpRequest' },
-                    body: JSON.stringify(data)
-                });
-                const result = await res.json();
-                if (result.success) {
-                    if (modalInstance) modalInstance.hide();
-                    // Success
+                // 1) Transport — a real network failure is the only case where nothing was saved
+                let res;
+                try {
+                    res = await fetch(editApiUrl, {
+                        method: method,
+                        headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': csrf, 'X-Requested-With': 'XMLHttpRequest', 'Accept': 'application/json' },
+                        body: JSON.stringify(data)
+                    });
+                } catch (netErr) {
+                    console.error('POS sale: request failed', netErr);
+                    toast('Could not reach the server — the sale was NOT saved. Check the connection and try again.', 'error');
+                    return;
+                }
+
+                // 2) Read the body once as text so a non-JSON answer cannot look like a failed sale
+                const raw = await res.text();
+                let result = null;
+                try { result = raw ? JSON.parse(raw) : null; } catch (parseErr) { result = null; }
+
+                if (result && result.success) {
+                    hidePaymentModal();
+
                     let pmtsHtml = '';
                     if (paymentsData.length > 0) {
                         pmtsHtml = '<hr class="my-1"><div class="small text-start px-2">' +
-                            paymentsData.map(function(p) { return '<div class="d-flex justify-content-between"><span class="text-capitalize">' + p.method + '</span><span>' + CS + p.amount.toFixed(2) + '</span></div>'; }).join('') +
+                            paymentsData.map(function(p) { return '<div class="d-flex justify-content-between"><span class="text-capitalize">' + p.method + '</span><span>' + CS + Number(p.amount || 0).toFixed(2) + '</span></div>'; }).join('') +
                             '</div>';
                     }
                     var msgTitle = isEditMode ? 'Sale Updated!' : 'Sale Completed!';
                     var cancelBtnText = isEditMode ? 'Back to Transactions' : 'Close';
                     Swal.fire({
                         icon: 'success', title: msgTitle,
-                        html: '<p>' + (isEditMode ? 'Sale' : 'Sale') + ' #' + (result.sale_number || result.sale_id) + '</p><p class="fs-4 fw-bold text-success">Change: ' + CS + (result.change_amount || 0).toFixed(2) + '</p>' + pmtsHtml,
+                        html: '<p>Sale #' + (result.sale_number || result.sale_id) + '</p><p class="fs-4 fw-bold text-success">Change: ' + CS + Number(result.change_amount || 0).toFixed(2) + '</p>' + pmtsHtml,
                         showConfirmButton: true, showCancelButton: true,
                         confirmButtonText: 'View Receipt', cancelButtonText: cancelBtnText
                     }).then(function(r) {
@@ -929,14 +954,23 @@ import Choices from 'choices.js';
                         else if (isEditMode && r.dismiss === Swal.DismissReason.cancel) window.location.href = '/pos/transactions';
                     });
                     clearCart();
-                } else {
-                    toast(result.message || 'Sale failed', 'error');
+                    return;
                 }
-            } catch (e) {
-                toast('Network error', 'error');
+
+                if (result) {
+                    // The server ran and said no — repeat its own wording (validation, stock, etc.)
+                    toast(result.message || 'The sale was not completed. Check the details and try again.', 'error');
+                    return;
+                }
+
+                // 3) Unparseable answer: the POST already reached the server, so the sale may exist.
+                // Never invite a blind retry — that is how duplicate sales get created.
+                console.error('POS sale: unexpected response', res.status, String(raw).slice(0, 500));
+                toast('The server did not confirm this sale (HTTP ' + res.status + '). It may already be saved — open Transactions and check before ringing it up again.', 'error');
+            } finally {
+                btn.disabled = false;
+                btn.innerHTML = 'Confirm & Complete';
             }
-            this.disabled = false;
-            this.innerHTML = 'Confirm & Complete';
         });
     }
 
