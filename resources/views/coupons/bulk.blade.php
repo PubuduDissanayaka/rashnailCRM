@@ -3,6 +3,14 @@
 @section('content')
     @include('layouts.partials.page-title', ['title' => 'Bulk Generate Coupons', 'subtitle' => 'Coupons'])
 
+    @php
+        // Present in every normal request via ShareErrorsFromSession; guarded so the
+        // view can also be rendered outside a request (tests, exports).
+        if (! isset($errors)) {
+            $errors = new Illuminate\Support\ViewErrorBag();
+        }
+    @endphp
+
     @if ($errors->any())
         <div class="alert alert-danger d-flex align-items-start gap-2" role="alert">
             <i class="ti ti-alert-triangle fs-lg mt-1"></i>
