@@ -18,7 +18,10 @@ return Application::configure(basePath: dirname(__DIR__))
 
         // Runs after the session is started, so it can end the session of an account
         // that was suspended or deactivated while it was signed in.
-        $middleware->appendToGroup('web', \App\Http\Middleware\EnsureAccountIsActive::class);
+        // (appendToGroup() silently failed to apply here; web(append:) is the reliable form.)
+        $middleware->web(append: [
+            \App\Http\Middleware\EnsureAccountIsActive::class,
+        ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         //
