@@ -262,23 +262,99 @@ class CouponController extends Controller
     /**
      * Remove the specified coupon from storage.
      */
+    /**
+     * Delete a single coupon permanently.
+     *
+     * Coupons that were actually redeemed keep their row: `coupon_redemptions`
+     * cascades on delete, so a hard delete would erase the discount history of
+     * past sales. Those must be deactivated instead.
+     */
     public function destroy(Coupon $coupon)
     {
         $this->authorize('delete coupons');
 
-        DB::beginTransaction();
+        if ($coupon->redemptions()->exists()) {
+            return redirect()->back()->with('error', sprintf(
+                'Coupon %s has already been used, so it cannot be deleted without erasing sale history. Deactivate it instead.',
+                $coupon->code
+            ));
+        }
+
         try {
-            $coupon->delete();
-            DB::commit();
+            $code = $coupon->code;
+            $coupon->forceDelete();
+
             return redirect()->route('coupons.index')
-                ->with('success', 'Coupon deleted successfully.');
+                ->with('success', "Coupon {$code} was permanently deleted. The code can be used again.");
         } catch (\Throwable $e) {
-            DB::rollBack();
             \Log::error('Coupon delete failed', ['coupon' => $coupon->id, 'error' => $e->getMessage()]);
 
             return redirect()->back()
                 ->with('error', 'We could not delete this coupon. Please try again.');
         }
+    }
+
+    /**
+     * Bulk activate / deactivate / permanently delete from the coupons list.
+     */
+    public function bulkAction(Request $request)
+    {
+        $data = $request->validate([
+            'action' => 'required|in:activate,deactivate,delete',
+            'ids'    => 'required|array|min:1',
+            'ids.*'  => 'integer',
+        ], [
+            'ids.required' => 'Select at least one coupon first.',
+            'action.in' => 'That bulk action is not supported.',
+        ]);
+
+        $this->authorize($data['action'] === 'delete' ? 'delete coupons' : 'edit coupons');
+
+        $coupons = Coupon::whereIn('id', $data['ids'])->get();
+
+        if ($coupons->isEmpty()) {
+            return redirect()->back()->with('error', 'Those coupons no longer exist — nothing was changed.');
+        }
+
+        if ($data['action'] === 'delete') {
+            // Never cascade away redemption history: only coupons that were
+            // never redeemed can be removed for good.
+            $deletableIds = [];
+            $kept = collect();
+
+            foreach ($coupons as $coupon) {
+                if ($coupon->redemptions()->exists()) {
+                    $kept->push($coupon);
+                } else {
+                    $deletableIds[] = $coupon->id;
+                }
+            }
+
+            $deleted = $deletableIds === [] ? 0 : Coupon::whereIn('id', $deletableIds)->forceDelete();
+
+            if ($kept->isNotEmpty()) {
+                $codes = $kept->pluck('code')->take(5)->implode(', ');
+                $more = $kept->count() > 5 ? ' and ' . ($kept->count() - 5) . ' more' : '';
+
+                \Log::info('Coupon bulk delete skipped redeemed coupons', ['ids' => $kept->pluck('id')->all()]);
+
+                return redirect()->back()->with(
+                    $deleted > 0 ? 'success' : 'error',
+                    ($deleted > 0 ? "{$deleted} coupon(s) permanently deleted. " : '')
+                    . "{$kept->count()} coupon(s) were kept because they have redemptions ({$codes}{$more}) — deactivate them instead."
+                );
+            }
+
+            return redirect()->back()->with('success', "{$deleted} coupon(s) permanently deleted. Those codes can be used again.");
+        }
+
+        $active = $data['action'] === 'activate';
+        Coupon::whereIn('id', $coupons->pluck('id'))->update(['active' => $active]);
+
+        return redirect()->back()->with(
+            'success',
+            $coupons->count() . ' coupon(s) ' . ($active ? 'activated.' : 'deactivated.')
+        );
     }
 
     /**

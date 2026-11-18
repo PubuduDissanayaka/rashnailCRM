@@ -230,6 +230,11 @@ Route::middleware(['auth'])->group(function () {
 
         Route::delete('/coupons/{coupon}', [CouponController::class, 'destroy'])->middleware('can:delete coupons')->name('coupons.destroy');
 
+        // Bulk management from the coupons list (activate / deactivate / delete).
+        // Declared before the wildcard routes for the same reason as "batches";
+        // the per-action permission is enforced inside the controller.
+        Route::post('/coupons/bulk-action', [CouponController::class, 'bulkAction'])->name('coupons.bulk.action');
+
         // Customer groups management
         Route::middleware(['can:manage coupon batches'])->group(function () {
             Route::get('/customer-groups', [CouponController::class, 'customerGroups'])->name('customer-groups.index');

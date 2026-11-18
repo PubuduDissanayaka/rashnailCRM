@@ -52,10 +52,23 @@
                         @endcan
                     </div>
                 </div>
+                @canany(['delete coupons', 'edit coupons'])
+                <div id="bulk-bar" class="px-3 py-2 border-top border-bottom bg-primary bg-opacity-10 d-none align-items-center gap-2 flex-wrap">
+                    <span class="fw-semibold me-2"><span id="bulk-count">0</span> selected</span>
+                    <button type="button" class="btn btn-sm btn-success" data-bulk="activate"><i class="ti ti-circle-check me-1"></i>Activate</button>
+                    <button type="button" class="btn btn-sm btn-warning" data-bulk="deactivate"><i class="ti ti-circle-minus me-1"></i>Deactivate</button>
+                    <button type="button" class="btn btn-sm btn-danger" data-bulk="delete"><i class="ti ti-trash me-1"></i>Delete permanently</button>
+                    <button type="button" class="btn btn-sm btn-light ms-auto" id="bulk-clear">Clear selection</button>
+                </div>
+                @endcanany
+
                 <div class="table-responsive">
                     <table class="table table-custom table-centered table-hover w-100 mb-0">
                         <thead class="bg-light align-middle bg-opacity-25 thead-sm">
                             <tr class="text-uppercase fs-xxs">
+                                <th class="text-center" style="width:1%">
+                                    <input class="form-check-input" type="checkbox" id="select-all" title="Select all coupons in this list" aria-label="Select all">
+                                </th>
                                 <th data-table-sort="sort-code">Code</th>
                                 <th data-table-sort="sort-name">Name</th>
                                 <th data-table-sort="sort-type">Type</th>
@@ -74,6 +87,10 @@
                                 $limit = $coupon->total_usage_limit;
                             @endphp
                             <tr>
+                                <td class="text-center">
+                                    <input class="form-check-input js-row-check" type="checkbox" value="{{ $coupon->id }}"
+                                           data-code="{{ $coupon->code }}" data-used="{{ $used }}" aria-label="Select {{ $coupon->code }}">
+                                </td>
                                 <td><code class="fw-semibold">{{ $coupon->code }}</code></td>
                                 <td>
                                     {{ $coupon->name }}
@@ -111,7 +128,7 @@
                                 </td>
                             </tr>
                             @empty
-                            <tr><td colspan="7" class="text-center py-5 text-muted">No coupons found.</td></tr>
+                            <tr><td colspan="8" class="text-center py-5 text-muted">No coupons found.</td></tr>
                             @endforelse
                         </tbody>
                     </table>
@@ -133,6 +150,7 @@
                 if (window.Swal) Swal.fire({ toast: true, position: 'top-end', icon: 'error', title: @json(session('error')), showConfirmButton: false, timer: 6000, timerProgressBar: true });
             @endif
 
+            // ---------- single delete (permanent) ----------
             document.querySelectorAll('.js-delete-coupon').forEach(function (form) {
                 const btn = form.querySelector('.js-delete-btn');
                 if (!btn) return;
@@ -141,24 +159,36 @@
                     const code = form.dataset.code || 'this coupon';
                     const used = parseInt(form.dataset.used || '0', 10);
 
-                    // Deleted coupons are soft deleted: past redemptions stay on record and the
-                    // unique index keeps the code reserved, so the wording must say exactly that.
-                    const confirmText = used > 0
-                        ? 'This coupon has been used ' + used + ' time(s). It will be removed from the list, the past redemptions stay on record, and the code stays reserved.'
-                        : 'The coupon will be removed from the list. The code stays reserved, so old receipts and reports keep pointing at the right coupon.';
+                    // Redeemed coupons cannot be deleted: coupon_redemptions cascades,
+                    // so a hard delete would erase the discount history of past sales.
+                    if (used > 0) {
+                        if (window.Swal) {
+                            Swal.fire({
+                                icon: 'info',
+                                title: code + ' has already been used',
+                                text: 'It was redeemed ' + used + ' time(s), so it cannot be deleted without losing sale history. Deactivate it instead to stop further use.',
+                                confirmButtonText: 'Got it'
+                            });
+                        } else {
+                            alert(code + ' has already been used ' + used + ' time(s) and cannot be deleted. Deactivate it instead.');
+                        }
+                        return;
+                    }
+
+                    const confirmText = 'This is permanent: the coupon is removed from the database and the code can be issued again. It cannot be undone.';
 
                     if (!window.Swal) {
-                        if (confirm('Delete coupon ' + code + '?\n\n' + confirmText)) form.submit();
+                        if (confirm('Permanently delete coupon ' + code + '?' + String.fromCharCode(10, 10) + confirmText)) form.submit();
                         return;
                     }
 
                     Swal.fire({
-                        title: 'Delete coupon ' + code + '?',
+                        title: 'Permanently delete ' + code + '?',
                         text: confirmText,
                         icon: 'warning',
                         showCancelButton: true,
-                        confirmButtonText: 'Yes, delete it',
-                        cancelButtonText: 'Keep it',
+                        confirmButtonText: 'Yes, delete permanently',
+                        cancelButtonText: 'Cancel',
                         buttonsStyling: false,
                         customClass: { confirmButton: 'btn btn-danger me-2', cancelButton: 'btn btn-secondary' }
                     }).then(function (result) {
@@ -166,6 +196,123 @@
                     });
                 });
             });
+
+            // ---------- bulk selection ----------
+            const bulkBar = document.getElementById('bulk-bar');
+            const selectAll = document.getElementById('select-all');
+            const countEl = document.getElementById('bulk-count');
+            const allChecks = () => Array.from(document.querySelectorAll('.js-row-check'));
+
+            // Rows hidden by the search filter or pagination should not be selected
+            // by "select all" — only what the user can actually see.
+            const visibleChecks = () => allChecks().filter(function (cb) {
+                const tr = cb.closest('tr');
+                return tr && tr.offsetParent !== null;
+            });
+
+            const selectedChecks = () => allChecks().filter(function (cb) { return cb.checked; });
+
+            function syncSelection() {
+                const chosen = selectedChecks();
+
+                if (countEl) countEl.textContent = chosen.length;
+                if (bulkBar) {
+                    bulkBar.classList.toggle('d-none', chosen.length === 0);
+                    bulkBar.classList.toggle('d-flex', chosen.length > 0);
+                }
+
+                if (selectAll) {
+                    const visible = visibleChecks();
+                    const checkedVisible = visible.filter(function (cb) { return cb.checked; });
+                    selectAll.checked = visible.length > 0 && checkedVisible.length === visible.length;
+                    selectAll.indeterminate = !selectAll.checked && checkedVisible.length > 0;
+                }
+            }
+
+            allChecks().forEach(function (cb) { cb.addEventListener('change', syncSelection); });
+
+            if (selectAll) {
+                selectAll.addEventListener('change', function () {
+                    visibleChecks().forEach(function (cb) { cb.checked = selectAll.checked; });
+                    syncSelection();
+                });
+            }
+
+            document.getElementById('bulk-clear')?.addEventListener('click', function () {
+                allChecks().forEach(function (cb) { cb.checked = false; });
+                syncSelection();
+            });
+
+            function submitBulk(action, ids) {
+                const form = document.createElement('form');
+                form.method = 'POST';
+                form.action = @json(route('coupons.bulk.action'));
+                form.style.display = 'none';
+
+                const token = document.createElement('input');
+                token.type = 'hidden';
+                token.name = '_token';
+                token.value = @json(csrf_token());
+                form.appendChild(token);
+
+                const actionInput = document.createElement('input');
+                actionInput.type = 'hidden';
+                actionInput.name = 'action';
+                actionInput.value = action;
+                form.appendChild(actionInput);
+
+                ids.forEach(function (id) {
+                    const input = document.createElement('input');
+                    input.type = 'hidden';
+                    input.name = 'ids[]';
+                    input.value = id;
+                    form.appendChild(input);
+                });
+
+                document.body.appendChild(form);
+                form.submit();
+            }
+
+            document.querySelectorAll('[data-bulk]').forEach(function (btn) {
+                btn.addEventListener('click', function () {
+                    const action = btn.dataset.bulk;
+                    const chosen = selectedChecks();
+                    if (!chosen.length) return;
+
+                    const ids = chosen.map(function (cb) { return cb.value; });
+                    const used = chosen.filter(function (cb) { return parseInt(cb.dataset.used || '0', 10) > 0; });
+
+                    if (action !== 'delete') {
+                        submitBulk(action, ids);
+                        return;
+                    }
+
+                    let text = 'This is permanent: ' + ids.length + ' coupon(s) will be removed from the database and their codes can be issued again. It cannot be undone.';
+                    if (used.length) {
+                        text += String.fromCharCode(10, 10) + used.length + ' of them have already been redeemed and will be kept so sale history stays correct.';
+                    }
+
+                    if (!window.Swal) {
+                        if (confirm('Permanently delete ' + ids.length + ' coupon(s)?')) submitBulk('delete', ids);
+                        return;
+                    }
+
+                    Swal.fire({
+                        title: 'Permanently delete ' + ids.length + ' coupon(s)?',
+                        text: text,
+                        icon: 'warning',
+                        showCancelButton: true,
+                        confirmButtonText: 'Yes, delete permanently',
+                        cancelButtonText: 'Cancel',
+                        buttonsStyling: false,
+                        customClass: { confirmButton: 'btn btn-danger me-2', cancelButton: 'btn btn-secondary' }
+                    }).then(function (result) {
+                        if (result.isConfirmed) submitBulk('delete', ids);
+                    });
+                });
+            });
+
+            syncSelection();
         });
     </script>
 @endsection
