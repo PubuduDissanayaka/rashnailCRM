@@ -234,8 +234,24 @@ class Sale extends Model
 
     private static function generateSaleNumber()
     {
-        $lastSale = self::whereDate('created_at', today())->latest('id')->first();
-        $nextNumber = $lastSale ? (intval(substr($lastSale->sale_number, -5)) + 1) : 1;
-        return sprintf('SALE-%s-%05d', date('Ymd'), $nextNumber);
+        $prefix = 'SALE-'.now()->format('Ymd').'-';
+
+        // A deleted sale still owns its number: soft deletes are invisible to a normal query but
+        // the unique index covers them, so excluding them made the day's counter restart at 00001
+        // and every completion afterwards died on "Duplicate entry" (2026-11-18: two voided sales
+        // blocked the till for the rest of the day). The base is the highest suffix issued today —
+        // read from the number itself, so a retry or a manual row cannot move it backwards.
+        $lastNumber = self::withTrashed()
+            ->where('sale_number', 'like', $prefix.'%')
+            ->orderByRaw('CAST(SUBSTRING(sale_number, -5) AS UNSIGNED) DESC')
+            ->value('sale_number');
+
+        $nextNumber = 1;
+
+        if ($lastNumber !== null && preg_match('/(\d+)$/', $lastNumber, $matches)) {
+            $nextNumber = (int) $matches[1] + 1;
+        }
+
+        return $prefix.str_pad((string) $nextNumber, 5, '0', STR_PAD_LEFT);
     }
 }

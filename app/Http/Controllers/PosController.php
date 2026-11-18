@@ -283,8 +283,10 @@ class PosController extends Controller
                 }
             }
 
-            // Create sale record
-            $sale = Sale::create([
+            // Create sale record. The number is derived, not reserved, so two tills completing in
+            // the same instant can land on the same one; MySQL does not abort the transaction on a
+            // duplicate key, so recompute and retry rather than losing the sale.
+            $saleAttributes = [
                 'customer_id' => $request->customer_id,
                 'user_id' => $userId,
                 'subtotal' => $subtotal,
@@ -299,7 +301,22 @@ class PosController extends Controller
                 'sale_type' => 'walk_in',
                 'notes' => $request->notes,
                 'sale_date' => now(),
-            ]);
+            ];
+
+            $sale = null;
+
+            for ($attempt = 1; ; $attempt++) {
+                try {
+                    $sale = Sale::create($saleAttributes);
+                    break;
+                } catch (\Illuminate\Database\QueryException $e) {
+                    if ($attempt >= 5 || ! str_contains($e->getMessage(), 'sale_number')) {
+                        throw $e;
+                    }
+
+                    usleep(25000 * $attempt);
+                }
+            }
 
             if (!empty($priceOverrides)) {
                 \Log::warning('POS price override on sale', [
