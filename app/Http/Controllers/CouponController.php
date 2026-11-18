@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Requests\CouponRequest;
 use App\Models\Coupon;
 use App\Models\CouponBatch;
 use App\Models\CustomerGroup;
@@ -43,7 +44,9 @@ class CouponController extends Controller
             'total_redemptions' => \App\Models\CouponRedemption::count(),
         ];
 
-        return view('coupons.index', compact('coupons', 'stats'));
+        $currencySymbol = \App\Models\Setting::get('payment.currency_symbol', 'Rs');
+
+        return view('coupons.index', compact('coupons', 'stats', 'currencySymbol'));
     }
 
     /**
@@ -60,118 +63,100 @@ class CouponController extends Controller
         $servicePackages = ServicePackage::active()->get();
         $categories = ServicePackageCategory::all();
 
+        $currencySymbol = \App\Models\Setting::get('payment.currency_symbol', 'Rs');
+
         return view('coupons.create', compact(
             'batches',
             'customerGroups',
             'locations',
             'services',
             'servicePackages',
-            'categories'
+            'categories',
+            'currencySymbol'
         ));
     }
 
     /**
      * Store a newly created coupon in storage.
      */
-    public function store(Request $request)
+    public function store(CouponRequest $request)
     {
         $this->authorize('create coupons');
 
-        $request->validate([
-            'code' => 'required|string|max:50|unique:coupons,code',
-            'name' => 'required|string|max:255',
-            'description' => 'nullable|string',
-            'type' => 'required|in:percentage,fixed,bogo,free_shipping,tiered',
-            'discount_value' => 'nullable|numeric|min:0',
-            'discount_percentage' => 'nullable|numeric|min:0|max:100',
-            'max_discount_amount' => 'nullable|numeric|min:0',
-            'minimum_purchase_amount' => 'nullable|numeric|min:0',
-            'start_date' => 'required|date',
-            'end_date' => 'nullable|date|after:start_date',
-            'timezone' => 'required|string',
-            'total_usage_limit' => 'nullable|integer|min:1',
-            'per_customer_limit' => 'nullable|integer|min:1',
-            'stackable' => 'boolean',
-            'active' => 'boolean',
-            'location_restriction_type' => 'required|in:all,specific',
-            'customer_eligibility_type' => 'required|in:all,new,existing,groups',
-            'product_restriction_type' => 'required|in:all,specific,categories',
-            'metadata' => 'nullable|json',
-            'batch_id' => 'nullable|exists:coupon_batches,id',
-            'customer_groups' => 'nullable|array',
-            'customer_groups.*' => 'exists:customer_groups,id',
-            'locations' => 'nullable|array',
-            'locations.*' => 'exists:locations,id',
-            'products' => 'nullable|array',
-            'categories' => 'nullable|array',
-            'categories.*' => 'exists:service_package_categories,id',
-        ]);
+        $data = $this->couponPayload($request);
 
         DB::beginTransaction();
         try {
-            $data = $request->only([
-                'code', 'name', 'description', 'type', 'max_discount_amount',
-                'minimum_purchase_amount', 'start_date', 'end_date', 'timezone',
-                'total_usage_limit', 'per_customer_limit', 'stackable', 'active',
-                'location_restriction_type', 'customer_eligibility_type', 'product_restriction_type',
-                'metadata', 'batch_id'
-            ]);
-
-            // Handle discount mapping
-            if ($request->type === 'percentage') {
-                $data['discount_value'] = $request->discount_percentage;
-            } else {
-                $data['discount_value'] = $request->discount_value;
-            }
-
-            // Ensure non-nullable fields have defaults if null
-            $data['minimum_purchase_amount'] = $data['minimum_purchase_amount'] ?? 0;
-            $data['per_customer_limit'] = $data['per_customer_limit'] ?? 1;
-
             $coupon = Coupon::create($data);
-
-            // Attach customer groups
-            if ($request->has('customer_groups')) {
-                $coupon->customerGroups()->sync($request->customer_groups);
-            }
-
-            // Attach locations
-            if ($request->has('locations')) {
-                $coupon->locations()->sync($request->locations);
-            }
-
-            // Attach products (handle prefixed IDs from form)
-            if ($request->has('products')) {
-                foreach ($request->products as $prefixedId) {
-                    if (str_starts_with($prefixedId, 'service_')) {
-                        $id = str_replace('service_', '', $prefixedId);
-                        $productType = Service::class;
-                    } elseif (str_starts_with($prefixedId, 'package_')) {
-                        $id = str_replace('package_', '', $prefixedId);
-                        $productType = ServicePackage::class;
-                    } else {
-                        continue;
-                    }
-
-                    $coupon->products()->attach($id, [
-                        'product_type' => $productType,
-                        'restriction_type' => 'included',
-                    ]);
-                }
-            }
-
-            // Attach categories
-            if ($request->has('categories')) {
-                $coupon->categories()->sync($request->categories);
-            }
+            $this->syncCouponRelations($coupon, $request);
 
             DB::commit();
+
             return redirect()->route('coupons.index')
-                ->with('success', 'Coupon created successfully.');
-        } catch (\Exception $e) {
+                ->with('success', 'Coupon ' . $coupon->code . ' created successfully.');
+        } catch (\Throwable $e) {
             DB::rollBack();
+            \Log::error('Coupon create failed', [
+                'code' => $request->input('code'),
+                'error' => $e->getMessage(),
+            ]);
+
             return redirect()->back()->withInput()
-                ->with('error', 'Failed to create coupon: ' . $e->getMessage());
+                ->with('error', 'We could not save this coupon. Please check the details and try again.');
+        }
+    }
+
+    /**
+     * Columns that come straight from the validated coupon form.
+     * `discount_value` is already mapped from the percentage/fixed input by CouponRequest.
+     */
+    private function couponPayload(CouponRequest $request): array
+    {
+        $data = $request->only([
+            'code', 'name', 'description', 'type', 'discount_value', 'max_discount_amount',
+            'minimum_purchase_amount', 'start_date', 'end_date', 'timezone',
+            'total_usage_limit', 'per_customer_limit', 'stackable', 'active',
+            'location_restriction_type', 'customer_eligibility_type', 'product_restriction_type',
+            'metadata', 'batch_id',
+        ]);
+
+        // Columns that are NOT NULL with defaults in the database
+        $data['minimum_purchase_amount'] = $data['minimum_purchase_amount'] ?? 0;
+        $data['per_customer_limit'] = $data['per_customer_limit'] ?? 1;
+
+        return $data;
+    }
+
+    /**
+     * Rebuild the coupon's restriction links (customer groups, locations,
+     * products/packages and categories). Used by both create and update so the
+     * two paths can never store different shapes of data.
+     */
+    private function syncCouponRelations(Coupon $coupon, CouponRequest $request): void
+    {
+        $coupon->customerGroups()->sync($request->input('customer_groups') ?? []);
+        $coupon->locations()->sync($request->input('locations') ?? []);
+        $coupon->categories()->sync($request->input('categories') ?? []);
+
+        // Morph relations share the coupon_products table; the morph type is set
+        // automatically by attach(), so only the pivot attribute is passed.
+        $coupon->products()->detach();
+        $coupon->servicePackages()->detach();
+
+        foreach ($request->input('products') ?? [] as $prefixedId) {
+            if (! is_string($prefixedId)) {
+                continue;
+            }
+
+            if (str_starts_with($prefixedId, 'service_')) {
+                $coupon->products()->attach((int) str_replace('service_', '', $prefixedId), [
+                    'restriction_type' => 'included',
+                ]);
+            } elseif (str_starts_with($prefixedId, 'package_')) {
+                $coupon->servicePackages()->attach((int) str_replace('package_', '', $prefixedId), [
+                    'restriction_type' => 'included',
+                ]);
+            }
         }
     }
 
@@ -246,96 +231,30 @@ class CouponController extends Controller
     /**
      * Update the specified coupon in storage.
      */
-    public function update(Request $request, Coupon $coupon)
+    public function update(CouponRequest $request, Coupon $coupon)
     {
         $this->authorize('edit coupons');
 
-        $request->validate([
-            'code' => 'required|string|max:50|unique:coupons,code,' . $coupon->id,
-            'name' => 'required|string|max:255',
-            'description' => 'nullable|string',
-            'type' => 'required|in:percentage,fixed,bogo,free_shipping,tiered',
-            'discount_value' => 'nullable|numeric|min:0',
-            'discount_percentage' => 'nullable|numeric|min:0|max:100',
-            'max_discount_amount' => 'nullable|numeric|min:0',
-            'minimum_purchase_amount' => 'nullable|numeric|min:0',
-            'start_date' => 'required|date',
-            'end_date' => 'nullable|date|after:start_date',
-            'timezone' => 'required|string',
-            'total_usage_limit' => 'nullable|integer|min:1',
-            'per_customer_limit' => 'nullable|integer|min:1',
-            'stackable' => 'boolean',
-            'active' => 'boolean',
-            'location_restriction_type' => 'required|in:all,specific',
-            'customer_eligibility_type' => 'required|in:all,new,existing,groups',
-            'product_restriction_type' => 'required|in:all,specific,categories',
-            'metadata' => 'nullable|json',
-            'batch_id' => 'nullable|exists:coupon_batches,id',
-            'customer_groups' => 'nullable|array',
-            'customer_groups.*' => 'exists:customer_groups,id',
-            'locations' => 'nullable|array',
-            'locations.*' => 'exists:locations,id',
-            'products' => 'nullable|array',
-            'categories' => 'nullable|array',
-            'categories.*' => 'exists:service_package_categories,id',
-        ]);
+        $data = $this->couponPayload($request);
 
         DB::beginTransaction();
         try {
-            $data = $request->only([
-                'code', 'name', 'description', 'type', 'max_discount_amount',
-                'minimum_purchase_amount', 'start_date', 'end_date', 'timezone',
-                'total_usage_limit', 'per_customer_limit', 'stackable', 'active',
-                'location_restriction_type', 'customer_eligibility_type', 'product_restriction_type',
-                'metadata', 'batch_id'
-            ]);
-
-            // Handle discount mapping
-            if ($request->type === 'percentage') {
-                $data['discount_value'] = $request->discount_percentage ?? $request->discount_value;
-            } else {
-                $data['discount_value'] = $request->discount_value;
-            }
-
-            // Ensure non-nullable fields have defaults if null
-            $data['minimum_purchase_amount'] = $data['minimum_purchase_amount'] ?? 0;
-            $data['per_customer_limit'] = $data['per_customer_limit'] ?? 1;
-
             $coupon->update($data);
-
-            // Sync relationships
-            $coupon->customerGroups()->sync($request->customer_groups ?? []);
-            $coupon->locations()->sync($request->locations ?? []);
-
-            // Sync products
-            $coupon->products()->detach();
-            $coupon->servicePackages()->detach();
-            if ($request->has('products')) {
-                foreach ($request->products as $prefixedId) {
-                    if (str_starts_with($prefixedId, 'service_')) {
-                        $id = str_replace('service_', '', $prefixedId);
-                        $coupon->products()->attach($id, [
-                            'restriction_type' => 'included',
-                        ]);
-                    } elseif (str_starts_with($prefixedId, 'package_')) {
-                        $id = str_replace('package_', '', $prefixedId);
-                        $coupon->servicePackages()->attach($id, [
-                            'restriction_type' => 'included',
-                        ]);
-                    }
-                }
-            }
-
-            // Sync categories
-            $coupon->categories()->sync($request->categories ?? []);
+            $this->syncCouponRelations($coupon, $request);
 
             DB::commit();
+
             return redirect()->route('coupons.index')
-                ->with('success', 'Coupon updated successfully.');
-        } catch (\Exception $e) {
+                ->with('success', 'Coupon ' . $coupon->code . ' updated successfully.');
+        } catch (\Throwable $e) {
             DB::rollBack();
+            \Log::error('Coupon update failed', [
+                'coupon' => $coupon->id,
+                'error' => $e->getMessage(),
+            ]);
+
             return redirect()->back()->withInput()
-                ->with('error', 'Failed to update coupon: ' . $e->getMessage());
+                ->with('error', 'We could not update this coupon. Please check the details and try again.');
         }
     }
 
@@ -352,9 +271,12 @@ class CouponController extends Controller
             DB::commit();
             return redirect()->route('coupons.index')
                 ->with('success', 'Coupon deleted successfully.');
-        } catch (\Exception $e) {
+        } catch (\Throwable $e) {
             DB::rollBack();
-            return redirect()->back()->with('error', 'Failed to delete coupon: ' . $e->getMessage());
+            \Log::error('Coupon delete failed', ['coupon' => $coupon->id, 'error' => $e->getMessage()]);
+
+            return redirect()->back()
+                ->with('error', 'We could not delete this coupon. Please try again.');
         }
     }
 
@@ -581,45 +503,57 @@ class CouponController extends Controller
             'code' => 'required|string|max:50',
             'customer_id' => 'nullable|exists:customers,id',
             'location_id' => 'nullable|exists:locations,id',
-            'items' => 'nullable|array',
-            'items.*.type' => 'in:service,package',
+            'items' => 'required|array|min:1',
+            'items.*.type' => 'required|in:service,package',
             'items.*.id' => 'required',
-            'items.*.price' => 'required|numeric',
+            'items.*.price' => 'required|numeric|min:0',
             'items.*.quantity' => 'required|integer|min:1',
+        ], [
+            'code.required' => 'Enter a coupon code.',
+            'items.required' => 'Add at least one service or package to the cart before applying a coupon.',
         ]);
 
-        $coupon = Coupon::where('code', $request->code)->first();
-        if (!$coupon) {
+        $code = strtoupper(trim($request->input('code')));
+        $coupon = Coupon::whereRaw('UPPER(code) = ?', [$code])->first();
+
+        if (! $coupon) {
             return response()->json([
                 'valid' => false,
-                'errors' => ['Coupon code not found.'],
+                'message' => 'Coupon code ' . $code . ' was not found.',
+                'errors' => ['Coupon code ' . $code . ' was not found.'],
             ], 404);
         }
 
-        // Create a temporary sale object for validation
+        $subtotal = collect($request->input('items'))
+            ->sum(fn ($item) => (float) $item['price'] * (int) $item['quantity']);
+
+        // A transient sale is only used to carry the subtotal/location into the
+        // coupon service — nothing is persisted here.
         $sale = new Sale();
-        $sale->subtotal = collect($request->items)->sum(function ($item) {
-            return $item['price'] * $item['quantity'];
-        });
-        $sale->location_id = $request->location_id;
-        // We'll need to set other sale attributes if necessary
+        $sale->subtotal = $subtotal;
+        $sale->location_id = $request->input('location_id');
 
-        $customer = $request->customer_id ? \App\Models\Customer::find($request->customer_id) : null;
+        $customer = $request->input('customer_id') ? Customer::find($request->input('customer_id')) : null;
 
-        $validationResult = $this->couponService->validate($coupon, $sale, $customer);
+        $result = $this->couponService->validate($coupon, $sale, $customer);
 
-        if (!$validationResult['valid']) {
-            return response()->json($validationResult, 422);
+        if (! $result['valid']) {
+            return response()->json([
+                'valid' => false,
+                'message' => $result['errors'][0] ?? 'This coupon cannot be used for this sale.',
+                'errors' => $result['errors'],
+            ], 422);
         }
 
-        // Calculate discount amount
-        $discount = $this->couponService->calculateDiscount($coupon, $sale->subtotal, $request->items);
+        $discount = $this->couponService->calculateDiscount($coupon, $subtotal, $request->input('items'));
+        $discount = round(min($discount, $subtotal), 2);
 
         return response()->json([
             'valid' => true,
+            'message' => 'Coupon applied successfully.',
             'coupon' => $coupon->only(['id', 'code', 'name', 'type', 'discount_value', 'max_discount_amount', 'stackable']),
             'discount_amount' => $discount,
-            'message' => 'Coupon applied successfully.',
+            'subtotal' => round($subtotal, 2),
         ]);
     }
 

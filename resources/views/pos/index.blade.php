@@ -507,6 +507,7 @@ window.currencySymbol = "{{ $currencySymbol }}";
 // Endpoint used by pos.js — resolved from the router so it cannot go stale
 window.posRoutes = {
     quickCustomer: "{{ route('pos.customers.store') }}",
+    couponValidate: "{{ route('coupons.validate') }}",
 };
 @if(isset($editSale))
 window.editSale = @json($editSale);

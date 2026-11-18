@@ -7,6 +7,19 @@
 @section('content')
     @include('layouts.partials.page-title', ['title' => 'Coupons'])
 
+    @if(session('success'))
+        <div class="alert alert-success alert-dismissible fade show" role="alert">
+            <i class="ti ti-circle-check me-1"></i>{{ session('success') }}
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    @endif
+    @if(session('error'))
+        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+            <i class="ti ti-alert-triangle me-1"></i>{{ session('error') }}
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    @endif
+
     <div class="row mb-4">
         <div class="col-md-3"><div class="card card-animate"><div class="card-body"><p class="fw-medium text-muted mb-0">Total Coupons</p><h3 class="mt-2 ff-secondary fw-semibold">{{ $stats['total'] }}</h3></div></div></div>
         <div class="col-md-3"><div class="card card-animate"><div class="card-body"><p class="fw-medium text-muted mb-0">Active</p><h3 class="mt-2 ff-secondary fw-semibold text-success">{{ $stats['active'] }}</h3></div></div></div>
@@ -78,9 +91,10 @@
                                         <a href="{{ route('coupons.edit', $coupon) }}" class="btn btn-light btn-icon btn-sm rounded-circle" title="Edit"><i class="ti ti-edit fs-lg"></i></a>
                                         @endcan
                                         @can('delete coupons')
-                                        <form action="{{ route('coupons.destroy', $coupon) }}" method="POST" class="d-inline" onsubmit="return confirm('Delete this coupon?')">
+                                        <form action="{{ route('coupons.destroy', $coupon) }}" method="POST" class="d-inline js-delete-coupon"
+                                              data-code="{{ $coupon->code }}" data-used="{{ $used }}">
                                             @csrf @method('DELETE')
-                                            <button class="btn btn-danger btn-icon btn-sm rounded-circle" title="Delete"><i class="ti ti-trash fs-lg"></i></button>
+                                            <button type="button" class="btn btn-danger btn-icon btn-sm rounded-circle js-delete-btn" title="Delete"><i class="ti ti-trash fs-lg"></i></button>
                                         </form>
                                         @endcan
                                     </div>
@@ -99,5 +113,47 @@
 @endsection
 
 @section('scripts')
-    @vite(['resources/js/pages/custom-table.js', ])
+    @vite(['resources/js/pages/custom-table.js'])
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            @if(session('success'))
+                if (window.Swal) Swal.fire({ toast: true, position: 'top-end', icon: 'success', title: @json(session('success')), showConfirmButton: false, timer: 3500, timerProgressBar: true });
+            @endif
+            @if(session('error'))
+                if (window.Swal) Swal.fire({ toast: true, position: 'top-end', icon: 'error', title: @json(session('error')), showConfirmButton: false, timer: 6000, timerProgressBar: true });
+            @endif
+
+            document.querySelectorAll('.js-delete-coupon').forEach(function (form) {
+                const btn = form.querySelector('.js-delete-btn');
+                if (!btn) return;
+
+                btn.addEventListener('click', function () {
+                    const code = form.dataset.code || 'this coupon';
+                    const used = parseInt(form.dataset.used || '0', 10);
+
+                    const confirmText = used > 0
+                        ? 'This coupon has already been used ' + used + ' time(s). Deleting it keeps the past redemptions on record but the code can no longer be used.'
+                        : 'The coupon will be removed and the code can be reused afterwards.';
+
+                    if (!window.Swal) {
+                        if (confirm('Delete coupon ' + code + '?\n\n' + confirmText)) form.submit();
+                        return;
+                    }
+
+                    Swal.fire({
+                        title: 'Delete coupon ' + code + '?',
+                        text: confirmText,
+                        icon: 'warning',
+                        showCancelButton: true,
+                        confirmButtonText: 'Yes, delete it',
+                        cancelButtonText: 'Keep it',
+                        buttonsStyling: false,
+                        customClass: { confirmButton: 'btn btn-danger me-2', cancelButton: 'btn btn-secondary' }
+                    }).then(function (result) {
+                        if (result.isConfirmed) form.submit();
+                    });
+                });
+            });
+        });
+    </script>
 @endsection

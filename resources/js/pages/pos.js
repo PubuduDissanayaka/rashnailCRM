@@ -437,28 +437,70 @@ import Choices from 'choices.js';
     // ============================
     if (couponBtn) {
         couponBtn.addEventListener('click', async function () {
-            const code = couponInput?.value?.trim();
+            const code = (couponInput?.value || '').trim().toUpperCase();
             if (!code) { toast('Enter a coupon code', 'error'); return; }
-            if (!customerSelect) { toast('Select a customer first', 'error'); return; }
-            const customerId = customerSelect.value;
+            if (!cart.length) { toast('Add a service to the cart first', 'error'); return; }
+
+            const showCouponMessage = function (message, isError) {
+                if (!couponFb) return;
+                couponFb.innerHTML = '';
+                const span = document.createElement('span');
+                span.className = isError ? 'text-danger' : 'text-success';
+                span.textContent = (isError ? '⚠ ' : '✅ ') + message;
+                couponFb.appendChild(span);
+            };
+
+            const items = cart.map(function (i) {
+                return {
+                    type: i.type === 'package' ? 'package' : 'service',
+                    id: i.id,
+                    price: parseFloat(i.price) || 0,
+                    quantity: i.quantity || 1
+                };
+            });
+
             try {
-                const res = await fetch('/coupons/validate', {
+                const res = await fetch(ROUTES.couponValidate || '/api/coupons/validate', {
                     method: 'POST',
-                    headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.content, 'X-Requested-With': 'XMLHttpRequest' },
-                    body: JSON.stringify({ code, customer_id: customerId, cart_total: sum(cart) })
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.content,
+                        'X-Requested-With': 'XMLHttpRequest',
+                        'Accept': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        code: code,
+                        customer_id: customerSelect?.value || null,
+                        items: items
+                    })
                 });
-                const data = await res.json();
+
+                const data = await res.json().catch(() => null);
+                if (!data) {
+                    showCouponMessage('We could not check this coupon. Please try again.', true);
+                    return;
+                }
+
                 if (data.valid) {
-                    appliedCoupons.push({ id: data.coupon.id, code, discount_amount: data.discount_amount });
-                    if (couponFb) couponFb.innerHTML = `<span class="text-success">✅ Coupon applied: -${CS}${parseFloat(data.discount_amount).toFixed(2)}</span>`;
+                    if (appliedCoupons.some(function (c) { return String(c.code).toUpperCase() === code; })) {
+                        showCouponMessage('This coupon is already applied.', true);
+                        return;
+                    }
+                    appliedCoupons.push({
+                        id: data.coupon.id,
+                        code: data.coupon.code,
+                        discount_amount: data.discount_amount
+                    });
+                    showCouponMessage('Coupon ' + data.coupon.code + ' applied: -' + CS + Number(data.discount_amount || 0).toFixed(2), false);
                     if (couponInput) couponInput.value = '';
                     updateTotals();
                     toast('Coupon applied!');
                 } else {
-                    if (couponFb) couponFb.innerHTML = `<span class="text-danger">${data.message || 'Invalid coupon'}</span>`;
+                    showCouponMessage(data.message || 'This coupon cannot be used for this sale.', true);
                 }
             } catch (e) {
-                toast('Failed to validate coupon', 'error');
+                console.error('Coupon validation failed', e);
+                showCouponMessage('We could not reach the server to check this coupon.', true);
             }
         });
     }
