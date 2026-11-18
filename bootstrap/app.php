@@ -15,6 +15,10 @@ return Application::configure(basePath: dirname(__DIR__))
             'role' => \App\Http\Middleware\RoleMiddleware::class,
             'check.role' => \App\Http\Middleware\CheckRole::class,
         ]);
+
+        // Runs after the session is started, so it can end the session of an account
+        // that was suspended or deactivated while it was signed in.
+        $middleware->appendToGroup('web', \App\Http\Middleware\EnsureAccountIsActive::class);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         //

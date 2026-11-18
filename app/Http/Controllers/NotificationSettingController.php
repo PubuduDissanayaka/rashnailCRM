@@ -394,6 +394,8 @@ class NotificationSettingController extends Controller
      */
     public function bulkUpdate(Request $request)
     {
+        $this->authorize('manage system');
+
         $request->validate([
             'user_ids' => 'required|array',
             'user_ids.*' => 'exists:users,id',

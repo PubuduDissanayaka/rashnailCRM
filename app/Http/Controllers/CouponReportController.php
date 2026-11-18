@@ -167,7 +167,26 @@ class CouponReportController extends Controller
         };
 
         $filename = 'coupon_report_' . $type . '_' . $filters->startDate->format('Y-m-d') . '_' . $filters->endDate->format('Y-m-d');
-        
-        return $this->exportService->exportToCsv($data, $filename . '.csv');
+
+        // ExportService::exportToCsv() takes a FilterCriteria and produces the staff
+        // report; passing this report's rows to it threw a TypeError. Stream the rows
+        // this endpoint actually selected instead.
+        $rows = is_array($data) ? $data : $data->toArray();
+
+        return response()->streamDownload(function () use ($rows) {
+            $out = fopen('php://output', 'w');
+            fwrite($out, "\xEF\xBB\xBF");
+
+            $first = $rows[0] ?? null;
+            if (is_array($first)) {
+                fputcsv($out, array_keys($first));
+            }
+
+            foreach ($rows as $row) {
+                fputcsv($out, is_array($row) ? array_values($row) : [$row]);
+            }
+
+            fclose($out);
+        }, $filename . '.csv', ['Content-Type' => 'text/csv; charset=utf-8']);
     }
 }

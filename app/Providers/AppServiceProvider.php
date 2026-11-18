@@ -29,6 +29,18 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
+        // Brute-force protection for the login form (used by routes/web.php).
+        // Keyed by email + IP so one noisy account cannot lock out everyone, and by
+        // IP alone so spraying many accounts is still bounded.
+        \Illuminate\Support\Facades\RateLimiter::for('login', function ($request) {
+            return [
+                \Illuminate\Cache\RateLimiting\Limit::perMinute(5)->by(
+                    \Illuminate\Support\Str::lower((string) $request->input('email')) . '|' . $request->ip()
+                ),
+                \Illuminate\Cache\RateLimiting\Limit::perHour(30)->by($request->ip()),
+            ];
+        });
+
         // Apply business timezone from settings (if available)
         $this->applyBusinessTimezone();
 

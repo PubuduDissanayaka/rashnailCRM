@@ -453,7 +453,7 @@ class AttendanceController extends Controller
      */
     public function import(Request $request)
     {
-        if (!Gate::any(['manage attendances', 'view attendances', 'edit attendances'])) {
+        if (!Gate::allows('manage attendances')) {
             abort(403);
         }
 
@@ -625,7 +625,7 @@ class AttendanceController extends Controller
      */
     public function export(Request $request)
     {
-        if (!Gate::any(['manage attendances', 'view attendances', 'edit attendances'])) {
+        if (!Gate::allows('manage attendances')) {
             abort(403);
         }
 
@@ -844,7 +844,7 @@ class AttendanceController extends Controller
      */
     public function approve(Attendance $attendance)
     {
-        if (!Gate::any(['manage attendances', 'view attendances', 'edit attendances'])) {
+        if (!Gate::allows('manage attendances')) {
             abort(403);
         }
 
@@ -885,7 +885,7 @@ class AttendanceController extends Controller
      */
     public function reject(Attendance $attendance, Request $request)
     {
-        if (!Gate::any(['manage attendances', 'view attendances', 'edit attendances'])) {
+        if (!Gate::allows('manage attendances')) {
             abort(403);
         }
 
@@ -944,7 +944,7 @@ class AttendanceController extends Controller
      */
     public function viewRecord(Attendance $attendance)
     {
-        if (!Gate::any(['manage attendances', 'view attendances', 'edit attendances'])) {
+        if (!Gate::allows('manage attendances')) {
             abort(403);
         }
 
@@ -997,7 +997,7 @@ class AttendanceController extends Controller
      */
     public function datatableStaff(Request $request)
     {
-        if (!Gate::any(['manage attendances', 'view attendances', 'edit attendances'])) {
+        if (!Gate::allows('manage attendances')) {
             abort(403);
         }
 

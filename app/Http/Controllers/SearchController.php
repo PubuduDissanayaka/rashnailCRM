@@ -68,18 +68,23 @@ class SearchController extends Controller
                 'icon'  => 'ti ti-scissors',
             ]);
 
-        // Search users by name or email
-        $users = User::where('name', 'like', $term)
-            ->orWhere('email', 'like', $term)
-            ->limit(5)
-            ->get()
-            ->map(fn ($u) => [
-                'type' => 'User',
-                'label' => $u->name,
-                'sub'   => $u->email,
-                'url'   => route('users.edit', $u->id),
-                'icon'  => 'ti ti-users',
-            ]);
+        // The staff directory is gated by 'view users'. Without this check the global
+        // search box doubles as an org-wide name/email listing for every logged-in user.
+        $users = collect();
+
+        if (auth()->user()->can('view users')) {
+            $users = User::where('name', 'like', $term)
+                ->orWhere('email', 'like', $term)
+                ->limit(5)
+                ->get()
+                ->map(fn ($u) => [
+                    'type' => 'User',
+                    'label' => $u->name,
+                    'sub'   => $u->email,
+                    'url'   => route('users.edit', $u->id),
+                    'icon'  => 'ti ti-users',
+                ]);
+        }
 
         $results = collect()
             ->merge($customers)

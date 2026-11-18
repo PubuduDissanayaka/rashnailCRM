@@ -149,6 +149,18 @@
                         <div class="row">
                             <div class="col-md-6">
                                 <div class="mb-3">
+                                    <label for="current_password" class="form-label">Current Password</label>
+                                    <input class="form-control" type="password" id="current_password" name="current_password" autocomplete="current-password">
+                                    @error('current_password')
+                                        <span class="text-danger" role="alert">
+                                            <small>{{ $message }}</small>
+                                        </span>
+                                    @enderror
+                                    <div class="form-text">Required when you set a new password.</div>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
                                     <label for="password" class="form-label">New Password</label>
                                     <input class="form-control" type="password" id="password" name="password">
                                     <div class="form-text">Leave blank to keep current password</div>

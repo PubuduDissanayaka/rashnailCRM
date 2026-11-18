@@ -49,8 +49,19 @@ class AuthController extends Controller
             // Block inactive or suspended users
             if ($user->status === 'inactive' || $user->status === 'suspended') {
                 Auth::logout();
+                $request->session()->invalidate();
+                $request->session()->regenerateToken();
+
+                // Deliberately the same wording as a wrong password: telling the client
+                // "your password was right but the account is disabled" confirms a guess.
+                \Log::warning('Login blocked: account not active', [
+                    'user_id' => $user->id,
+                    'status' => $user->status,
+                    'ip' => $request->ip(),
+                ]);
+
                 return back()->withErrors([
-                    'email' => 'Your account is ' . $user->status . '. Please contact the administrator.',
+                    'email' => 'The provided credentials do not match our records.',
                 ])->withInput($request->only('email'));
             }
 

@@ -141,6 +141,10 @@ class PosController extends Controller
             }
             $taxRateDecimal = $taxRate / 100;
 
+            // Only a user who manages the POS may override a catalogue price.
+            $mayOverridePrice = auth()->user()->can('manage pos');
+            $priceOverrides = [];
+
             // Calculate totals and validate items exist and are active
             $subtotal = 0;
 
@@ -154,8 +158,13 @@ class PosController extends Controller
                         throw new \Exception('Service with ID ' . $item['id'] . ' does not exist or is not active');
                     }
 
-                    // Use custom price if provided, otherwise use service price
-                    $price = isset($item['price']) ? $item['price'] : $service->price;
+                    // The catalogue price is authoritative; an override needs POS
+                    // management rights and is recorded for the audit trail.
+                    $price = (float) $service->price;
+                    if ($mayOverridePrice && isset($item['price']) && (float) $item['price'] !== $price) {
+                        $price = (float) $item['price'];
+                        $priceOverrides[] = ['type' => 'service', 'id' => $service->id, 'catalogue' => (float) $service->price, 'charged' => $price];
+                    }
 
                     // Validate that price is not negative
                     if ($price < 0) {
@@ -172,8 +181,12 @@ class PosController extends Controller
                         throw new \Exception('Service package with ID ' . $item['id'] . ' does not exist, is not active, or is not available for sale');
                     }
 
-                    // Use custom price if provided, otherwise use package price
-                    $price = isset($item['price']) ? $item['price'] : $package->price;
+                    // Catalogue price is authoritative here too (see services above).
+                    $price = (float) $package->price;
+                    if ($mayOverridePrice && isset($item['price']) && (float) $item['price'] !== $price) {
+                        $price = (float) $item['price'];
+                        $priceOverrides[] = ['type' => 'package', 'id' => $package->id, 'catalogue' => (float) $package->price, 'charged' => $price];
+                    }
 
                     // Validate that price is not negative
                     if ($price < 0) {
@@ -197,13 +210,44 @@ class PosController extends Controller
             }
 
             // Calculate coupon discount
-            $couponDiscountAmount = $request->input('coupon_discount_amount', 0);
-            if ($couponDiscountAmount < 0) {
-                throw new \Exception('Coupon discount amount cannot be negative');
+            // Coupon discounts are recomputed from the coupons themselves. The amount the
+            // browser sends is never trusted, and a coupon that is no longer valid stops
+            // the sale instead of silently discounting it.
+            $couponDiscountAmount = 0.0;
+            $computedCouponDiscounts = [];
+
+            foreach ($request->input('applied_coupons', []) as $appliedCoupon) {
+                $coupon = \App\Models\Coupon::find($appliedCoupon['id'] ?? null);
+
+                if (!$coupon) {
+                    throw new \Exception('One of the applied coupons could not be found. Please remove it and try again.');
+                }
+
+                if (!$coupon->isActive()) {
+                    throw new \Exception("Coupon {$coupon->code} is no longer active.");
+                }
+
+                if (!$coupon->hasRemainingUses()) {
+                    throw new \Exception("Coupon {$coupon->code} has reached its usage limit.");
+                }
+
+                if ($subtotal < (float) $coupon->minimum_purchase_amount) {
+                    throw new \Exception("Coupon {$coupon->code} requires a minimum purchase of " . number_format((float) $coupon->minimum_purchase_amount, 2) . '.');
+                }
+
+                $discountForCoupon = app(\App\Services\CouponService::class)
+                    ->calculateDiscount($coupon, max(0, $subtotal - $couponDiscountAmount));
+
+                $computedCouponDiscounts[$coupon->id] = $discountForCoupon;
+                $couponDiscountAmount += $discountForCoupon;
             }
 
             // Calculate taxable amount (subtotal - discount - coupon discount)
             // Ensure taxable amount doesn't go below zero
+            if (($discountAmount + $couponDiscountAmount) > $subtotal) {
+                throw new \Exception('The discount cannot be more than the sale subtotal.');
+            }
+
             $taxableAmount = max(0, $subtotal - $discountAmount - $couponDiscountAmount);
 
             $taxAmount = $taxableAmount * $taxRateDecimal;
@@ -255,6 +299,14 @@ class PosController extends Controller
                 'sale_date' => now(),
             ]);
 
+            if (!empty($priceOverrides)) {
+                \Log::warning('POS price override on sale', [
+                    'sale_id' => $sale->id,
+                    'user_id' => auth()->id(),
+                    'overrides' => $priceOverrides,
+                ]);
+            }
+
             // Create coupon redemptions and link coupons to sale
             if ($request->has('applied_coupons') && !empty($request->applied_coupons)) {
                 foreach ($request->applied_coupons as $couponData) {
@@ -269,7 +321,7 @@ class PosController extends Controller
                         'sale_id' => $sale->id,
                         'customer_id' => $request->customer_id,
                         'redeemed_by_user_id' => auth()->id(),
-                        'discount_amount' => $couponData['discount_amount'],
+                        'discount_amount' => $computedCouponDiscounts[$coupon->id] ?? 0,
                         'redeemed_at' => now(),
                         'ip_address' => $request->ip(),
                         'user_agent' => $request->userAgent(),
@@ -280,7 +332,7 @@ class PosController extends Controller
                         'sale_id' => $sale->id,
                         'coupon_id' => $coupon->id,
                         'coupon_redemption_id' => $redemption->id,
-                        'discount_amount' => $couponData['discount_amount'],
+                        'discount_amount' => $computedCouponDiscounts[$coupon->id] ?? 0,
                     ]);
                 }
             }
@@ -297,7 +349,7 @@ class PosController extends Controller
                     }
 
                     // Use custom price if provided, otherwise use service price
-                    $unitPrice = isset($item['price']) ? $item['price'] : $service->price;
+                    $unitPrice = isset($item['price']) && $mayOverridePrice ? (float) $item['price'] : (float) $service->price;
 
                     // Validate that price is not negative
                     if ($unitPrice < 0) {
@@ -315,7 +367,7 @@ class PosController extends Controller
                     }
 
                     // Use custom price if provided, otherwise use package price
-                    $unitPrice = isset($item['price']) ? $item['price'] : $package->price;
+                    $unitPrice = isset($item['price']) && $mayOverridePrice ? (float) $item['price'] : (float) $package->price;
 
                     // Validate that price is not negative
                     if ($unitPrice < 0) {
@@ -985,6 +1037,11 @@ class PosController extends Controller
      */
     public function update(Request $request, Sale $sale)
     {
+        // Catalogue prices stay authoritative on edit too; only a POS manager
+        // may change what was charged.
+        $mayOverridePrice = auth()->user()->can('manage pos');
+        $priceOverrides = [];
+
         if (!Gate::any(['edit pos transactions', 'manage pos'])) {
             abort(403, 'Unauthorized action.');
         }
@@ -1038,13 +1095,21 @@ class PosController extends Controller
                     if (!$service) {
                         throw new \Exception('Service with ID ' . $item['id'] . ' does not exist or is not active');
                     }
-                    $price = isset($item['price']) ? $item['price'] : $service->price;
+                    $price = (float) $service->price;
+                    if ($mayOverridePrice && isset($item['price']) && (float) $item['price'] !== $price) {
+                        $price = (float) $item['price'];
+                        $priceOverrides[] = ['type' => 'service', 'id' => $service->id, 'catalogue' => (float) $service->price, 'charged' => $price];
+                    }
                 } else {
                     $package = ServicePackage::where('id', $item['id'])->where('is_active', true)->first();
                     if (!$package) {
                         throw new \Exception('Package with ID ' . $item['id'] . ' does not exist or is not active');
                     }
-                    $price = isset($item['price']) ? $item['price'] : $package->price;
+                    $price = (float) $package->price;
+                    if ($mayOverridePrice && isset($item['price']) && (float) $item['price'] !== $price) {
+                        $price = (float) $item['price'];
+                        $priceOverrides[] = ['type' => 'package', 'id' => $package->id, 'catalogue' => (float) $package->price, 'charged' => $price];
+                    }
                 }
                 if ($price < 0) throw new \Exception('Item price cannot be negative');
                 $subtotal += ($price * $item['quantity']);
@@ -1060,8 +1125,39 @@ class PosController extends Controller
                 }
             }
 
-            $couponDiscountAmount = $request->input('coupon_discount_amount', 0);
-            if ($couponDiscountAmount < 0) throw new \Exception('Coupon discount amount cannot be negative');
+            // Recomputed from the coupons themselves — never taken from the request.
+            $couponDiscountAmount = 0.0;
+            $computedCouponDiscounts = [];
+
+            foreach ($request->input('applied_coupons', []) as $appliedCoupon) {
+                $coupon = \App\Models\Coupon::find($appliedCoupon['id'] ?? null);
+
+                if (!$coupon) {
+                    throw new \Exception('One of the applied coupons could not be found. Please remove it and try again.');
+                }
+
+                if (!$coupon->isActive()) {
+                    throw new \Exception("Coupon {$coupon->code} is no longer active.");
+                }
+
+                if (!$coupon->hasRemainingUses()) {
+                    throw new \Exception("Coupon {$coupon->code} has reached its usage limit.");
+                }
+
+                if ($subtotal < (float) $coupon->minimum_purchase_amount) {
+                    throw new \Exception("Coupon {$coupon->code} requires a minimum purchase of " . number_format((float) $coupon->minimum_purchase_amount, 2) . '.');
+                }
+
+                $discountForCoupon = app(\App\Services\CouponService::class)
+                    ->calculateDiscount($coupon, max(0, $subtotal - $couponDiscountAmount));
+
+                $computedCouponDiscounts[$coupon->id] = $discountForCoupon;
+                $couponDiscountAmount += $discountForCoupon;
+            }
+
+            if (($discountAmount + $couponDiscountAmount) > $subtotal) {
+                throw new \Exception('The discount cannot be more than the sale subtotal.');
+            }
 
             $taxableAmount = max(0, $subtotal - $discountAmount - $couponDiscountAmount);
             $taxAmount = $taxableAmount * $taxRateDecimal;
@@ -1111,6 +1207,14 @@ class PosController extends Controller
                 'notes' => $request->notes,
             ]);
 
+            if (!empty($priceOverrides)) {
+                \Log::warning('POS price override on sale edit', [
+                    'sale_id' => $sale->id,
+                    'user_id' => auth()->id(),
+                    'overrides' => $priceOverrides,
+                ]);
+            }
+
             // --- Recreate coupon redemptions ---
             if ($request->has('applied_coupons') && !empty($request->applied_coupons)) {
                 foreach ($request->applied_coupons as $couponData) {
@@ -1122,7 +1226,7 @@ class PosController extends Controller
                         'sale_id' => $sale->id,
                         'customer_id' => $request->customer_id,
                         'redeemed_by_user_id' => auth()->id(),
-                        'discount_amount' => $couponData['discount_amount'],
+                        'discount_amount' => $computedCouponDiscounts[$coupon->id] ?? 0,
                         'redeemed_at' => now(),
                         'ip_address' => $request->ip(),
                         'user_agent' => $request->userAgent(),
@@ -1132,7 +1236,7 @@ class PosController extends Controller
                         'sale_id' => $sale->id,
                         'coupon_id' => $coupon->id,
                         'coupon_redemption_id' => $redemption->id,
-                        'discount_amount' => $couponData['discount_amount'],
+                        'discount_amount' => $computedCouponDiscounts[$coupon->id] ?? 0,
                     ]);
                 }
             }
@@ -1141,11 +1245,11 @@ class PosController extends Controller
             foreach ($request->items as $item) {
                 if ($item['type'] === 'service') {
                     $service = Service::where('id', $item['id'])->where('is_active', true)->first();
-                    $unitPrice = isset($item['price']) ? $item['price'] : $service->price;
+                    $unitPrice = isset($item['price']) && $mayOverridePrice ? (float) $item['price'] : (float) $service->price;
                     $itemName = $service->name;
                 } else {
                     $package = ServicePackage::where('id', $item['id'])->where('is_active', true)->first();
-                    $unitPrice = isset($item['price']) ? $item['price'] : $package->price;
+                    $unitPrice = isset($item['price']) && $mayOverridePrice ? (float) $item['price'] : (float) $package->price;
                     $itemName = $package->name;
                 }
 

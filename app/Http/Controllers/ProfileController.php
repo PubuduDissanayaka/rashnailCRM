@@ -42,6 +42,9 @@ class ProfileController extends Controller
             'name' => 'required|string|max:255',
             'email' => 'required|email|unique:users,email,' . $user->id,
             'phone' => 'nullable|string|max:20',
+            // Changing a password is a re-authentication event, otherwise anyone holding
+            // a live session (an unattended till, a stolen cookie) can take the account over.
+            'current_password' => ['required_with:password', 'current_password'],
             'password' => $this->getPasswordRules(required: false),
         ]);
 
@@ -67,8 +70,10 @@ class ProfileController extends Controller
     public function updateAvatar(Request $request)
     {
         try {
+            // SVG is excluded on purpose: it is an XML document that can carry script,
+            // and these files are served from the application's own origin.
             $request->validate([
-                'avatar' => 'required|image|mimes:jpeg,png,jpg,gif,svg|max:2048',
+                'avatar' => 'required|image|mimes:jpeg,png,jpg,gif,webp|max:2048',
             ]);
 
             $user = Auth::user();

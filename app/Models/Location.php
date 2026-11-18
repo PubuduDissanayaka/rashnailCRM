@@ -77,6 +77,11 @@ class Location extends Model
      */
     public function scopeNearby($query, $latitude, $longitude, $radius = 1000)
     {
+        // These values are interpolated into raw SQL, so force them to floats before
+        // they get anywhere near a query string.
+        $latitude = (float) $latitude;
+        $longitude = (float) $longitude;
+        $radius = (float) $radius;
         // Using Haversine formula for distance calculation
         $haversine = "(6371 * acos(cos(radians($latitude)) 
                      * cos(radians(latitude)) 

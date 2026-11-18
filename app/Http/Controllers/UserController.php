@@ -57,6 +57,11 @@ class UserController extends Controller
     {
         $this->authorize('create users');
 
+        // Staff management must not be a route to minting administrators.
+        if ($request->role === 'administrator' && !auth()->user()->can('manage system')) {
+            abort(403, 'Only a system administrator can create an administrator account.');
+        }
+
         $request->validate([
             'name' => 'required|string|max:255',
             'email' => 'required|email|unique:users',
@@ -102,6 +107,19 @@ class UserController extends Controller
         // Allow admins to edit any user, but regular users can only edit themselves
         if (!auth()->user()->can('edit users') && $user->id !== Auth::id()) {
             abort(403, 'You are not authorized to edit other users.');
+        }
+
+        // Granting a role is an administrative action, not a profile edit: nobody may
+        // change their own role, and only a system administrator may change anyone's.
+        $currentRole = $user->getRoleNames()->first();
+        if ($request->filled('role') && $request->role !== $currentRole) {
+            if ($user->id === Auth::id()) {
+                abort(403, 'You cannot change your own role.');
+            }
+
+            if (!auth()->user()->can('manage system')) {
+                abort(403, 'Only a system administrator can change a user role.');
+            }
         }
 
         $user->loadMissing('roles');
