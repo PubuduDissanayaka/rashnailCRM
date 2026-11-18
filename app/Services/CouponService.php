@@ -31,13 +31,16 @@ class CouponService
             $errors[] = 'Coupon is not active or has expired.';
         }
 
-        // 2. Total usage limit
+        // 2. Remaining uses, or remaining balance for a value-based coupon
         if (!$coupon->hasRemainingUses()) {
-            $errors[] = 'Coupon usage limit reached.';
+            $errors[] = $coupon->isValueBased()
+                ? 'This coupon has no balance left.'
+                : 'Coupon usage limit reached.';
         }
 
-        // 3. Per customer limit
-        if ($customer && !$coupon->canBeUsedByCustomer($customer)) {
+        // 3. Per customer limit. A value-based coupon is limited by its balance, so the
+        // same customer may spend it across several visits.
+        if ($customer && !$coupon->isValueBased() && !$coupon->canBeUsedByCustomer($customer)) {
             $errors[] = 'You have already used this coupon the maximum number of times.';
         }
 
@@ -185,7 +188,10 @@ class CouponService
                 return round($discount, 2);
 
             case Coupon::TYPE_FIXED:
-                return min($coupon->discount_value, $subtotal);
+                // A value-based code can only give what is left of its balance.
+                $available = $coupon->isValueBased() ? $coupon->remainingValue() : $coupon->discount_value;
+
+                return round(min($available, $subtotal), 2);
 
             case Coupon::TYPE_BOGO:
                 // Buy X Get Y free logic (simplified)
@@ -224,6 +230,29 @@ class CouponService
             default:
                 return 0;
         }
+    }
+
+    /**
+     * Take part of a value-based coupon's balance, guarded so two tills cannot spend
+     * the same rupees at the same time. Throws when the balance is no longer enough.
+     */
+    public function consumeValue(Coupon $coupon, float $amount): void
+    {
+        if (! $coupon->isValueBased() || $amount <= 0) {
+            return;
+        }
+
+        $amount = round($amount, 2);
+
+        $affected = Coupon::whereKey($coupon->getKey())
+            ->whereRaw('consumed_value + ? <= value_limit', [$amount])
+            ->update(['consumed_value' => DB::raw('consumed_value + ' . number_format($amount, 2, '.', ''))]);
+
+        if ($affected === 0) {
+            throw new \Exception("Coupon {$coupon->code} no longer has enough balance for this sale.");
+        }
+
+        $coupon->refresh();
     }
 
     /**
@@ -270,6 +299,10 @@ class CouponService
                 'coupon_redemption_id' => $redemption->id,
                 'discount_amount' => $discountAmount,
             ]);
+
+            if ($coupon->isValueBased()) {
+                $this->consumeValue($coupon, (float) $discountAmount);
+            }
 
             // Update sale's coupon discount total
             $sale->coupon_discount_amount = $sale->saleCoupons()->sum('discount_amount');

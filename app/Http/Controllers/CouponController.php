@@ -557,6 +557,11 @@ class CouponController extends Controller
             'timezone'                => config('app.timezone', 'Asia/Colombo'),
             // Starting number for any {SEQ:n} placeholder in the pattern
             'seq_start'               => $request->filled('seq_start') ? (int) $request->seq_start : 1,
+            // Value-based ("wallet") coupons: a Rs 10,000 code that keeps its balance
+            'allow_partial_use'       => $request->boolean('allow_partial_use'),
+            'value_limit'             => $request->boolean('allow_partial_use') && $request->filled('discount_value')
+                ? (float) $request->discount_value
+                : null,
         ];
 
         $batch = CouponBatch::create([
@@ -668,6 +673,8 @@ class CouponController extends Controller
             'active'                  => $request->boolean('active'),
             'timezone'                => config('app.timezone', 'Asia/Colombo'),
             'seq_start'               => isset($data['seq_start']) ? (int) $data['seq_start'] : (int) ($batch->settings['seq_start'] ?? 1),
+            'allow_partial_use'       => $batch->settings['allow_partial_use'] ?? false,
+            'value_limit'             => $batch->settings['value_limit'] ?? null,
         ]);
 
         $batch->update([
@@ -842,12 +849,22 @@ class CouponController extends Controller
         $discount = $this->couponService->calculateDiscount($coupon, $subtotal, $request->input('items'));
         $discount = round(min($discount, $subtotal), 2);
 
+        // For a value-based coupon the till needs to show what is left on the code
+        // after this sale, not just today's discount.
+        $remainingAfter = $coupon->isValueBased()
+            ? max(0, round($coupon->remainingValue() - $discount, 2))
+            : null;
+
         return response()->json([
             'valid' => true,
             'message' => 'Coupon applied successfully.',
             'coupon' => $coupon->only(['id', 'code', 'name', 'type', 'discount_value', 'max_discount_amount', 'stackable']),
             'discount_amount' => $discount,
             'subtotal' => round($subtotal, 2),
+            'is_value_based' => $coupon->isValueBased(),
+            'value_limit' => $coupon->isValueBased() ? round($coupon->valueLimit(), 2) : null,
+            'remaining_before' => $coupon->isValueBased() ? round($coupon->remainingValue(), 2) : null,
+            'remaining_value' => $remainingAfter,
         ]);
     }
 

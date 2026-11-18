@@ -32,12 +32,13 @@ class CouponRequest extends FormRequest
             'code' => strtoupper(trim((string) $this->input('code'))),
             'stackable' => $this->boolean('stackable'),
             'active' => $this->boolean('active'),
+            'allow_partial_use' => $this->boolean('allow_partial_use'),
             'timezone' => $this->input('timezone') ?: config('app.timezone', 'Asia/Colombo'),
         ];
 
         foreach (['description', 'discount_value', 'discount_percentage', 'max_discount_amount',
                   'minimum_purchase_amount', 'total_usage_limit', 'per_customer_limit',
-                  'end_date', 'metadata', 'batch_id'] as $field) {
+                  'end_date', 'metadata', 'batch_id', 'value_limit'] as $field) {
             if ($this->has($field) && $this->input($field) === '') {
                 $merge[$field] = null;
             }
@@ -47,6 +48,17 @@ class CouponRequest extends FormRequest
         // depends on the type chosen in the form.
         if ($type === 'percentage') {
             $merge['discount_value'] = $this->input('discount_percentage');
+        }
+
+        // A value-based ("wallet") coupon spends a fixed balance over several sales.
+        // When it is switched on without an explicit total, the discount itself is the
+        // total value: a Rs 10,000 coupon that keeps whatever is not spent.
+        if (($merge['allow_partial_use'] ?? false) && $type === 'fixed' && blank($this->input('value_limit'))) {
+            $merge['value_limit'] = $this->input('discount_value');
+        }
+
+        if (! ($merge['allow_partial_use'] ?? false)) {
+            $merge['value_limit'] = null;
         }
 
         $this->merge($merge);
@@ -84,6 +96,8 @@ class CouponRequest extends FormRequest
             'type' => 'required|in:percentage,fixed,bogo,free_shipping,tiered',
             'discount_percentage' => 'nullable|numeric|min:0.01|max:100|required_if:type,percentage',
             'discount_value' => 'nullable|numeric|min:0.01|required_if:type,fixed',
+            'allow_partial_use' => 'boolean',
+            'value_limit' => 'nullable|numeric|min:0.01|required_if:allow_partial_use,1',
             'max_discount_amount' => 'nullable|numeric|min:0',
             'minimum_purchase_amount' => 'nullable|numeric|min:0',
             'start_date' => 'required|date',

@@ -489,9 +489,17 @@ import Choices from 'choices.js';
                     appliedCoupons.push({
                         id: data.coupon.id,
                         code: data.coupon.code,
-                        discount_amount: data.discount_amount
+                        discount_amount: data.discount_amount,
+                        remaining_value: data.remaining_value
                     });
-                    showCouponMessage('Coupon ' + data.coupon.code + ' applied: -' + CS + Number(data.discount_amount || 0).toFixed(2), false);
+
+                    // A value-based code keeps its balance: tell the cashier what is left
+                    // on it after this sale, so the next visit knows what to warn about.
+                    var couponMsg = 'Coupon ' + data.coupon.code + ' applied: -' + CS + Number(data.discount_amount || 0).toFixed(2);
+                    if (data.is_value_based && data.remaining_value !== null && typeof data.remaining_value !== 'undefined') {
+                        couponMsg += ' — ' + CS + Number(data.remaining_value).toFixed(2) + ' balance left on this code';
+                    }
+                    showCouponMessage(couponMsg, false);
                     if (couponInput) couponInput.value = '';
                     updateTotals();
                     toast('Coupon applied!');

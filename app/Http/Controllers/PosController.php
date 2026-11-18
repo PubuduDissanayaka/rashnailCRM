@@ -334,6 +334,13 @@ class PosController extends Controller
                         'coupon_redemption_id' => $redemption->id,
                         'discount_amount' => $computedCouponDiscounts[$coupon->id] ?? 0,
                     ]);
+
+                    // A value-based coupon keeps its balance for the next visit; spend the
+                    // part this sale used, guarded against a concurrent spend of the same code.
+                    if ($coupon->isValueBased()) {
+                        app(\App\Services\CouponService::class)
+                            ->consumeValue($coupon, (float) ($computedCouponDiscounts[$coupon->id] ?? 0));
+                    }
                 }
             }
 
@@ -1188,6 +1195,8 @@ class PosController extends Controller
             // Remove old payments
             $sale->payments()->delete();
             // Remove old coupon redemptions and sale_coupon links
+            $previousCouponIds = $sale->couponRedemptions()->pluck('coupon_id')->all();
+
             $sale->couponRedemptions()->delete();
             $sale->saleCoupons()->delete();
 
@@ -1238,6 +1247,19 @@ class PosController extends Controller
                         'coupon_redemption_id' => $redemption->id,
                         'discount_amount' => $computedCouponDiscounts[$coupon->id] ?? 0,
                     ]);
+                }
+            }
+
+            // A value coupon's balance follows its redemption rows, so rebuild it for every
+            // coupon this edit touched — including one that was removed from the sale.
+            $touchedCouponIds = array_unique(array_merge(
+                $previousCouponIds ?? [],
+                array_column($request->input('applied_coupons', []), 'id')
+            ));
+
+            foreach (\App\Models\Coupon::whereIn('id', $touchedCouponIds)->get() as $touchedCoupon) {
+                if ($touchedCoupon->isValueBased()) {
+                    $touchedCoupon->syncConsumedValue();
                 }
             }
 

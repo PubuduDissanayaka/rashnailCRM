@@ -116,6 +116,17 @@
                                     <input type="number" name="discount_value" class="form-control" value="{{ old('discount_value', 10) }}" min="0.01" step="0.01" required>
                                 </div>
                                 @error('discount_value')<span class="text-danger"><small>{{ $message }}</small></span>@enderror
+                                <div class="form-check mt-2">
+                                    <input class="form-check-input" type="checkbox" id="allow_partial_use" name="allow_partial_use" value="1"
+                                           {{ old('allow_partial_use') ? 'checked' : '' }}>
+                                    <label class="form-check-label" for="allow_partial_use">
+                                        Value-based codes (keep the unused balance)
+                                    </label>
+                                    <div class="form-text">
+                                        Each code is worth the discount amount and can be spent across several sales
+                                        (e.g. 10,000 used for 7,000 keeps 3,000). Fixed-amount batches only.
+                                    </div>
+                                </div>
                             </div>
                             <div class="col-md-3 mb-3">
                                 <label class="form-label">Valid For (Days) <span class="text-danger">*</span></label>

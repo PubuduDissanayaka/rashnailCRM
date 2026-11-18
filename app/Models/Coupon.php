@@ -20,6 +20,9 @@ class Coupon extends Model
         'description',
         'type',
         'discount_value',
+        'allow_partial_use',
+        'value_limit',
+        'consumed_value',
         'max_discount_amount',
         'minimum_purchase_amount',
         'start_date',
@@ -38,6 +41,12 @@ class Coupon extends Model
 
     protected $casts = [
         'discount_value' => 'decimal:2',
+
+        'allow_partial_use' => 'boolean',
+
+        'value_limit' => 'decimal:2',
+
+        'consumed_value' => 'decimal:2',
         'max_discount_amount' => 'decimal:2',
         'minimum_purchase_amount' => 'decimal:2',
         'start_date' => 'datetime',
@@ -154,6 +163,59 @@ class Coupon extends Model
         return $this->active && !$this->isExpired() && $this->start_date->isPast();
     }
 
+    /**
+     * A value-based coupon is spent like a prepaid balance rather than used up in
+     * one go: Rs 10,000 can pay for 7,000 today and the remaining 3,000 later.
+     */
+    public function isValueBased(): bool
+    {
+        return (bool) $this->allow_partial_use && $this->type === self::TYPE_FIXED;
+    }
+
+    /**
+     * Total value this code may ever give.
+     */
+    public function valueLimit(): float
+    {
+        return (float) ($this->value_limit ?? $this->discount_value ?? 0);
+    }
+
+    /**
+     * Balance still available on this code.
+     */
+    public function remainingValue(): float
+    {
+        if (! $this->isValueBased()) {
+            return 0.0;
+        }
+
+        return max(0.0, round($this->valueLimit() - (float) $this->consumed_value, 2));
+    }
+
+    /**
+     * How much of the value has been spent, 0-100.
+     */
+    public function valueUsedPercent(): float
+    {
+        $limit = $this->valueLimit();
+
+        if ($limit <= 0) {
+            return 0.0;
+        }
+
+        return min(100.0, round(((float) $this->consumed_value / $limit) * 100, 1));
+    }
+
+    /**
+     * Rebuild consumed_value from the redemption rows. Used after a sale is edited or
+     * voided, so the balance can never drift away from the recorded redemptions.
+     */
+    public function syncConsumedValue(): void
+    {
+        $this->consumed_value = round((float) $this->redemptions()->sum('discount_amount'), 2);
+        $this->saveQuietly();
+    }
+
     public function remainingUses(): ?int
     {
         if ($this->total_usage_limit === null) {
@@ -164,6 +226,10 @@ class Coupon extends Model
 
     public function hasRemainingUses(): bool
     {
+        if ($this->isValueBased()) {
+            return $this->remainingValue() > 0.004;
+        }
+
         return $this->remainingUses() === null || $this->remainingUses() > 0;
     }
 

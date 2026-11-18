@@ -96,6 +96,34 @@
                                     </p>
                                 </div>
                                 <div class="col-md-6">
+                                    @if($coupon->isValueBased())
+                                        @php
+                                            $usedPct = $coupon->valueUsedPercent();
+                                            $barClass = $usedPct >= 99 ? 'danger' : ($usedPct >= 70 ? 'warning' : 'success');
+                                        @endphp
+                                        <h6 class="text-uppercase text-muted fs-xs mb-2">Balance</h6>
+                                        <div class="mb-3">
+                                            <div class="d-flex justify-content-between align-items-baseline mb-1">
+                                                <span class="fw-semibold {{ $coupon->remainingValue() <= 0 ? 'text-danger' : 'text-success' }}">
+                                                    {{ $currencySymbol }}{{ number_format($coupon->remainingValue(), 2) }} left
+                                                </span>
+                                                <span class="fs-xs text-muted">{{ number_format($usedPct, 0) }}% used</span>
+                                            </div>
+                                            <div class="progress" style="height:10px" role="progressbar"
+                                                 aria-valuenow="{{ (int) $usedPct }}" aria-valuemin="0" aria-valuemax="100">
+                                                <div class="progress-bar bg-{{ $barClass }}"
+                                                     style="width: {{ $usedPct <= 0 ? 0 : max(3, $usedPct) }}%"></div>
+                                            </div>
+                                            <div class="d-flex justify-content-between fs-xs text-muted mt-1">
+                                                <span>{{ $currencySymbol }}{{ number_format((float) $coupon->consumed_value, 2) }} used</span>
+                                                <span>of {{ $currencySymbol }}{{ number_format($coupon->valueLimit(), 2) }}</span>
+                                            </div>
+                                            <div class="fs-xxs text-muted mt-1">
+                                                Partial use is on: this code keeps its balance and can be used again until it reaches zero.
+                                            </div>
+                                        </div>
+                                    @endif
+
                                     <h6 class="text-uppercase text-muted fs-xs mb-2">Usage Limits</h6>
                                     <p class="mb-3">
                                         Total: {{ $coupon->total_usage_limit ?: '&#8734;' }}<br>

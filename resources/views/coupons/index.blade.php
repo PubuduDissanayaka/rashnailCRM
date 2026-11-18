@@ -73,7 +73,7 @@
                                 <th data-table-sort="sort-name">Name</th>
                                 <th data-table-sort="sort-type">Type</th>
                                 <th data-table-sort="sort-discount">Discount</th>
-                                <th data-table-sort="sort-usage">Usage</th>
+                                <th data-table-sort="sort-usage">Usage / Balance</th>
                                 <th data-table-sort="sort-status">Status</th>
                                 <th class="text-center" style="width:1%">Actions</th>
                             </tr>
@@ -104,7 +104,36 @@
                                 </td>
                                 <td><span class="badge bg-info-subtle text-info">{{ ucfirst($coupon->type) }}</span></td>
                                 <td>{{ $coupon->type === 'percentage' ? $coupon->discount_value.'%' : $currencySymbol.number_format($coupon->discount_value, 2) }}</td>
-                                <td>{{ $used }}/{{ $limit ?: '∞' }}</td>
+                                <td>
+                                    @if($coupon->isValueBased())
+                                        @php
+                                            $usedPct = $coupon->valueUsedPercent();
+                                            $barClass = $usedPct >= 99 ? 'danger' : ($usedPct >= 70 ? 'warning' : 'success');
+                                            $remaining = $coupon->remainingValue();
+                                        @endphp
+                                        <div class="coupon-balance" style="min-width:150px">
+                                            <div class="d-flex justify-content-between align-items-baseline">
+                                                <span class="fw-semibold {{ $remaining <= 0 ? 'text-danger' : 'text-success' }}">
+                                                    {{ $currencySymbol }}{{ number_format($remaining, 2) }}
+                                                    <span class="fs-xxs text-muted fw-normal">left</span>
+                                                </span>
+                                                <span class="fs-xxs text-muted">{{ number_format($usedPct, 0) }}%</span>
+                                            </div>
+                                            <div class="progress mt-1" style="height:6px" role="progressbar"
+                                                 aria-valuenow="{{ (int) $usedPct }}" aria-valuemin="0" aria-valuemax="100"
+                                                 aria-label="{{ $coupon->code }} balance used">
+                                                <div class="progress-bar bg-{{ $barClass }}"
+                                                     style="width: {{ $usedPct <= 0 ? 0 : max(3, $usedPct) }}%"></div>
+                                            </div>
+                                            <div class="fs-xxs text-muted mt-1">
+                                                {{ $currencySymbol }}{{ number_format((float) $coupon->consumed_value, 2) }} of
+                                                {{ $currencySymbol }}{{ number_format($coupon->valueLimit(), 2) }} used
+                                            </div>
+                                        </div>
+                                    @else
+                                        {{ $used }}/{{ $limit ?: '∞' }}
+                                    @endif
+                                </td>
                                 <td>
                                     @if($isActive)<span class="badge bg-success-subtle text-success">Active</span>
                                     @elseif($isExpired)<span class="badge bg-danger-subtle text-danger">Expired</span>

@@ -181,6 +181,33 @@
 
     {{-- Usage Limits Tab --}}
     <div class="tab-pane fade" id="usage" role="tabpanel">
+        {{-- Value-based ("wallet") coupon --}}
+        <div class="border rounded p-3 mb-3 bg-light bg-opacity-50">
+            <div class="form-check form-switch mb-1">
+                <input class="form-check-input" type="checkbox" role="switch" id="allow_partial_use" name="allow_partial_use" value="1"
+                       {{ old('allow_partial_use', $coupon?->allow_partial_use) ? 'checked' : '' }}>
+                <label class="form-check-label fw-semibold" for="allow_partial_use">
+                    Allow partial use (keeps the remaining balance)
+                </label>
+            </div>
+            <div class="form-text mb-2">
+                Fixed-amount coupons only. A coupon worth 10,000 that gives 7,000 today keeps 3,000 on the same
+                code for next time, until the value runs out.
+            </div>
+            <div class="row" id="value-limit-wrap" style="display:none">
+                <div class="col-md-6">
+                    <label for="value_limit" class="form-label">Total value on this code</label>
+                    <input type="number" step="0.01" min="0.01" class="form-control" id="value_limit" name="value_limit"
+                           value="{{ old('value_limit', $coupon?->value_limit) }}" placeholder="Defaults to the discount amount">
+                    <div class="form-text">Leave empty to use the discount amount above. The coupon list shows a progress bar against this value.</div>
+                    @error('value_limit')<span class="text-danger"><small>{{ $message }}</small></span>@enderror
+                </div>
+            </div>
+            <div class="form-text mt-2 mb-0">
+                With partial use on, the usage limits below do not apply — the balance is the limit.
+            </div>
+        </div>
+
         <div class="row">
             <div class="col-md-6">
                 <div class="mb-3">
@@ -312,3 +339,26 @@
     </button>
     <a href="{{ $isEdit ? route('coupons.show', $coupon) : route('coupons.index') }}" class="btn btn-secondary">Cancel</a>
 </div>
+
+{{-- Partial-use toggle: shown as a plain script because the page layouts have no
+     @stack('scripts'); the partial is included inside the form on create and edit. --}}
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        const toggle = document.getElementById('allow_partial_use');
+        const wrap = document.getElementById('value-limit-wrap');
+        const type = document.getElementById('type');
+
+        if (!toggle || !wrap) return;
+
+        function sync() {
+            if (type && type.value !== 'fixed' && toggle.checked) {
+                toggle.checked = false;
+            }
+            wrap.style.display = toggle.checked ? '' : 'none';
+        }
+
+        toggle.addEventListener('change', sync);
+        if (type) type.addEventListener('change', sync);
+        sync();
+    });
+</script>
