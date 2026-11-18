@@ -29,7 +29,7 @@
 
     <div class="row">
         <div class="col-12">
-            <div class="card" data-table="" data-table-rows-per-page="100">
+            <div class="card" data-table="" data-table-rows-per-page="10">
                 <div class="card-header border-light justify-content-between">
                     <div class="d-flex gap-2">
                         <div class="app-search">
@@ -40,7 +40,7 @@
                     <div class="d-flex align-items-center gap-2">
                         <div>
                             <select class="form-select form-control my-1 my-md-0" data-table-set-rows-per-page="">
-                                <option value="25">25</option><option value="50">50</option><option value="100" selected>100</option>
+                                <option value="10" selected>10</option><option value="25">25</option><option value="50">50</option><option value="100">100</option>
                             </select>
                         </div>
                         @can('create coupons')
@@ -207,8 +207,12 @@
                         </tbody>
                     </table>
                 </div>
-                <div class="card-footer border-0 d-flex justify-content-between align-items-center">
+                <div class="card-footer border-0 d-flex flex-wrap justify-content-between align-items-center gap-2">
                     <span class="fs-xs text-muted">{{ $coupons->count() }} coupon(s) in this list — use the search box to narrow it down.</span>
+                    <div class="d-flex flex-wrap align-items-center gap-3">
+                        <div data-table-pagination-info="coupons" class="fs-xs text-muted"></div>
+                        <div data-table-pagination=""></div>
+                    </div>
                 </div>
             </div>
         </div>
