@@ -496,9 +496,16 @@ class PosController extends Controller
                 'request_data' => $request->all()
             ]);
 
+            // A database failure is ours, not the cashier's. It used to print SQLSTATE and the
+            // whole INSERT (with every bound value) into the till's error toast, which told the
+            // cashier nothing and showed them the schema. The detail is in the log line above.
+            $message = $e instanceof \Illuminate\Database\QueryException
+                ? 'The sale could not be saved, so nothing was charged. Please try again — if it happens twice, tell a manager the time it failed.'
+                : $e->getMessage();
+
             return response()->json([
                 'success' => false,
-                'message' => 'Error processing sale: ' . $e->getMessage(),
+                'message' => $message,
             ], 500);
         }
     }
