@@ -131,9 +131,11 @@
                     const code = form.dataset.code || 'this coupon';
                     const used = parseInt(form.dataset.used || '0', 10);
 
+                    // Deleted coupons are soft deleted: past redemptions stay on record and the
+                    // unique index keeps the code reserved, so the wording must say exactly that.
                     const confirmText = used > 0
-                        ? 'This coupon has already been used ' + used + ' time(s). Deleting it keeps the past redemptions on record but the code can no longer be used.'
-                        : 'The coupon will be removed and the code can be reused afterwards.';
+                        ? 'This coupon has been used ' + used + ' time(s). It will be removed from the list, the past redemptions stay on record, and the code stays reserved.'
+                        : 'The coupon will be removed from the list. The code stays reserved, so old receipts and reports keep pointing at the right coupon.';
 
                     if (!window.Swal) {
                         if (confirm('Delete coupon ' + code + '?\n\n' + confirmText)) form.submit();
