@@ -34,9 +34,12 @@ class CouponController extends Controller
     {
         $this->authorize('view coupons');
 
+        // The table on this screen does its own searching, sorting and paging, so hand it
+        // the whole list. Paginating here as well left rows that simply were not on the
+        // page — with 30 codes the screen showed 10 and the rest looked missing.
         $coupons = Coupon::with(['batch', 'redemptions'])
             ->orderBy('created_at', 'desc')
-            ->paginate(20);
+            ->get();
 
         $stats = [
             'total' => Coupon::count(),

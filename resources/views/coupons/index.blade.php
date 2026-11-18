@@ -40,7 +40,7 @@
                     <div class="d-flex align-items-center gap-2">
                         <div>
                             <select class="form-select form-control my-1 my-md-0" data-table-set-rows-per-page="">
-                                <option value="5">5</option><option value="10" selected>10</option><option value="15">15</option><option value="20">20</option>
+                                <option value="10">10</option><option value="25" selected>25</option><option value="50">50</option><option value="100">100</option>
                             </select>
                         </div>
                         @can('create coupons')
@@ -207,7 +207,9 @@
                         </tbody>
                     </table>
                 </div>
-                <div class="card-footer border-0">{{ $coupons->links() }}</div>
+                <div class="card-footer border-0 d-flex justify-content-between align-items-center">
+                    <span class="fs-xs text-muted">Showing all {{ $coupons->count() }} coupon(s)</span>
+                </div>
             </div>
         </div>
     </div>
