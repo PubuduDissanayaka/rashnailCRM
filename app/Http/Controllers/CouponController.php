@@ -14,6 +14,7 @@ use App\Models\Sale;
 use App\Models\Customer;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\ValidationException;
 use App\Services\CouponService;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 
@@ -388,46 +389,74 @@ class CouponController extends Controller
     {
         $this->authorize('manage coupon batches');
 
+        $isPercentage = $request->input('coupon_type') === 'percentage';
+
         $request->validate([
             'name'              => 'required|string|max:255',
-            'description'       => 'nullable|string',
+            'description'       => 'nullable|string|max:2000',
             'pattern'           => 'required|string|max:100',
             'count'             => 'required|integer|min:1|max:500',
             'coupon_type'       => 'required|in:fixed,percentage',
-            'discount_value'    => 'required|numeric|min:0',
+            'discount_value'    => $isPercentage
+                ? 'required|numeric|min:0.01|max:100'
+                : 'required|numeric|min:0.01',
             'valid_days'        => 'required|integer|min:1|max:3650',
             'usage_limit'       => 'nullable|integer|min:1',
             'per_customer'      => 'required|integer|min:1',
             'min_purchase'      => 'nullable|numeric|min:0',
+        ], [
+            'name.required' => 'Give this batch a name.',
+            'pattern.required' => 'Enter a code pattern, for example SUMMER-{RANDOM:6}.',
+            'discount_value.required' => 'Enter the discount value for these coupons.',
+            'discount_value.max' => 'A percentage discount cannot be more than 100.',
+            'count.max' => 'You can generate at most 500 coupons in one batch.',
         ]);
 
-        // Build settings from clean form fields
+        // Without a placeholder every coupon in the batch would receive the same
+        // code, so only the first one could ever be saved.
+        if ((int) $request->input('count') > 1
+            && ! $this->couponService->patternHasPlaceholder((string) $request->input('pattern'))) {
+            throw ValidationException::withMessages([
+                'pattern' => 'Add a placeholder to the pattern (for example {RANDOM:6} or {SEQ:4}) so each coupon gets its own code.',
+            ]);
+        }
+
         $settings = [
-            'type'                     => $request->coupon_type,
-            'discount_value'           => (float) $request->discount_value,
-            'start_date'               => now()->toDateTimeString(),
-            'end_date'                 => now()->addDays((int) $request->valid_days)->toDateTimeString(),
-            'total_usage_limit'        => $request->usage_limit ? (int) $request->usage_limit : null,
-            'per_customer_limit'       => (int) $request->per_customer,
-            'minimum_purchase_amount'  => $request->min_purchase ? (float) $request->min_purchase : 0,
-            'active'                   => true,
+            'type'                    => $request->coupon_type,
+            'discount_value'          => (float) $request->discount_value,
+            'start_date'              => now()->toDateTimeString(),
+            'end_date'                => now()->addDays((int) $request->valid_days)->toDateTimeString(),
+            'total_usage_limit'       => $request->usage_limit ? (int) $request->usage_limit : null,
+            'per_customer_limit'      => (int) $request->per_customer,
+            'minimum_purchase_amount' => $request->min_purchase ? (float) $request->min_purchase : 0,
+            'active'                  => true,
+            'timezone'                => config('app.timezone', 'Asia/Colombo'),
         ];
 
         $batch = CouponBatch::create([
             'name'        => $request->name,
             'description' => $request->description,
             'pattern'     => $request->pattern,
-            'count'       => $request->count,
+            'count'       => (int) $request->count,
             'settings'    => $settings,
-            'status'      => 'pending',
+            'status'      => CouponBatch::STATUS_PENDING,
         ]);
 
-        $this->couponService->generateBulkCoupons($batch);
+        try {
+            $result = $this->couponService->generateBulkCoupons($batch);
+        } catch (\Throwable $e) {
+            \Log::error('Bulk coupon generation failed', ['batch' => $batch->id, 'error' => $e->getMessage()]);
 
-        $generated = $batch->fresh()->generated_count;
+            return redirect()->route('coupons.batches.show', $batch)
+                ->with('error', 'The batch was created but the codes could not be generated. Nothing was saved — check the pattern and try again.');
+        }
 
-        return redirect()->route('coupons.index')
-            ->with('success', "Batch '{$batch->name}' created — {$generated} coupons generated successfully.");
+        $message = "Batch '{$batch->name}' created — {$result['generated']} of {$batch->count} coupons generated.";
+        if ($result['skipped'] > 0) {
+            $message .= " {$result['skipped']} code(s) were skipped because they already exist; use a longer {RANDOM:N} or a {SEQ:N} pattern.";
+        }
+
+        return redirect()->route('coupons.batches.show', $batch)->with('success', $message);
     }
 
     /**
@@ -437,8 +466,11 @@ class CouponController extends Controller
     {
         $this->authorize('manage coupon batches');
 
-        $batches = CouponBatch::withCount('coupons')->paginate(20);
-        return view('admin.coupons.batches', compact('batches'));
+        $batches = CouponBatch::withCount('coupons')
+            ->orderByDesc('id')
+            ->paginate(20);
+
+        return view('coupons.batches', compact('batches'));
     }
 
     /**
@@ -448,8 +480,9 @@ class CouponController extends Controller
     {
         $this->authorize('manage coupon batches');
 
-        $batch->load('coupons');
-        return view('admin.coupons.batch_show', compact('batch'));
+        $batch->load(['coupons' => fn ($q) => $q->orderBy('id')]);
+
+        return view('coupons.batch-show', compact('batch'));
     }
 
     /**
@@ -459,8 +492,7 @@ class CouponController extends Controller
     {
         $this->authorize('manage coupon batches');
 
-        $batch->load('coupons');
-        $coupons = $batch->coupons;
+        $coupons = $batch->coupons()->orderBy('id')->get();
 
         $filename = 'batch_' . $batch->id . '_coupons.csv';
 
@@ -474,26 +506,32 @@ class CouponController extends Controller
 
         return new StreamedResponse(function () use ($coupons) {
             $handle = fopen('php://output', 'w');
-            // Add UTF-8 BOM for Excel compatibility
+            // UTF-8 BOM so Excel opens the file with the right encoding
             fwrite($handle, "\xEF\xBB\xBF");
-            // Header row
-            fputcsv($handle, ['Code', 'Name', 'Description', 'Type', 'Discount Value', 'Start Date', 'End Date', 'Status', 'Created At']);
+            fputcsv($handle, ['Code', 'Name', 'Type', 'Discount', 'Min Purchase', 'Start Date', 'End Date', 'Usage Limit', 'Per Customer', 'Status', 'Created At']);
+
             foreach ($coupons as $coupon) {
+                $status = $coupon->isExpired() ? 'Expired' : ($coupon->isActive() ? 'Active' : 'Inactive');
+
                 fputcsv($handle, [
                     $coupon->code,
                     $coupon->name,
-                    $coupon->description,
                     $coupon->type,
-                    $coupon->discount_value ?? $coupon->discount_percentage,
+                    $coupon->type === 'percentage' ? $coupon->discount_value . '%' : $coupon->discount_value,
+                    $coupon->minimum_purchase_amount,
                     $coupon->start_date,
                     $coupon->end_date,
-                    $coupon->status,
+                    $coupon->total_usage_limit,
+                    $coupon->per_customer_limit,
+                    $status,
                     $coupon->created_at,
                 ]);
             }
+
             fclose($handle);
         }, 200, $headers);
     }
+
     /**
      * Validate a coupon for POS.
      */

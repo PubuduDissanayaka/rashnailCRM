@@ -47,6 +47,7 @@
                         <a href="{{ route('coupons.create') }}" class="btn btn-primary"><i class="ti ti-plus me-1"></i> Create Coupon</a>
                         @endcan
                         @can('manage coupon batches')
+                        <a href="{{ route('coupons.batches') }}" class="btn btn-outline-secondary"><i class="ti ti-stack me-1"></i> Batches</a>
                         <a href="{{ route('coupons.bulk.create') }}" class="btn btn-outline-primary"><i class="ti ti-copy me-1"></i> Bulk Generate</a>
                         @endcan
                     </div>
@@ -74,7 +75,16 @@
                             @endphp
                             <tr>
                                 <td><code class="fw-semibold">{{ $coupon->code }}</code></td>
-                                <td>{{ $coupon->name }}</td>
+                                <td>
+                                    {{ $coupon->name }}
+                                    @if($coupon->batch)
+                                        <div class="fs-xs">
+                                            <a href="{{ route('coupons.batches.show', $coupon->batch) }}" class="text-muted text-decoration-none">
+                                                <i class="ti ti-stack me-1"></i>{{ $coupon->batch->name }}
+                                            </a>
+                                        </div>
+                                    @endif
+                                </td>
                                 <td><span class="badge bg-info-subtle text-info">{{ ucfirst($coupon->type) }}</span></td>
                                 <td>{{ $coupon->type === 'percentage' ? $coupon->discount_value.'%' : $currencySymbol.number_format($coupon->discount_value, 2) }}</td>
                                 <td>{{ $used }}/{{ $limit ?: '∞' }}</td>

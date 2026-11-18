@@ -216,6 +216,14 @@ Route::middleware(['auth'])->group(function () {
         Route::post('/coupons', [CouponController::class, 'store'])->middleware('can:create coupons')->name('coupons.store');
         Route::get('/coupons/bulk/create', [CouponController::class, 'bulkCreate'])->middleware('can:manage coupon batches')->name('coupons.bulk.create');
         Route::post('/coupons/bulk/generate', [CouponController::class, 'bulkStore'])->middleware('can:manage coupon batches')->name('coupons.bulk.generate');
+
+        // Batch list / detail / CSV export — these routes are declared BEFORE the
+        // /coupons/{coupon} wildcard so "batches" is never mistaken for a coupon id.
+        Route::middleware(['can:manage coupon batches'])->group(function () {
+            Route::get('/coupons/batches', [CouponController::class, 'batches'])->name('coupons.batches');
+            Route::get('/coupons/batches/{batch}', [CouponController::class, 'showBatch'])->name('coupons.batches.show');
+            Route::get('/coupons/batches/{batch}/export', [CouponController::class, 'exportBatch'])->name('coupons.batches.export');
+        });
         Route::get('/coupons/{coupon}', [CouponController::class, 'show'])->name('coupons.show');
         Route::get('/coupons/{coupon}/edit', [CouponController::class, 'edit'])->middleware('can:edit coupons')->name('coupons.edit');
         Route::put('/coupons/{coupon}', [CouponController::class, 'update'])->middleware('can:edit coupons')->name('coupons.update');

@@ -1,0 +1,125 @@
+@extends('layouts.vertical', ['title' => 'Batch - ' . $batch->name])
+
+@section('content')
+    @include('layouts.partials.page-title', ['title' => $batch->name, 'subtitle' => 'Coupon Batches'])
+
+    @if(session('success'))
+        <div class="alert alert-success alert-dismissible fade show" role="alert">
+            <i class="ti ti-circle-check me-1"></i>{{ session('success') }}
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    @endif
+    @if(session('error'))
+        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+            <i class="ti ti-alert-triangle me-1"></i>{{ session('error') }}
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    @endif
+
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="card card-animate"><div class="card-body">
+                <p class="fw-medium text-muted mb-0">Codes Generated</p>
+                <h3 class="mt-2 ff-secondary fw-semibold">{{ $batch->generated_count }} <span class="fs-sm text-muted">/ {{ $batch->count }}</span></h3>
+            </div></div>
+        </div>
+        <div class="col-md-3">
+            <div class="card card-animate"><div class="card-body">
+                <p class="fw-medium text-muted mb-0">Status</p>
+                <h3 class="mt-2 ff-secondary fw-semibold text-capitalize">{{ $batch->status }}</h3>
+            </div></div>
+        </div>
+        <div class="col-md-3">
+            <div class="card card-animate"><div class="card-body">
+                <p class="fw-medium text-muted mb-0">Pattern</p>
+                <h5 class="mt-2 ff-secondary fw-semibold"><code>{{ $batch->pattern }}</code></h5>
+            </div></div>
+        </div>
+        <div class="col-md-3">
+            <div class="card card-animate"><div class="card-body">
+                <p class="fw-medium text-muted mb-0">Created</p>
+                <h5 class="mt-2 ff-secondary fw-semibold">{{ $batch->created_at?->format('d M Y, H:i') }}</h5>
+            </div></div>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header border-light d-flex justify-content-between align-items-center">
+                    <div>
+                        <h5 class="card-title mb-0">Coupon codes</h5>
+                        @if($batch->description)
+                            <p class="text-muted fs-xs mb-0">{{ $batch->description }}</p>
+                        @endif
+                    </div>
+                    <div class="d-flex gap-2">
+                        @if($batch->generated_count > 0)
+                            <a href="{{ route('coupons.batches.export', $batch) }}" class="btn btn-primary btn-sm">
+                                <i class="ti ti-download me-1"></i> Export CSV
+                            </a>
+                        @endif
+                        <a href="{{ route('coupons.batches') }}" class="btn btn-light btn-sm">
+                            <i class="ti ti-arrow-left me-1"></i> All batches
+                        </a>
+                    </div>
+                </div>
+                <div class="table-responsive">
+                    <table class="table table-custom table-centered table-hover w-100 mb-0">
+                        <thead class="bg-light bg-opacity-25 thead-sm">
+                            <tr class="text-uppercase fs-xxs">
+                                <th>Code</th>
+                                <th>Name</th>
+                                <th>Discount</th>
+                                <th>Valid Until</th>
+                                <th>Usage</th>
+                                <th>Status</th>
+                                <th class="text-center" style="width:1%">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @forelse($batch->coupons as $coupon)
+                                <tr>
+                                    <td><code class="fw-semibold">{{ $coupon->code }}</code></td>
+                                    <td>{{ $coupon->name }}</td>
+                                    <td>
+                                        @if($coupon->type === 'percentage')
+                                            {{ rtrim(rtrim(number_format((float) $coupon->discount_value, 2), '0'), '.') }}%
+                                        @else
+                                            {{ \App\Models\Setting::get('payment.currency_symbol', 'Rs') }}{{ number_format((float) $coupon->discount_value, 2) }}
+                                        @endif
+                                    </td>
+                                    <td>{{ $coupon->end_date?->format('d M Y') ?? 'No expiry' }}</td>
+                                    <td>{{ $coupon->redemptions_count ?? $coupon->redemptions()->count() }}{{ $coupon->total_usage_limit ? ' / ' . $coupon->total_usage_limit : '' }}</td>
+                                    <td>
+                                        @if($coupon->isExpired())
+                                            <span class="badge bg-danger-subtle text-danger">Expired</span>
+                                        @elseif($coupon->isActive())
+                                            <span class="badge bg-success-subtle text-success">Active</span>
+                                        @else
+                                            <span class="badge bg-warning-subtle text-warning">Inactive</span>
+                                        @endif
+                                    </td>
+                                    <td class="text-center">
+                                        <a href="{{ route('coupons.show', $coupon) }}" class="btn btn-light btn-icon btn-sm rounded-circle" title="View coupon">
+                                            <i class="ti ti-eye fs-lg"></i>
+                                        </a>
+                                    </td>
+                                </tr>
+                            @empty
+                                <tr>
+                                    <td colspan="7" class="text-center py-5 text-muted">
+                                        No codes in this batch yet.
+                                        @if($batch->status === 'failed')
+                                            Generation failed — check the pattern and create the batch again.
+                                        @endif
+                                    </td>
+                                </tr>
+                            @endforelse
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+@endsection

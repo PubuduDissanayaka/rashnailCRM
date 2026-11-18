@@ -310,48 +310,90 @@ class CouponService
     /**
      * Generate bulk coupons from a batch.
      */
-    public function generateBulkCoupons(CouponBatch $batch): void
+    /**
+     * Generate the coupons belonging to a batch.
+     *
+     * Runs in a single transaction: either the whole batch is written or none of
+     * it is, so a failure can never leave a "generating" batch with half its
+     * codes. Codes are checked against soft-deleted coupons too, because
+     * `coupons.code` is unique across live and trashed rows.
+     *
+     * @return array{generated: int, skipped: int}
+     */
+    public function generateBulkCoupons(CouponBatch $batch): array
     {
         if ($batch->status === CouponBatch::STATUS_COMPLETED) {
-            return;
+            return ['generated' => 0, 'skipped' => 0];
         }
 
         $batch->update(['status' => CouponBatch::STATUS_GENERATING]);
 
-        $pattern  = $batch->pattern;
-        $count    = $batch->remainingToGenerate();
-        $settings = $batch->settings ?? [];
+        try {
+            $result = DB::transaction(function () use ($batch) {
+                $settings = array_merge([
+                    'type' => Coupon::TYPE_FIXED,
+                    'discount_value' => 0,
+                    'start_date' => now(),
+                    'end_date' => null,
+                    'active' => true,
+                    'timezone' => config('app.timezone', 'Asia/Colombo'),
+                ], $batch->settings ?? []);
 
-        $defaults = [
-            'type'          => Coupon::TYPE_FIXED,
-            'discount_value' => 0,
-            'start_date'    => now(),
-            'active'        => true,
-        ];
+                $count = $batch->remainingToGenerate();
+                $startIndex = (int) $batch->generated_count;
+                $generated = 0;
+                $skipped = 0;
 
-        for ($i = 0; $i < $count; $i++) {
-            // Retry up to 5 times on duplicate code
-            $attempts = 0;
-            do {
-                $code = $this->generateCodeFromPattern($pattern, $i + $attempts);
-                $exists = Coupon::where('code', $code)->exists();
-                $attempts++;
-            } while ($exists && $attempts < 5);
+                for ($i = 0; $i < $count; $i++) {
+                    $code = null;
 
-            if ($exists) {
-                continue; // skip if still colliding after 5 tries
-            }
+                    // Retry with fresh randomness; a duplicate is a skip, never an
+                    // SQL error.
+                    for ($attempt = 0; $attempt < 10; $attempt++) {
+                        $candidate = $this->generateCodeFromPattern($batch->pattern, $startIndex + $i + $attempt);
 
-            Coupon::create(array_merge($defaults, $settings, [
-                'name'     => $batch->name . ' #' . ($i + 1),
-                'code'     => $code,
-                'batch_id' => $batch->id,
-            ]));
+                        if ($candidate !== '' && ! Coupon::withTrashed()->where('code', $candidate)->exists()) {
+                            $code = $candidate;
+                            break;
+                        }
+                    }
 
-            $batch->increment('generated_count');
+                    if ($code === null) {
+                        $skipped++;
+                        continue;
+                    }
+
+                    Coupon::create(array_merge($settings, [
+                        'name' => $batch->name . ' #' . ($startIndex + $i + 1),
+                        'code' => $code,
+                        'batch_id' => $batch->id,
+                    ]));
+
+                    $generated++;
+                }
+
+                $batch->forceFill([
+                    'generated_count' => $startIndex + $generated,
+                    'status' => CouponBatch::STATUS_COMPLETED,
+                ])->save();
+
+                return ['generated' => $generated, 'skipped' => $skipped];
+            });
+        } catch (\Throwable $e) {
+            $batch->forceFill(['status' => CouponBatch::STATUS_FAILED])->save();
+
+            throw $e;
         }
 
-        $batch->update(['status' => CouponBatch::STATUS_COMPLETED]);
+        return $result;
+    }
+
+    /**
+     * Does this pattern contain at least one placeholder that keeps codes unique?
+     */
+    public function patternHasPlaceholder(string $pattern): bool
+    {
+        return (bool) preg_match('/\{(RANDOM|SEQUENTIAL|SEQ|DATE|TIME)/i', $pattern);
     }
 
     /**
@@ -361,31 +403,43 @@ class CouponService
     {
         $code = $pattern;
 
-        // Random placeholders like {RANDOM4}, {RANDOM6}, etc.
-        if (preg_match_all('/{RANDOM(\d+)}/', $code, $matches)) {
-            foreach ($matches[0] as $i => $placeholder) {
-                $length = (int)$matches[1][$i];
-                // Use random_bytes for better entropy, then convert to hex and take necessary length
-                $random = strtoupper(substr(bin2hex(random_bytes(max(1, ceil($length / 2)))), 0, $length));
-                $code = str_replace($placeholder, $random, $code);
-            }
+        // Random placeholders — accept {RANDOM6}, {RANDOM:6} and bare {RANDOM}
+        // (the form has always advertised the colon form, the old regex did not).
+        $code = preg_replace_callback('/\{RANDOM:?(\d*)\}/i', function ($m) {
+            $length = $m[1] !== '' ? (int) $m[1] : 6;
+            $length = max(1, min($length, 32));
+
+            return $this->randomCodeSegment($length);
+        }, $code);
+
+        // Sequential placeholders — {SEQUENTIAL4}, {SEQUENTIAL:4}, {SEQ4}, {SEQ:4}
+        $code = preg_replace_callback('/\{(?:SEQUENTIAL|SEQ):?(\d*)\}/i', function ($m) use ($index) {
+            $length = $m[1] !== '' ? (int) $m[1] : 4;
+
+            return str_pad((string) ($index + 1), max(1, $length), '0', STR_PAD_LEFT);
+        }, $code);
+
+        // Date / time placeholders
+        $code = str_replace(['{DATE-YMD}', '{DATE}'], date('Ymd'), $code);
+        $code = str_replace('{TIME}', (string) time(), $code);
+
+        return strtoupper(trim($code));
+    }
+
+    /**
+     * Random alphanumeric segment (no vowels, so codes cannot spell words).
+     */
+    private function randomCodeSegment(int $length): string
+    {
+        $alphabet = '0123456789BCDFGHJKLMNPQRSTVWXYZ';
+        $max = strlen($alphabet) - 1;
+        $out = '';
+
+        for ($i = 0; $i < $length; $i++) {
+            $out .= $alphabet[random_int(0, $max)];
         }
 
-        // Sequential placeholders like {SEQUENTIAL4}
-        if (preg_match_all('/{SEQUENTIAL(\d+)}/', $code, $matches)) {
-            foreach ($matches[0] as $i => $placeholder) {
-                $length = (int)$matches[1][$i];
-                $seq = str_pad((string)($index + 1), $length, '0', STR_PAD_LEFT);
-                $code = str_replace($placeholder, $seq, $code);
-            }
-        }
-
-        // Date/Time placeholders
-        $code = str_replace('{DATE-YMD}', date('Ymd'), $code);
-        $code = str_replace('{DATE}', date('Ymd'), $code);
-        $code = str_replace('{TIME}', (string)time(), $code);
-
-        return $code;
+        return $out;
     }
 
     /**
