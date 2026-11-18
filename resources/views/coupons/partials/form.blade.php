@@ -182,7 +182,7 @@
     {{-- Usage Limits Tab --}}
     <div class="tab-pane fade" id="usage" role="tabpanel">
         {{-- Value-based ("wallet") coupon --}}
-        <div class="border rounded p-3 mb-3 bg-light bg-opacity-50">
+        <div class="border rounded p-3 mb-3 bg-light bg-opacity-50" id="partial-use-block" style="display:none">
             <div class="form-check form-switch mb-1">
                 <input class="form-check-input" type="checkbox" role="switch" id="allow_partial_use" name="allow_partial_use" value="1"
                        {{ old('allow_partial_use', $coupon?->allow_partial_use) ? 'checked' : '' }}>
@@ -347,13 +347,17 @@
         const toggle = document.getElementById('allow_partial_use');
         const wrap = document.getElementById('value-limit-wrap');
         const type = document.getElementById('type');
+        const block = document.getElementById('partial-use-block');
 
         if (!toggle || !wrap) return;
 
         function sync() {
-            if (type && type.value !== 'fixed' && toggle.checked) {
-                toggle.checked = false;
-            }
+            const isFixed = !type || type.value === 'fixed';
+
+            // Only fixed-amount coupons can carry a balance
+            if (block) block.style.display = isFixed ? '' : 'none';
+            if (!isFixed && toggle.checked) toggle.checked = false;
+
             wrap.style.display = toggle.checked ? '' : 'none';
         }
 
