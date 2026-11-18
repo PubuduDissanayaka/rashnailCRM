@@ -3,6 +3,7 @@
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
+use Sentry\Laravel\Integration;
 
 return Application::configure(basePath: dirname(__DIR__))
     ->withRouting(
@@ -24,5 +25,7 @@ return Application::configure(basePath: dirname(__DIR__))
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
-        //
+        // Report unhandled exceptions to Sentry (pos.rashnaillounge.com project
+        // "Rash Nail Lounge CRM"). DSN lives in .env as SENTRY_LARAVEL_DSN.
+        Integration::handles($exceptions);
     })->create();
