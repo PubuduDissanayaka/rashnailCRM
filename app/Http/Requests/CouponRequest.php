@@ -54,7 +54,9 @@ class CouponRequest extends FormRequest
 
     public function rules(): array
     {
-        $couponId = $this->route('coupon')?->id;
+        // Route-model binding gives a Coupon; a plain route parameter gives an id.
+        $routeCoupon = $this->route('coupon');
+        $couponId = $routeCoupon instanceof Coupon ? $routeCoupon->id : $routeCoupon;
 
         return [
             // `coupons.code` is unique across live AND soft-deleted rows (deleted

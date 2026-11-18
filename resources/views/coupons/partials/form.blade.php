@@ -7,7 +7,7 @@
     // Present in every normal request via ShareErrorsFromSession; guard anyway so
     // the partial can also be rendered on its own (tests, exports).
     if (! isset($errors)) {
-        $errors = new Illuminate\Support\MessageBag();
+        $errors = new Illuminate\Support\ViewErrorBag();
     }
     $isEdit = (bool) $coupon;
     $selectedCustomerGroups = $selectedCustomerGroups ?? [];
