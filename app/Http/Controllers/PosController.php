@@ -1385,9 +1385,15 @@ class PosController extends Controller
         $sale->delete();
 
         foreach (\App\Models\Coupon::whereIn('id', $touchedCouponIds)->get() as $touchedCoupon) {
-            if ($touchedCoupon->isValueBased()) {
-                $touchedCoupon->syncConsumedValue();
+            if (! $touchedCoupon->isValueBased()) {
+                continue;
             }
+
+            // Sale::delete() is a soft delete, so the redemption rows survive it and the
+            // balance would stay spent. Voiding the sale refunds the value it used: drop
+            // those redemption rows and rebuild the balance from what is left.
+            $touchedCoupon->redemptions()->where('sale_id', $sale->id)->delete();
+            $touchedCoupon->syncConsumedValue();
         }
 
         return redirect()->route('pos.transactions')
