@@ -1376,7 +1376,17 @@ class PosController extends Controller
             abort(403, 'Unauthorized action.');
         }
 
+        // A value-based coupon's balance follows its redemption rows: deleting the sale
+        // removes those rows, so put the unspent value back on the code.
+        $touchedCouponIds = $sale->couponRedemptions()->pluck('coupon_id')->unique()->all();
+
         $sale->delete();
+
+        foreach (\App\Models\Coupon::whereIn('id', $touchedCouponIds)->get() as $touchedCoupon) {
+            if ($touchedCoupon->isValueBased()) {
+                $touchedCoupon->syncConsumedValue();
+            }
+        }
 
         return redirect()->route('pos.transactions')
             ->with('success', 'Sale deleted successfully.');
