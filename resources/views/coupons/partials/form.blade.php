@@ -4,6 +4,11 @@
      * Works with or without $coupon, so create and edit can never drift apart.
      */
     $coupon = $coupon ?? null;
+    // Present in every normal request via ShareErrorsFromSession; guard anyway so
+    // the partial can also be rendered on its own (tests, exports).
+    if (! isset($errors)) {
+        $errors = new Illuminate\Support\MessageBag();
+    }
     $isEdit = (bool) $coupon;
     $selectedCustomerGroups = $selectedCustomerGroups ?? [];
     $selectedLocations = $selectedLocations ?? [];
