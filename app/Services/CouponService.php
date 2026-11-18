@@ -26,9 +26,16 @@ class CouponService
     {
         $errors = [];
 
+        // 0. The card must have been handed to a customer before it can be used
+        if (!$coupon->isIssued()) {
+            $errors[] = 'This coupon card has not been issued yet.';
+        } elseif ($coupon->isExpired()) {
+            $errors[] = 'This coupon card expired on ' . $coupon->end_date->format('M d, Y') . '.';
+        }
+
         // 1. Active and date validity
-        if (!$coupon->isActive()) {
-            $errors[] = 'Coupon is not active or has expired.';
+        if (!$coupon->isActive() && $coupon->isIssued() && !$coupon->isExpired()) {
+            $errors[] = 'Coupon is not active.';
         }
 
         // 2. Remaining uses, or remaining balance for a value-based coupon
@@ -403,6 +410,9 @@ class CouponService
                         'name' => $batch->name . ' #' . ($startIndex + $i + 1),
                         'code' => $code,
                         'batch_id' => $batch->id,
+                        // Remember the window so the expiry can restart from the day the
+                        // card is actually handed over rather than the day it was printed.
+                        'valid_days' => $settings['valid_days'] ?? null,
                     ]));
 
                     $generated++;

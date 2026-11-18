@@ -119,7 +119,7 @@ class CouponController extends Controller
             'minimum_purchase_amount', 'start_date', 'end_date', 'timezone',
             'total_usage_limit', 'per_customer_limit', 'stackable', 'active',
             'location_restriction_type', 'customer_eligibility_type', 'product_restriction_type',
-            'metadata', 'batch_id',
+            'metadata', 'batch_id', 'valid_days',
         ]);
 
         // Columns that are NOT NULL with defaults in the database
@@ -160,6 +160,96 @@ class CouponController extends Controller
                 ]);
             }
         }
+    }
+
+    /**
+     * Mark a printed card as handed to a customer. The validity window starts here.
+     */
+    public function issue(Coupon $coupon)
+    {
+        $this->authorize('edit coupons');
+
+        if ($coupon->isIssued()) {
+            return $this->issueResponse($coupon, true, 'This coupon was already issued.');
+        }
+
+        $coupon->markIssued(auth()->id());
+
+        return $this->issueResponse(
+            $coupon,
+            true,
+            'Coupon ' . $coupon->code . ' marked as issued'
+                . ($coupon->end_date ? '. Valid until ' . $coupon->end_date->format('M d, Y') . '.' : '.')
+        );
+    }
+
+    /**
+     * Put a card back to "not issued" (printed in error, returned, withdrawn).
+     */
+    public function unissue(Coupon $coupon)
+    {
+        $this->authorize('edit coupons');
+
+        if (! $coupon->isIssued()) {
+            return $this->issueResponse($coupon, true, 'This coupon was not issued.');
+        }
+
+        if ($coupon->redemptions()->exists()) {
+            return $this->issueResponse($coupon, false, 'Coupon ' . $coupon->code . ' has already been used, so it cannot go back to not issued.');
+        }
+
+        $coupon->markUnissued();
+
+        return $this->issueResponse($coupon, true, 'Coupon ' . $coupon->code . ' marked as not issued.');
+    }
+
+    /**
+     * The list toggles this with fetch(), so answer JSON to those calls and redirect
+     * back with a flash for a plain form post.
+     */
+    private function issueResponse(Coupon $coupon, bool $ok, string $message)
+    {
+        $payload = [
+            'ok' => $ok,
+            'message' => $message,
+            'coupon' => [
+                'id' => $coupon->id,
+                'issued' => $coupon->isIssued(),
+                'issued_at' => $coupon->issued_at?->format('M d, Y'),
+                'issued_by' => $coupon->issued_by,
+                'end_date' => $coupon->end_date?->format('M d, Y'),
+                'expires_in' => $coupon->daysUntilExpiry(),
+                'status' => $coupon->statusLabel(),
+            ],
+        ];
+
+        if (request()->expectsJson()) {
+            return response()->json($payload, $ok ? 200 : 422);
+        }
+
+        return redirect()->back()->with($ok ? 'success' : 'error', $message);
+    }
+
+    /**
+     * Issue every card in a batch at once — the usual case when a printed sheet is
+     * handed over as a stack.
+     */
+    public function issueBatch(CouponBatch $batch)
+    {
+        $this->authorize('manage coupon batches');
+
+        $pending = $batch->coupons()->whereNull('issued_at')->get();
+
+        foreach ($pending as $coupon) {
+            $coupon->markIssued(auth()->id());
+        }
+
+        return redirect()->back()->with(
+            'success',
+            $pending->isEmpty()
+                ? 'Every code in this batch was already issued.'
+                : $pending->count() . ' code(s) in this batch marked as issued.'
+        );
     }
 
     /**
@@ -242,6 +332,10 @@ class CouponController extends Controller
         DB::beginTransaction();
         try {
             $coupon->update($data);
+
+            // An issued card's expiry is anchored to the day it was handed over, so a
+            // change to the validity window has to move the end date with it.
+            $coupon->syncExpiryFromIssue();
             $this->syncCouponRelations($coupon, $request);
 
             DB::commit();
@@ -301,7 +395,7 @@ class CouponController extends Controller
     public function bulkAction(Request $request)
     {
         $data = $request->validate([
-            'action' => 'required|in:activate,deactivate,delete',
+            'action' => 'required|in:activate,deactivate,issue,unissue,delete',
             'ids'    => 'required|array|min:1',
             'ids.*'  => 'integer',
         ], [
@@ -347,6 +441,35 @@ class CouponController extends Controller
             }
 
             return redirect()->back()->with('success', "{$deleted} coupon(s) permanently deleted. Those codes can be used again.");
+        }
+
+        // Issuing a stack of printed cards: the expiry of each one starts the day it is
+        // handed over, so this is done per coupon rather than with a single UPDATE.
+        if (in_array($data['action'], ['issue', 'unissue'], true)) {
+            $count = 0;
+
+            foreach ($coupons as $coupon) {
+                if ($data['action'] === 'issue') {
+                    if (! $coupon->isIssued()) {
+                        $coupon->markIssued(auth()->id());
+                        $count++;
+                    }
+                } else {
+                    if ($coupon->isIssued()) {
+                        $coupon->markUnissued();
+                        $count++;
+                    }
+                }
+            }
+
+            $verb = $data['action'] === 'issue' ? 'marked as issued' : 'marked as not issued';
+
+            return redirect()->back()->with(
+                'success',
+                $count === 0
+                    ? 'Nothing changed — those coupons were already ' . ($data['action'] === 'issue' ? 'issued.' : 'not issued.')
+                    : "{$count} coupon(s) {$verb}."
+            );
         }
 
         $active = $data['action'] === 'activate';
@@ -558,6 +681,8 @@ class CouponController extends Controller
             'timezone'                => config('app.timezone', 'Asia/Colombo'),
             // Starting number for any {SEQ:n} placeholder in the pattern
             'seq_start'               => $request->filled('seq_start') ? (int) $request->seq_start : 1,
+            // Validity counted from the day each printed card is handed over
+            'valid_days'              => (int) $request->valid_days,
             // Value-based ("wallet") coupons: a Rs 10,000 code that keeps its balance
             'allow_partial_use'       => $request->boolean('allow_partial_use'),
             'value_limit'             => $request->boolean('allow_partial_use') && $request->filled('discount_value')

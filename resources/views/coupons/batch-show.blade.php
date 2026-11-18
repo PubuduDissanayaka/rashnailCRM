@@ -66,6 +66,12 @@
                             </a>
                         @endcan
                         @if($batch->generated_count > 0)
+                            <form action="{{ route('coupons.batches.issue', $batch) }}" method="POST" class="d-inline">
+                                @csrf
+                                <button type="submit" class="btn btn-success btn-sm" title="Hand these cards over and start their validity window">
+                                    <i class="ti ti-check me-1"></i> Issue all codes
+                                </button>
+                            </form>
                             <a href="{{ route('coupons.batches.export', $batch) }}" class="btn btn-primary btn-sm">
                                 <i class="ti ti-download me-1"></i> Export CSV
                             </a>
@@ -91,6 +97,7 @@
                                 <th>Code</th>
                                 <th>Name</th>
                                 <th>Discount</th>
+                                <th>Issued</th>
                                 <th>Valid Until</th>
                                 <th>Usage</th>
                                 <th>Status</th>
@@ -109,10 +116,20 @@
                                             {{ \App\Models\Setting::get('payment.currency_symbol', 'Rs') }}{{ number_format((float) $coupon->discount_value, 2) }}
                                         @endif
                                     </td>
+                                    <td>
+                                        @if($coupon->isIssued())
+                                            <span class="text-success fw-semibold">Issued</span>
+                                            <div class="fs-xxs text-muted">{{ $coupon->issued_at->format('d M Y') }}</div>
+                                        @else
+                                            <span class="text-muted">Not issued</span>
+                                        @endif
+                                    </td>
                                     <td>{{ $coupon->end_date?->format('d M Y') ?? 'No expiry' }}</td>
                                     <td>{{ $coupon->redemptions_count ?? $coupon->redemptions()->count() }}{{ $coupon->total_usage_limit ? ' / ' . $coupon->total_usage_limit : '' }}</td>
                                     <td>
-                                        @if($coupon->isExpired())
+                                        @if(! $coupon->isIssued())
+                                            <span class="badge bg-secondary-subtle text-secondary">Not issued</span>
+                                        @elseif($coupon->isExpired())
                                             <span class="badge bg-danger-subtle text-danger">Expired</span>
                                         @elseif($coupon->isActive())
                                             <span class="badge bg-success-subtle text-success">Active</span>

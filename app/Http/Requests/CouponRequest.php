@@ -38,7 +38,7 @@ class CouponRequest extends FormRequest
 
         foreach (['description', 'discount_value', 'discount_percentage', 'max_discount_amount',
                   'minimum_purchase_amount', 'total_usage_limit', 'per_customer_limit',
-                  'end_date', 'metadata', 'batch_id', 'value_limit'] as $field) {
+                  'end_date', 'metadata', 'batch_id', 'value_limit', 'valid_days'] as $field) {
             if ($this->has($field) && $this->input($field) === '') {
                 $merge[$field] = null;
             }
@@ -98,6 +98,8 @@ class CouponRequest extends FormRequest
             'discount_value' => 'nullable|numeric|min:0.01|required_if:type,fixed',
             'allow_partial_use' => 'boolean',
             'value_limit' => 'nullable|numeric|min:0.01|required_if:allow_partial_use,1',
+            // Validity in days, counted from the issue date rather than the creation date
+            'valid_days' => 'nullable|integer|min:1|max:3650',
             'max_discount_amount' => 'nullable|numeric|min:0',
             'minimum_purchase_amount' => 'nullable|numeric|min:0',
             'start_date' => 'required|date',

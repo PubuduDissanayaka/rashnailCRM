@@ -16,6 +16,25 @@
                         <p class="text-muted mb-0">Code: <code class="fw-semibold fs-sm">{{ $coupon->code }}</code></p>
                     </div>
                     <div class="d-flex gap-2 align-items-center">
+                        @can('edit coupons')
+                            @if($coupon->isIssued())
+                                @unless($coupon->redemptions->count())
+                                <form action="{{ route('coupons.unissue', $coupon) }}" method="POST" class="d-inline">
+                                    @csrf @method('DELETE')
+                                    <button type="submit" class="btn btn-outline-secondary">
+                                        <i class="ti ti-arrow-back-up me-1"></i> Mark not issued
+                                    </button>
+                                </form>
+                                @endunless
+                            @else
+                                <form action="{{ route('coupons.issue', $coupon) }}" method="POST" class="d-inline">
+                                    @csrf
+                                    <button type="submit" class="btn btn-success">
+                                        <i class="ti ti-check me-1"></i> Mark as issued
+                                    </button>
+                                </form>
+                            @endif
+                        @endcan
                         <a href="{{ route('coupons.index') }}" class="btn btn-light">
                             <i class="ti ti-arrow-left me-1"></i> Back
                         </a>
@@ -96,6 +115,36 @@
                                     </p>
                                 </div>
                                 <div class="col-md-6">
+                                    <h6 class="text-uppercase text-muted fs-xs mb-2">Issue status</h6>
+                                    <div class="mb-3">
+                                        @if($coupon->isIssued())
+                                            <span class="badge bg-success-subtle text-success mb-1">Issued</span>
+                                            <div class="fs-sm text-muted">
+                                                Handed over {{ $coupon->issued_at->format('M d, Y') }}
+                                                @if($coupon->issued_by)
+                                                    by {{ optional(\App\Models\User::find($coupon->issued_by))->name }}
+                                                @endif
+                                            </div>
+                                            @if($coupon->end_date)
+                                                <div class="fs-sm {{ $coupon->isExpired() ? 'text-danger' : 'text-muted' }}">
+                                                    {{ $coupon->isExpired() ? 'Expired on' : 'Valid until' }}
+                                                    {{ $coupon->end_date->format('M d, Y') }}
+                                                    @if(! $coupon->isExpired() && $coupon->daysUntilExpiry() !== null)
+                                                        ({{ $coupon->daysUntilExpiry() }} day(s) left)
+                                                    @endif
+                                                </div>
+                                            @endif
+                                        @else
+                                            <span class="badge bg-secondary-subtle text-secondary mb-1">Not issued</span>
+                                            <div class="fs-sm text-muted">
+                                                Printed but not handed to a customer, so it cannot be redeemed yet.
+                                                @if($coupon->valid_days)
+                                                    Expiry starts when the card is issued ({{ $coupon->valid_days }} days).
+                                                @endif
+                                            </div>
+                                        @endif
+                                    </div>
+
                                     @if($coupon->isValueBased())
                                         @php
                                             $usedPct = $coupon->valueUsedPercent();

@@ -99,6 +99,15 @@
                     @error('end_date')<span class="text-danger"><small>{{ $message }}</small></span>@enderror
                 </div>
             </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="valid_days" class="form-label">Valid for (days after issue)</label>
+                                <input type="number" class="form-control" id="valid_days" name="valid_days" min="1" max="3650"
+                                       value="{{ old('valid_days', $coupon?->valid_days) }}" placeholder="e.g. 90">
+                                <div class="form-text">Counted from the day the card is handed to the customer, not from today. Leave empty to use the end date above.</div>
+                                @error('valid_days')<span class="text-danger"><small>{{ $message }}</small></span>@enderror
+                            </div>
+                        </div>
         </div>
         <div class="mb-3">
             <label for="timezone" class="form-label">Timezone <span class="text-danger">*</span></label>

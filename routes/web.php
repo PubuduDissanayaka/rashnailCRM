@@ -233,6 +233,15 @@ Route::middleware(['auth'])->group(function () {
 
         Route::delete('/coupons/{coupon}', [CouponController::class, 'destroy'])->middleware('can:delete coupons')->name('coupons.destroy');
 
+        // Issue tracking: printed cards are handed to customers, and the validity
+        // window starts on the day they are issued.
+        Route::post('/coupons/{coupon}/issue', [CouponController::class, 'issue'])
+            ->middleware('can:edit coupons')->name('coupons.issue');
+        Route::delete('/coupons/{coupon}/issue', [CouponController::class, 'unissue'])
+            ->middleware('can:edit coupons')->name('coupons.unissue');
+        Route::post('/coupons/batches/{batch}/issue', [CouponController::class, 'issueBatch'])
+            ->middleware('can:manage coupon batches')->name('coupons.batches.issue');
+
         // Bulk management from the coupons list (activate / deactivate / delete).
         // Declared before the wildcard routes for the same reason as "batches";
         // the per-action permission is enforced inside the controller.

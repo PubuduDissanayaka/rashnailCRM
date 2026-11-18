@@ -57,6 +57,8 @@
                     <span class="fw-semibold me-2"><span id="bulk-count">0</span> selected</span>
                     <button type="button" class="btn btn-sm btn-success" data-bulk="activate"><i class="ti ti-circle-check me-1"></i>Activate</button>
                     <button type="button" class="btn btn-sm btn-warning" data-bulk="deactivate"><i class="ti ti-circle-minus me-1"></i>Deactivate</button>
+                    <button type="button" class="btn btn-sm btn-primary" data-bulk="issue"><i class="ti ti-check me-1"></i>Mark issued</button>
+                    <button type="button" class="btn btn-sm btn-outline-secondary" data-bulk="unissue"><i class="ti ti-arrow-back-up me-1"></i>Mark not issued</button>
                     <button type="button" class="btn btn-sm btn-danger" data-bulk="delete"><i class="ti ti-trash me-1"></i>Delete permanently</button>
                     <button type="button" class="btn btn-sm btn-light ms-auto" id="bulk-clear">Clear selection</button>
                 </div>
@@ -74,6 +76,7 @@
                                 <th data-table-sort="sort-type">Type</th>
                                 <th data-table-sort="sort-discount">Discount</th>
                                 <th data-table-sort="sort-usage">Usage / Balance</th>
+                                <th data-table-sort="sort-issued">Issued</th>
                                 <th data-table-sort="sort-status">Status</th>
                                 <th class="text-center" style="width:1%">Actions</th>
                             </tr>
@@ -135,10 +138,52 @@
                                     @endif
                                 </td>
                                 <td>
-                                    @if($isActive)<span class="badge bg-success-subtle text-success">Active</span>
-                                    @elseif($isExpired)<span class="badge bg-danger-subtle text-danger">Expired</span>
-                                    @else<span class="badge bg-warning-subtle text-warning">Inactive</span>
-                                    @endif
+                                    {{-- Cards are printed and handed over: this switch records that --}}
+                                    <div class="d-flex align-items-center gap-2">
+                                        <div class="form-check form-switch m-0">
+                                            <input class="form-check-input js-issue-toggle" type="checkbox" role="switch"
+                                                   id="issue-{{ $coupon->id }}"
+                                                   data-id="{{ $coupon->id }}"
+                                                   data-code="{{ $coupon->code }}"
+                                                   data-url="{{ route('coupons.issue', $coupon) }}"
+                                                   aria-label="Mark {{ $coupon->code }} as issued"
+                                                   title="{{ $coupon->isIssued() ? 'Issued — switch off to mark as not issued' : 'Not issued — switch on when the card is handed over' }}"
+                                                   {{ $coupon->isIssued() ? 'checked' : '' }}
+                                                   @cannot('edit coupons') disabled @endcannot>
+                                        </div>
+                                        <div class="js-issue-info">
+                                            @if($coupon->isIssued())
+                                                <span class="fs-xs text-muted d-block">Issued {{ $coupon->issued_at->format('M d, Y') }}</span>
+                                                @if($coupon->end_date)
+                                                    <span class="fs-xxs {{ $coupon->isExpired() ? 'text-danger' : 'text-muted' }}">
+                                                        {{ $coupon->isExpired() ? 'Expired' : 'Valid to' }} {{ $coupon->end_date->format('M d, Y') }}
+                                                    </span>
+                                                @endif
+                                            @else
+                                                <span class="fs-xs text-muted d-block">Not issued</span>
+                                                <span class="fs-xxs text-muted">card not handed over</span>
+                                            @endif
+                                        </div>
+                                    </div>
+                                </td>
+                                <td class="js-status-cell">
+                                    @php $statusLabel = $coupon->statusLabel(); @endphp
+                                    @switch($statusLabel)
+                                        @case('not_issued')
+                                            <span class="badge bg-secondary-subtle text-secondary">Not issued</span>
+                                            @break
+                                        @case('expired')
+                                            <span class="badge bg-danger-subtle text-danger">Expired</span>
+                                            @break
+                                        @case('used_up')
+                                            <span class="badge bg-dark-subtle text-dark">Used up</span>
+                                            @break
+                                        @case('inactive')
+                                            <span class="badge bg-warning-subtle text-warning">Inactive</span>
+                                            @break
+                                        @default
+                                            <span class="badge bg-success-subtle text-success">Active</span>
+                                    @endswitch
                                 </td>
                                 <td class="text-center">
                                     <div class="d-flex justify-content-center gap-1">
@@ -157,7 +202,7 @@
                                 </td>
                             </tr>
                             @empty
-                            <tr><td colspan="8" class="text-center py-5 text-muted">No coupons found.</td></tr>
+                            <tr><td colspan="9" class="text-center py-5 text-muted">No coupons found.</td></tr>
                             @endforelse
                         </tbody>
                     </table>
@@ -222,6 +267,81 @@
                         customClass: { confirmButton: 'btn btn-danger me-2', cancelButton: 'btn btn-secondary' }
                     }).then(function (result) {
                         if (result.isConfirmed) form.submit();
+                    });
+                });
+            });
+
+            // ---------- issue toggle (printed cards) ----------
+            function issueToast(message, icon) {
+                if (window.Swal) {
+                    Swal.fire({ toast: true, position: 'top-end', icon: icon, title: message, showConfirmButton: false, timer: icon === 'error' ? 6000 : 3000, timerProgressBar: true });
+                }
+            }
+
+            document.querySelectorAll('.js-issue-toggle').forEach(function (input) {
+                input.addEventListener('change', function () {
+                    const issuing = input.checked;
+                    const url = input.dataset.url;
+                    input.disabled = true;
+
+                    fetch(url, {
+                        method: issuing ? 'POST' : 'DELETE',
+                        headers: {
+                            'X-CSRF-TOKEN': (document.querySelector('meta[name="csrf-token"]') || {}).content || '',
+                            'X-Requested-With': 'XMLHttpRequest',
+                            'Accept': 'application/json'
+                        }
+                    })
+                    .then(function (res) {
+                        return res.json().catch(function () { return null; }).then(function (data) {
+                            return { ok: res.ok, data: data };
+                        });
+                    })
+                    .then(function (result) {
+                        if (!result.ok || !result.data || !result.data.ok) {
+                            input.checked = !issuing;
+                            issueToast((result.data && result.data.message) || 'We could not update this coupon. Please try again.', 'error');
+                            return;
+                        }
+
+                        const coupon = result.data.coupon || {};
+                        const info = input.closest('td').querySelector('.js-issue-info');
+                        const cell = input.closest('tr').querySelector('.js-status-cell');
+
+                        if (info) {
+                            if (coupon.issued) {
+                                info.innerHTML = '<span class="fs-xs text-muted d-block">Issued ' + (coupon.issued_at || '') + '</span>' +
+                                    (coupon.end_date ? '<span class="fs-xxs text-muted">Valid to ' + coupon.end_date + '</span>' : '');
+                            } else {
+                                info.innerHTML = '<span class="fs-xs text-muted d-block">Not issued</span>' +
+                                    '<span class="fs-xxs text-muted">card not handed over</span>';
+                            }
+                        }
+
+                        if (cell) {
+                            const badges = {
+                                not_issued: ['bg-secondary-subtle text-secondary', 'Not issued'],
+                                expired: ['bg-danger-subtle text-danger', 'Expired'],
+                                used_up: ['bg-dark-subtle text-dark', 'Used up'],
+                                inactive: ['bg-warning-subtle text-warning', 'Inactive'],
+                                active: ['bg-success-subtle text-success', 'Active']
+                            };
+                            const badge = badges[coupon.status] || badges.active;
+                            cell.innerHTML = '<span class="badge ' + badge[0] + '">' + badge[1] + '</span>';
+                        }
+
+                        input.title = coupon.issued
+                            ? 'Issued — switch off to mark as not issued'
+                            : 'Not issued — switch on when the card is handed over';
+
+                        issueToast(result.data.message, 'success');
+                    })
+                    .catch(function () {
+                        input.checked = !issuing;
+                        issueToast('We could not reach the server. Please try again.', 'error');
+                    })
+                    .then(function () {
+                        input.disabled = false;
                     });
                 });
             });

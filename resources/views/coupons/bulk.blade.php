@@ -131,6 +131,7 @@
                             <div class="col-md-3 mb-3">
                                 <label class="form-label">Valid For (Days) <span class="text-danger">*</span></label>
                                 <input type="number" name="valid_days" class="form-control" value="{{ old('valid_days', 30) }}" min="1" max="3650" required>
+                                <div class="form-text">Counted from the day each card is issued to a customer, not from today.</div>
                                 @error('valid_days')<span class="text-danger"><small>{{ $message }}</small></span>@enderror
                             </div>
                         </div>

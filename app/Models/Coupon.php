@@ -32,6 +32,9 @@ class Coupon extends Model
         'per_customer_limit',
         'stackable',
         'active',
+        'issued_at',
+        'issued_by',
+        'valid_days',
         'location_restriction_type',
         'customer_eligibility_type',
         'product_restriction_type',
@@ -43,6 +46,8 @@ class Coupon extends Model
         'discount_value' => 'decimal:2',
 
         'allow_partial_use' => 'boolean',
+        'issued_at' => 'datetime',
+        'valid_days' => 'integer',
 
         'value_limit' => 'decimal:2',
 
@@ -133,6 +138,7 @@ class Coupon extends Model
     public function scopeActive($query)
     {
         return $query->where('active', true)
+            ->whereNotNull('issued_at')
             ->where('start_date', '<=', now())
             ->where(function ($q) {
                 $q->whereNull('end_date')->orWhere('end_date', '>=', now());
@@ -158,9 +164,104 @@ class Coupon extends Model
         return $this->end_date && $this->end_date->isPast();
     }
 
+    /**
+     * A card that has not been handed to a customer cannot be redeemed: it is printed
+     * but not live.
+     */
+    public function isIssued(): bool
+    {
+        return $this->issued_at !== null;
+    }
+
+    /**
+     * Give the card out. The validity window, if one is set, starts counting now —
+     * not on the day the code was generated — so the printed expiry matches what the
+     * customer is actually promised.
+     */
+    public function markIssued(?int $userId = null): void
+    {
+        if ($this->isIssued()) {
+            return;
+        }
+
+        $this->issued_at = now();
+        $this->issued_by = $userId;
+
+        if ($this->valid_days) {
+            $this->end_date = $this->issued_at->copy()->addDays((int) $this->valid_days);
+        }
+
+        $this->save();
+    }
+
+    /**
+     * Undo an issue (card printed by mistake, handed back, batch withdrawn).
+     */
+    public function markUnissued(): void
+    {
+        $this->issued_at = null;
+        $this->issued_by = null;
+        $this->save();
+    }
+
+    /**
+     * Recalculate the expiry from the issue date after the validity window is edited.
+     */
+    public function syncExpiryFromIssue(): void
+    {
+        if ($this->isIssued() && $this->valid_days) {
+            $this->end_date = $this->issued_at->copy()->addDays((int) $this->valid_days);
+            $this->saveQuietly();
+        }
+    }
+
+    /**
+     * The date the card stops being usable, as the customer would read it.
+     */
+    public function expiresAt(): ?\Illuminate\Support\Carbon
+    {
+        return $this->end_date;
+    }
+
+    /**
+     * Days left on an issued card, null when there is no expiry.
+     */
+    public function daysUntilExpiry(): ?int
+    {
+        if (! $this->end_date) {
+            return null;
+        }
+
+        return (int) now()->startOfDay()->diffInDays($this->end_date->copy()->startOfDay(), false);
+    }
+
+    /**
+     * One label for the list and the detail page.
+     */
+    public function statusLabel(): string
+    {
+        if (! $this->isIssued()) {
+            return 'not_issued';
+        }
+
+        if ($this->isExpired()) {
+            return 'expired';
+        }
+
+        if ($this->isValueBased() && $this->remainingValue() <= 0.004) {
+            return 'used_up';
+        }
+
+        if (! $this->active) {
+            return 'inactive';
+        }
+
+        return 'active';
+    }
+
     public function isActive(): bool
     {
-        return $this->active && !$this->isExpired() && $this->start_date->isPast();
+        return $this->active && $this->isIssued() && !$this->isExpired() && $this->start_date->isPast();
     }
 
     /**
