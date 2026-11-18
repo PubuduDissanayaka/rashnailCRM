@@ -396,6 +396,7 @@ class CouponController extends Controller
             'description'       => 'nullable|string|max:2000',
             'pattern'           => 'required|string|max:100',
             'count'             => 'required|integer|min:1|max:500',
+            'seq_start'         => 'nullable|integer|min:0|max:999999999',
             'coupon_type'       => 'required|in:fixed,percentage',
             'discount_value'    => $isPercentage
                 ? 'required|numeric|min:0.01|max:100'
@@ -410,6 +411,8 @@ class CouponController extends Controller
             'discount_value.required' => 'Enter the discount value for these coupons.',
             'discount_value.max' => 'A percentage discount cannot be more than 100.',
             'count.max' => 'You can generate at most 500 coupons in one batch.',
+            'seq_start.integer' => 'The start number must be a whole number.',
+            'seq_start.min' => 'The start number cannot be negative.',
         ]);
 
         // Without a placeholder every coupon in the batch would receive the same
@@ -431,6 +434,8 @@ class CouponController extends Controller
             'minimum_purchase_amount' => $request->min_purchase ? (float) $request->min_purchase : 0,
             'active'                  => true,
             'timezone'                => config('app.timezone', 'Asia/Colombo'),
+            // Starting number for any {SEQ:n} placeholder in the pattern
+            'seq_start'               => $request->filled('seq_start') ? (int) $request->seq_start : 1,
         ];
 
         $batch = CouponBatch::create([

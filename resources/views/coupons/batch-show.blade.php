@@ -33,6 +33,9 @@
             <div class="card card-animate"><div class="card-body">
                 <p class="fw-medium text-muted mb-0">Pattern</p>
                 <h5 class="mt-2 ff-secondary fw-semibold"><code>{{ $batch->pattern }}</code></h5>
+                @if(preg_match('/\{(?:SEQUENTIAL|SEQ):?/i', $batch->pattern))
+                    <p class="text-muted fs-xs mb-0">Numbering starts at {{ (int) ($batch->settings['seq_start'] ?? 1) }}</p>
+                @endif
             </div></div>
         </div>
         <div class="col-md-3">

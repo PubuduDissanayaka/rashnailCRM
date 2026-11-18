@@ -341,6 +341,9 @@ class CouponService
 
                 $count = $batch->remainingToGenerate();
                 $startIndex = (int) $batch->generated_count;
+                // {SEQ:n} starts here instead of 1, so a batch can continue an
+                // existing numbering (e.g. 501, 502, ...).
+                $seqStart = (int) ($batch->settings['seq_start'] ?? 1);
                 $generated = 0;
                 $skipped = 0;
 
@@ -350,7 +353,7 @@ class CouponService
                     // Retry with fresh randomness; a duplicate is a skip, never an
                     // SQL error.
                     for ($attempt = 0; $attempt < 10; $attempt++) {
-                        $candidate = $this->generateCodeFromPattern($batch->pattern, $startIndex + $i + $attempt);
+                        $candidate = $this->generateCodeFromPattern($batch->pattern, $startIndex + $i + $attempt, $seqStart);
 
                         if ($candidate !== '' && ! Coupon::withTrashed()->where('code', $candidate)->exists()) {
                             $code = $candidate;
@@ -393,30 +396,48 @@ class CouponService
      */
     public function patternHasPlaceholder(string $pattern): bool
     {
-        return (bool) preg_match('/\{(RANDOM|SEQUENTIAL|SEQ|DATE|TIME)/i', $pattern);
+        return (bool) preg_match('/\{(RANDOM|NUMBER|NUM|DIGITS|SEQUENTIAL|SEQ|DATE|TIME)/i', $pattern);
     }
 
     /**
-     * Generate a single coupon code from pattern.
+     * Expand a code pattern into one concrete coupon code.
+     *
+     * Supported placeholders (case-insensitive, colon optional):
+     *   {RANDOM:N}   N mixed letters + digits (always contains at least one digit)
+     *   {NUMBER:N}   N digits only          (aliases: {NUM:N}, {DIGITS:N})
+     *   {SEQ:N}      zero-padded running number, starting at the batch's start number
+     *                (alias {SEQUENTIAL:N}; {SEQ:4:501} sets length and start inline)
+     *   {DATE}       yyyymmdd today         {DATE-YMD} same        {TIME} unix timestamp
+     *
+     * @param  int       $index    Position inside the batch (0 based).
+     * @param  int|null  $seqStart First number used by {SEQ:...} (defaults to 1).
      */
-    private function generateCodeFromPattern(string $pattern, int $index = 0): string
+    private function generateCodeFromPattern(string $pattern, int $index = 0, ?int $seqStart = null): string
     {
         $code = $pattern;
+        $seqBase = $seqStart ?? 1;
 
-        // Random placeholders — accept {RANDOM6}, {RANDOM:6} and bare {RANDOM}
-        // (the form has always advertised the colon form, the old regex did not).
-        $code = preg_replace_callback('/\{RANDOM:?(\d*)\}/i', function ($m) {
+        // {NUMBER:N} / {NUM:N} / {DIGITS:N} — digits only. Handled before
+        // {RANDOM} so the words cannot shadow each other.
+        $code = preg_replace_callback('/\{(?:NUMBER|NUM|DIGITS):?(\d*)\}/i', function ($m) {
             $length = $m[1] !== '' ? (int) $m[1] : 6;
-            $length = max(1, min($length, 32));
 
-            return $this->randomCodeSegment($length);
+            return $this->numericCodeSegment(max(1, min($length, 32)));
         }, $code);
 
-        // Sequential placeholders — {SEQUENTIAL4}, {SEQUENTIAL:4}, {SEQ4}, {SEQ:4}
-        $code = preg_replace_callback('/\{(?:SEQUENTIAL|SEQ):?(\d*)\}/i', function ($m) use ($index) {
-            $length = $m[1] !== '' ? (int) $m[1] : 4;
+        // {RANDOM:N} / {RANDOMN} / {RANDOM} — mixed letters and digits.
+        $code = preg_replace_callback('/\{RANDOM:?(\d*)\}/i', function ($m) {
+            $length = $m[1] !== '' ? (int) $m[1] : 6;
 
-            return str_pad((string) ($index + 1), max(1, $length), '0', STR_PAD_LEFT);
+            return $this->randomCodeSegment(max(1, min($length, 32)));
+        }, $code);
+
+        // {SEQ:4}, {SEQUENTIAL:4}, {SEQ4}, and {SEQ:4:501} (length:start)
+        $code = preg_replace_callback('/\{(?:SEQUENTIAL|SEQ):?(\d*)(?::(\d+))?\}/i', function ($m) use ($index, $seqBase) {
+            $length = $m[1] !== '' ? (int) $m[1] : 4;
+            $start = ($m[2] ?? '') !== '' ? (int) $m[2] : $seqBase;
+
+            return str_pad((string) ($start + $index), max(1, min($length, 12)), '0', STR_PAD_LEFT);
         }, $code);
 
         // Date / time placeholders
@@ -427,16 +448,44 @@ class CouponService
     }
 
     /**
-     * Random alphanumeric segment (no vowels, so codes cannot spell words).
+     * Mixed random segment: uppercase letters (no vowels, so codes cannot spell
+     * words) plus digits, always containing at least one of each when the
+     * segment is long enough.
      */
     private function randomCodeSegment(int $length): string
     {
-        $alphabet = '0123456789BCDFGHJKLMNPQRSTVWXYZ';
-        $max = strlen($alphabet) - 1;
-        $out = '';
+        $digits = '0123456789';
+        $letters = 'BCDFGHJKLMNPQRSTVWXYZ';
 
+        if ($length === 1) {
+            $pool = $digits.$letters;
+
+            return $pool[random_int(0, strlen($pool) - 1)];
+        }
+
+        $chars = [
+            $digits[random_int(0, strlen($digits) - 1)],
+            $letters[random_int(0, strlen($letters) - 1)],
+        ];
+
+        $pool = $digits.$letters;
+        for ($i = 2; $i < $length; $i++) {
+            $chars[] = $pool[random_int(0, strlen($pool) - 1)];
+        }
+
+        shuffle($chars);
+
+        return implode('', $chars);
+    }
+
+    /**
+     * Digits-only random segment.
+     */
+    private function numericCodeSegment(int $length): string
+    {
+        $out = '';
         for ($i = 0; $i < $length; $i++) {
-            $out .= $alphabet[random_int(0, $max)];
+            $out .= (string) random_int(0, 9);
         }
 
         return $out;

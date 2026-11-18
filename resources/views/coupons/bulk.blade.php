@@ -34,22 +34,31 @@
                     <form method="POST" action="{{ route('coupons.bulk.generate') }}" id="bulk-form">
                         @csrf
                         <div class="row">
-                            <div class="col-md-6 mb-3">
+                            <div class="col-md-4 mb-3">
                                 <label class="form-label">Batch Name <span class="text-danger">*</span></label>
                                 <input type="text" name="name" class="form-control" required maxlength="255" value="{{ old('name') }}" placeholder="e.g. Summer Sale 2026">
                                 @error('name')<span class="text-danger"><small>{{ $message }}</small></span>@enderror
                             </div>
-                            <div class="col-md-6 mb-3">
+                            <div class="col-md-5 mb-3">
                                 <label class="form-label">Code Pattern <span class="text-danger">*</span></label>
                                 <input type="text" name="pattern" id="pattern" class="form-control text-uppercase" required maxlength="100"
                                        value="{{ old('pattern', 'COUPON-{RANDOM:6}') }}" placeholder="e.g. SUMMER-{RANDOM:6}">
                                 <div class="form-text">
-                                    Placeholders: <code>{RANDOM:6}</code> random letters/digits &middot;
-                                    <code>{SEQ:4}</code> running number &middot; <code>{DATE}</code> today &middot; <code>{TIME}</code> timestamp.
+                                    <code>{RANDOM:4}</code> random letters <strong>and numbers</strong> (e.g. <code>N9JH</code>) &middot;
+                                    <code>{NUMBER:4}</code> numbers only (e.g. <code>4821</code>) &middot;
+                                    <code>{SEQ:4}</code> running number &middot;
+                                    <code>{DATE}</code> today &middot; <code>{TIME}</code> timestamp.
                                     A pattern without a placeholder can only produce one code.
                                 </div>
                                 <div class="mt-1 fs-xs text-muted">Example codes: <span id="pattern-preview">—</span></div>
                                 @error('pattern')<span class="text-danger"><small>{{ $message }}</small></span>@enderror
+                            </div>
+                            <div class="col-md-3 mb-3">
+                                <label class="form-label" for="seq_start">Start number for {SEQ}</label>
+                                <input type="number" name="seq_start" id="seq_start" class="form-control" min="0" max="999999999" step="1"
+                                       value="{{ old('seq_start', 1) }}">
+                                <div class="form-text">The first code gets this number, then it counts up (e.g. 501, 502, 503).</div>
+                                @error('seq_start')<span class="text-danger"><small>{{ $message }}</small></span>@enderror
                             </div>
                         </div>
 
@@ -131,13 +140,31 @@
             const prefix = document.getElementById('discount-prefix');
             const symbol = @json($currencySymbol);
 
-            const ALPHABET = '0123456789BCDFGHJKLMNPQRSTVWXYZ';
-            const random = (n) => Array.from({ length: n }, () => ALPHABET[Math.floor(Math.random() * ALPHABET.length)]).join('');
+            const DIGITS = '0123456789';
+            const LETTERS = 'BCDFGHJKLMNPQRSTVWXYZ';
+            const seqInput = document.getElementById('seq_start');
+
+            // mixed: at least one digit and one letter, like the server does
+            function random(length) {
+                if (length === 1) return (DIGITS + LETTERS)[Math.floor(Math.random() * (DIGITS.length + LETTERS.length))];
+                const chars = [DIGITS[Math.floor(Math.random() * 10)], LETTERS[Math.floor(Math.random() * LETTERS.length)]];
+                while (chars.length < length) chars.push((DIGITS + LETTERS)[Math.floor(Math.random() * (DIGITS.length + LETTERS.length))]);
+                return chars.sort(() => Math.random() - 0.5).join('');
+            }
+
+            function numeric(length) {
+                return Array.from({ length }, () => DIGITS[Math.floor(Math.random() * 10)]).join('');
+            }
 
             function sample(text, index) {
+                const seqStart = parseInt((seqInput && seqInput.value) || '1', 10);
                 return String(text)
+                    .replace(/\{(?:NUMBER|NUM|DIGITS):?(\d*)\}/gi, (m, n) => numeric(parseInt(n || '6', 10)))
                     .replace(/\{RANDOM:?(\d*)\}/gi, (m, n) => random(parseInt(n || '6', 10)))
-                    .replace(/\{(?:SEQUENTIAL|SEQ):?(\d*)\}/gi, (m, n) => String(index).padStart(parseInt(n || '4', 10), '0'))
+                    .replace(/\{(?:SEQUENTIAL|SEQ):?(\d*)(?::(\d+))?\}/gi, (m, n, start) => {
+                        const from = start ? parseInt(start, 10) : (isNaN(seqStart) ? 1 : seqStart);
+                        return String(from + index).padStart(parseInt(n || '4', 10), '0');
+                    })
                     .replace(/\{DATE-YMD\}|\{DATE\}/gi, new Date().toISOString().slice(0, 10).replace(/-/g, ''))
                     .replace(/\{TIME\}/gi, String(Math.floor(Date.now() / 1000)))
                     .toUpperCase();
@@ -146,7 +173,7 @@
             function refreshPreview() {
                 if (!pattern || !preview) return;
                 const value = pattern.value || '';
-                preview.textContent = value ? [1, 2, 3].map((i) => sample(value, i)).join(', ') : '—';
+                preview.textContent = value ? [0, 1, 2].map((i) => sample(value, i)).join(', ') : '—';
             }
 
             function refreshDiscountLabel() {
@@ -155,6 +182,7 @@
             }
 
             pattern?.addEventListener('input', refreshPreview);
+            seqInput?.addEventListener('input', refreshPreview);
             type?.addEventListener('change', refreshDiscountLabel);
             refreshPreview();
             refreshDiscountLabel();
