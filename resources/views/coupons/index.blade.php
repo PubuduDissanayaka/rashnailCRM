@@ -29,7 +29,7 @@
 
     <div class="row">
         <div class="col-12">
-            <div class="card" data-table="" data-table-rows-per-page="10">
+            <div class="card" data-table="" data-table-rows-per-page="25">
                 <div class="card-header border-light justify-content-between">
                     <div class="d-flex gap-2">
                         <div class="app-search">
