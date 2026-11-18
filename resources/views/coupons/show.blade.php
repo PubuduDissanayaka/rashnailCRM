@@ -126,9 +126,16 @@
 
                                     <h6 class="text-uppercase text-muted fs-xs mb-2">Usage Limits</h6>
                                     <p class="mb-3">
-                                        Total: {{ $coupon->total_usage_limit ?: '&#8734;' }}<br>
-                                        Per Customer: {{ $coupon->per_customer_limit ?: '&#8734;' }}<br>
-                                        Used: {{ $stats['total_redemptions'] ?? 0 }} times
+                                        @if($coupon->isValueBased())
+                                            Limited by balance: this code can be used until the
+                                            {{ $currencySymbol }}{{ number_format($coupon->valueLimit(), 2) }} runs out.<br>
+                                            Used so far: {{ $stats['total_redemptions'] ?? 0 }} time(s),
+                                            {{ $currencySymbol }}{{ number_format((float) $coupon->consumed_value, 2) }} of value.
+                                        @else
+                                            Total: {{ $coupon->total_usage_limit ?: '&#8734;' }}<br>
+                                            Per Customer: {{ $coupon->per_customer_limit ?: '&#8734;' }}<br>
+                                            Used: {{ $stats['total_redemptions'] ?? 0 }} times
+                                        @endif
                                     </p>
                                 </div>
                                 <div class="col-md-6">
