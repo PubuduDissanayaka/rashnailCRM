@@ -105,7 +105,9 @@ class PosController extends Controller
             // Split payments validation
             'payments' => 'required_if:payment_method,null|array|min:1|max:10',
             'payments.*.method' => 'required|in:' . implode(',', $availableMethods),
-            'payments.*.amount' => 'required|numeric|min:0.01|max:' . Setting::get('payment.pos.max_payment_amount', 100000),
+            // A coupon can cover the whole sale, in which case the till legitimately takes
+            // nothing. The sum-vs-total check below still refuses a short payment.
+            'payments.*.amount' => 'required|numeric|min:0|max:' . Setting::get('payment.pos.max_payment_amount', 100000),
             'payments.*.reference' => 'nullable|string|max:100|regex:/^[A-Za-z0-9\-_#]+$/',
             'payments.*.notes' => 'nullable|string|max:500',
             // Legacy single payment (backward compat)
