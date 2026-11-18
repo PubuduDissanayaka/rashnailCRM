@@ -29,6 +29,12 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
+        // Pagination markup. Laravel defaults to the Tailwind view, whose Previous/Next
+        // arrows are inline SVGs sized by Tailwind classes (w-5 h-5). This theme has no
+        // Tailwind, so those classes do nothing and each arrow renders at its default
+        // size — the giant chevrons under any paginated table.
+        \Illuminate\Pagination\Paginator::useBootstrapFive();
+
         // Brute-force protection for the login form (used by routes/web.php).
         // Keyed by email + IP so one noisy account cannot lock out everyone, and by
         // IP alone so spraying many accounts is still bounded.
