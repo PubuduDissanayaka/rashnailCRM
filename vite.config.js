@@ -159,4 +159,22 @@ export default defineConfig({
             refresh: true,
         }),
     ],
+
+    build: {
+        rollupOptions: {
+            output: {
+                // Vite hashes and then deletes the previous files, so a browser holding a
+                // cached app-<hash>.css would ask for a font that no longer exists and fall
+                // back to a stray glyph (a giant icon in the middle of the page). Fonts keep
+                // a stable name; JS and CSS stay hashed so they still bust the cache.
+                assetFileNames: function (assetInfo) {
+                    var name = assetInfo.name || assetInfo.names?.[0] || "";
+                    if (/\.(woff2?|ttf|otf|eot)$/i.test(name)) {
+                        return "assets/fonts/[name][extname]";
+                    }
+                    return "assets/[name]-[hash][extname]";
+                },
+            },
+        },
+    },
 });

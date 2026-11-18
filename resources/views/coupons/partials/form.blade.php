@@ -185,7 +185,7 @@
         <div class="border rounded p-3 mb-3 bg-light bg-opacity-50" id="partial-use-block" style="display:none">
             <div class="form-check form-switch mb-1">
                 <input class="form-check-input" type="checkbox" role="switch" id="allow_partial_use" name="allow_partial_use" value="1"
-                       {{ old('allow_partial_use', $coupon?->allow_partial_use) ? 'checked' : '' }}>
+                       {{ old('allow_partial_use', $coupon?->allow_partial_use ?? true) ? 'checked' : '' }}>
                 <label class="form-check-label fw-semibold" for="allow_partial_use">
                     Allow partial use (keeps the remaining balance)
                 </label>
