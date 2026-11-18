@@ -114,7 +114,8 @@ class CouponController extends Controller
     private function couponPayload(CouponRequest $request): array
     {
         $data = $request->only([
-            'code', 'name', 'description', 'type', 'discount_value', 'max_discount_amount',
+            'code', 'name', 'description', 'type', 'discount_value', 'allow_partial_use', 'value_limit',
+            'max_discount_amount',
             'minimum_purchase_amount', 'start_date', 'end_date', 'timezone',
             'total_usage_limit', 'per_customer_limit', 'stackable', 'active',
             'location_restriction_type', 'customer_eligibility_type', 'product_restriction_type',
