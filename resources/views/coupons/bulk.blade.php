@@ -33,6 +33,38 @@
                 <div class="card-body">
                     <form method="POST" action="{{ route('coupons.bulk.generate') }}" id="bulk-form">
                         @csrf
+
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label" for="batch_id">Batch</label>
+                                <select name="batch_id" id="batch_id" class="form-select" data-choices data-choices-search-true>
+                                    <option value="" data-name="New batch">Create a new batch</option>
+                                    @foreach($batches as $b)
+                                        <option value="{{ $b->id }}"
+                                                data-name="{{ $b->name }}"
+                                                data-pattern="{{ $b->pattern }}"
+                                                data-count="{{ $b->count }}"
+                                                data-generated="{{ $b->generated_count }}"
+                                                {{ (string) old('batch_id', $preselectedBatchId) === (string) $b->id ? 'selected' : '' }}>
+                                            {{ $b->name }} — {{ $b->generated_count }}/{{ $b->count }} codes
+                                        </option>
+                                    @endforeach
+                                </select>
+                                <div class="form-text">Add codes to a batch you already have, or leave this on <strong>Create a new batch</strong>.</div>
+                                @error('batch_id')<span class="text-danger"><small>{{ $message }}</small></span>@enderror
+                            </div>
+                            <div class="col-md-6 mb-3 d-none" id="append-info">
+                                <div class="alert alert-info mb-0 py-2">
+                                    <div class="fw-semibold">Adding to <span id="append-name"></span></div>
+                                    <div class="fs-xs mt-1">
+                                        Pattern <code id="append-pattern"></code> &middot; <span id="append-count"></span>
+                                        New codes keep that batch's discount, dates and limits and continue its numbering.
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div id="new-batch-fields">
                         <div class="row">
                             <div class="col-md-4 mb-3">
                                 <label class="form-label">Batch Name <span class="text-danger">*</span></label>
@@ -69,11 +101,6 @@
                         </div>
 
                         <div class="row">
-                            <div class="col-md-3 mb-3">
-                                <label class="form-label">Number of Coupons <span class="text-danger">*</span></label>
-                                <input type="number" name="count" class="form-control" value="{{ old('count', 10) }}" min="1" max="500" required>
-                                @error('count')<span class="text-danger"><small>{{ $message }}</small></span>@enderror
-                            </div>
                             <div class="col-md-3 mb-3">
                                 <label class="form-label">Coupon Type <span class="text-danger">*</span></label>
                                 <select name="coupon_type" id="coupon_type" class="form-select" required>
@@ -119,6 +146,16 @@
                             </div>
                         </div>
 
+                        </div>{{-- /#new-batch-fields --}}
+
+                        <div class="row">
+                            <div class="col-md-3 mb-3">
+                                <label class="form-label" id="count-label">Number of Coupons <span class="text-danger">*</span></label>
+                                <input type="number" name="count" class="form-control" value="{{ old('count', 10) }}" min="1" max="500" required>
+                                @error('count')<span class="text-danger"><small>{{ $message }}</small></span>@enderror
+                            </div>
+                        </div>
+
                         <div class="text-end">
                             <a href="{{ route('coupons.batches') }}" class="btn btn-light me-2">All batches</a>
                             <a href="{{ route('coupons.index') }}" class="btn btn-light me-2">Cancel</a>
@@ -132,6 +169,7 @@
 @endsection
 
 @section('scripts')
+    @vite(['resources/js/pages/form-choice.js'])
     <script>
         document.addEventListener('DOMContentLoaded', function () {
             const pattern = document.getElementById('pattern');
@@ -139,6 +177,42 @@
             const type = document.getElementById('coupon_type');
             const prefix = document.getElementById('discount-prefix');
             const symbol = @json($currencySymbol);
+
+            // ---- new batch vs top-up an existing batch ----
+            const batchSelect = document.getElementById('batch_id');
+            const newBatchFields = document.getElementById('new-batch-fields');
+            const appendInfo = document.getElementById('append-info');
+            const countLabel = document.getElementById('count-label');
+
+            function syncMode() {
+                const opt = batchSelect && batchSelect.options[batchSelect.selectedIndex];
+                const isAppend = !!(opt && opt.value);
+
+                newBatchFields?.classList.toggle('d-none', isAppend);
+                appendInfo?.classList.toggle('d-none', !isAppend);
+
+                // A required field inside a hidden container blocks submission in
+                // Chrome ("not focusable"), so disable them while topping up a batch.
+                newBatchFields?.querySelectorAll('input, select, textarea').forEach(function (field) {
+                    field.disabled = isAppend;
+                });
+
+                if (isAppend) {
+                    document.getElementById('append-name').textContent = opt.dataset.name || '';
+                    document.getElementById('append-pattern').textContent = opt.dataset.pattern || '';
+                    document.getElementById('append-count').textContent = (opt.dataset.generated || '0') + ' of ' + (opt.dataset.count || '0') + ' code(s) generated so far.';
+                    if (countLabel) {
+                        countLabel.innerHTML = 'How many coupons to add <span class="text-danger">*</span>';
+                        document.querySelector('[name=count]').value = 5;
+                    }
+                } else if (countLabel) {
+                    countLabel.innerHTML = 'Number of Coupons <span class="text-danger">*</span>';
+                }
+            }
+
+            batchSelect?.addEventListener('change', syncMode);
+            // Choices.js hides the native select, so listen on the value it sets back
+            batchSelect && new MutationObserver(syncMode).observe(batchSelect, { attributes: true, childList: true, subtree: true });
 
             const DIGITS = '0123456789';
             const LETTERS = 'BCDFGHJKLMNPQRSTVWXYZ';
@@ -186,6 +260,7 @@
             type?.addEventListener('change', refreshDiscountLabel);
             refreshPreview();
             refreshDiscountLabel();
+            syncMode();
         });
     </script>
 @endsection

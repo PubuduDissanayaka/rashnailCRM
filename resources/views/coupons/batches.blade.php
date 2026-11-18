@@ -75,11 +75,22 @@
                                             <a href="{{ route('coupons.batches.show', $batch) }}" class="btn btn-light btn-icon btn-sm rounded-circle" title="View codes">
                                                 <i class="ti ti-eye fs-lg"></i>
                                             </a>
+                                            <a href="{{ route('coupons.batches.edit', $batch) }}" class="btn btn-light btn-icon btn-sm rounded-circle" title="Edit batch">
+                                                <i class="ti ti-edit fs-lg"></i>
+                                            </a>
                                             @if($batch->generated_count > 0)
                                                 <a href="{{ route('coupons.batches.export', $batch) }}" class="btn btn-light btn-icon btn-sm rounded-circle" title="Export CSV">
                                                     <i class="ti ti-download fs-lg"></i>
                                                 </a>
                                             @endif
+                                            <form method="POST" action="{{ route('coupons.batches.destroy', $batch) }}" class="js-delete-batch d-inline"
+                                                  data-name="{{ $batch->name }}">
+                                                @csrf
+                                                @method('DELETE')
+                                                <button type="button" class="btn btn-danger btn-icon btn-sm rounded-circle js-delete-batch-btn" title="Delete batch">
+                                                    <i class="ti ti-trash fs-lg"></i>
+                                                </button>
+                                            </form>
                                         </div>
                                     </td>
                                 </tr>
@@ -98,4 +109,38 @@
             </div>
         </div>
     </div>
+@endsection
+
+@section('scripts')
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            document.querySelectorAll('.js-delete-batch').forEach(function (form) {
+                const btn = form.querySelector('.js-delete-batch-btn');
+                if (!btn) return;
+
+                btn.addEventListener('click', function () {
+                    const name = form.dataset.name || 'this batch';
+                    const text = 'Unused codes in this batch are removed for good and can be issued again. Redeemed coupons are kept. This cannot be undone.';
+
+                    if (!window.Swal) {
+                        if (confirm('Delete batch ' + name + '?')) form.submit();
+                        return;
+                    }
+
+                    Swal.fire({
+                        title: 'Delete batch ' + name + '?',
+                        text: text,
+                        icon: 'warning',
+                        showCancelButton: true,
+                        confirmButtonText: 'Yes, delete it',
+                        cancelButtonText: 'Cancel',
+                        buttonsStyling: false,
+                        customClass: { confirmButton: 'btn btn-danger me-2', cancelButton: 'btn btn-secondary' }
+                    }).then(function (result) {
+                        if (result.isConfirmed) form.submit();
+                    });
+                });
+            });
+        });
+    </script>
 @endsection

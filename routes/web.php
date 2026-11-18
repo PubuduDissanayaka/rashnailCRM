@@ -222,6 +222,9 @@ Route::middleware(['auth'])->group(function () {
         Route::middleware(['can:manage coupon batches'])->group(function () {
             Route::get('/coupons/batches', [CouponController::class, 'batches'])->name('coupons.batches');
             Route::get('/coupons/batches/{batch}', [CouponController::class, 'showBatch'])->name('coupons.batches.show');
+            Route::get('/coupons/batches/{batch}/edit', [CouponController::class, 'editBatch'])->name('coupons.batches.edit');
+            Route::put('/coupons/batches/{batch}', [CouponController::class, 'updateBatch'])->name('coupons.batches.update');
+            Route::delete('/coupons/batches/{batch}', [CouponController::class, 'destroyBatch'])->name('coupons.batches.destroy');
             Route::get('/coupons/batches/{batch}/export', [CouponController::class, 'exportBatch'])->name('coupons.batches.export');
         });
         Route::get('/coupons/{coupon}', [CouponController::class, 'show'])->name('coupons.show');

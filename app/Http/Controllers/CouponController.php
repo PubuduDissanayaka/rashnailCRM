@@ -454,8 +454,11 @@ class CouponController extends Controller
     {
         $this->authorize('manage coupon batches');
 
-        $batches = CouponBatch::all();
-        return view('coupons.bulk', compact('batches'));
+        $batches = CouponBatch::orderByDesc('id')->get(['id', 'name', 'pattern', 'count', 'generated_count', 'settings']);
+        // ?batch=ID opens the form ready to top that batch up (used by the "Add codes" button)
+        $preselectedBatchId = (int) request('batch') ?: null;
+
+        return view('coupons.bulk', compact('batches', 'preselectedBatchId'));
     }
 
     /**
@@ -466,6 +469,48 @@ class CouponController extends Controller
         $this->authorize('manage coupon batches');
 
         $isPercentage = $request->input('coupon_type') === 'percentage';
+
+        // ---- append to an existing batch ----
+        // Choosing a batch on the bulk form tops it up instead of creating a new
+        // one: the batch keeps its pattern and settings, and the new codes
+        // continue the numbering where the old ones stopped.
+        if ($request->filled('batch_id') && (int) $request->batch_id > 0) {
+            $target = CouponBatch::find((int) $request->batch_id);
+
+            if (! $target) {
+                return redirect()->route('coupons.bulk.create')
+                    ->with('error', 'That coupon batch no longer exists. Pick another batch or create a new one.');
+            }
+
+            $add = (int) $request->count;
+
+            if ($add < 1 || $add > 500) {
+                throw ValidationException::withMessages([
+                    'count' => 'Enter how many coupons to add (1 to 500).',
+                ]);
+            }
+
+            $target->forceFill([
+                'count' => (int) $target->generated_count + $add,
+                'status' => CouponBatch::STATUS_PENDING,
+            ])->save();
+
+            try {
+                $result = $this->couponService->generateBulkCoupons($target);
+            } catch (\Throwable $e) {
+                \Log::error('Bulk coupon append failed', ['batch' => $target->id, 'error' => $e->getMessage()]);
+
+                return redirect()->route('coupons.batches.show', $target)
+                    ->with('error', 'The coupons could not be generated. Nothing was added — try again.');
+            }
+
+            $message = "{$result['generated']} coupon(s) added to batch '{$target->name}' — it now holds {$target->fresh()->generated_count} code(s).";
+            if ($result['skipped'] > 0) {
+                $message .= " {$result['skipped']} code(s) were skipped because they already exist; use {SEQ:N} or a longer {RANDOM:N} in the batch pattern.";
+            }
+
+            return redirect()->route('coupons.batches.show', $target)->with('success', $message);
+        }
 
         $request->validate([
             'name'              => 'required|string|max:255',
@@ -564,6 +609,136 @@ class CouponController extends Controller
         $batch->load(['coupons' => fn ($q) => $q->orderBy('id')]);
 
         return view('coupons.batch-show', compact('batch'));
+    }
+
+    /**
+     * Edit a batch: its name, description, pattern and the settings its coupons
+     * were built from.
+     */
+    public function editBatch(CouponBatch $batch)
+    {
+        $this->authorize('manage coupon batches');
+
+        $batch->loadCount('coupons');
+
+        return view('coupons.batch-edit', compact('batch'));
+    }
+
+    /**
+     * Save changes to a batch. Coupon settings (discount, validity, limits) are
+     * stored on the batch and can optionally be pushed to the coupons that were
+     * already generated from it.
+     */
+    public function updateBatch(Request $request, CouponBatch $batch)
+    {
+        $this->authorize('manage coupon batches');
+
+        $isPercentage = $request->input('coupon_type') === 'percentage';
+
+        $data = $request->validate([
+            'name'           => 'required|string|max:255',
+            'description'    => 'nullable|string|max:2000',
+            'pattern'        => 'required|string|max:100',
+            'seq_start'      => 'nullable|integer|min:0|max:999999999',
+            'coupon_type'    => 'required|in:fixed,percentage',
+            'discount_value' => $isPercentage
+                ? 'required|numeric|min:0.01|max:100'
+                : 'required|numeric|min:0.01',
+            'start_date'     => 'nullable|date',
+            'end_date'       => 'nullable|date|after_or_equal:start_date',
+            'usage_limit'    => 'nullable|integer|min:1',
+            'per_customer'   => 'required|integer|min:1',
+            'min_purchase'   => 'nullable|numeric|min:0',
+            'apply_to_coupons' => 'nullable|boolean',
+        ], [
+            'name.required' => 'Give this batch a name.',
+            'pattern.required' => 'Enter a code pattern, for example SUMMER-{RANDOM:6}.',
+            'discount_value.max' => 'A percentage discount cannot be more than 100.',
+            'end_date.after_or_equal' => 'The end date cannot be before the start date.',
+        ]);
+
+        $settings = array_merge($batch->settings ?? [], [
+            'type'                    => $data['coupon_type'],
+            'discount_value'          => (float) $data['discount_value'],
+            'start_date'              => $data['start_date'] ?? $batch->settings['start_date'] ?? now()->toDateTimeString(),
+            'end_date'                => $data['end_date'] ?? null,
+            'total_usage_limit'       => $data['usage_limit'] ? (int) $data['usage_limit'] : null,
+            'per_customer_limit'      => (int) $data['per_customer'],
+            'minimum_purchase_amount' => $data['min_purchase'] ? (float) $data['min_purchase'] : 0,
+            'active'                  => $request->boolean('active'),
+            'timezone'                => config('app.timezone', 'Asia/Colombo'),
+            'seq_start'               => isset($data['seq_start']) ? (int) $data['seq_start'] : (int) ($batch->settings['seq_start'] ?? 1),
+        ]);
+
+        $batch->update([
+            'name'        => $data['name'],
+            'description' => $data['description'] ?? null,
+            'pattern'     => $data['pattern'],
+            'settings'    => $settings,
+        ]);
+
+        $applied = 0;
+        if ($request->boolean('apply_to_coupons')) {
+            $applied = $batch->coupons()->update([
+                'type'                    => $settings['type'],
+                'discount_value'          => $settings['discount_value'],
+                'start_date'              => $settings['start_date'],
+                'end_date'                => $settings['end_date'],
+                'total_usage_limit'       => $settings['total_usage_limit'],
+                'per_customer_limit'      => $settings['per_customer_limit'],
+                'minimum_purchase_amount' => $settings['minimum_purchase_amount'],
+                'active'                  => $settings['active'],
+                'timezone'                => $settings['timezone'],
+            ]);
+        }
+
+        return redirect()->route('coupons.batches.show', $batch)->with(
+            'success',
+            "Batch '{$batch->name}' updated." . ($applied > 0 ? " The new settings were applied to {$applied} coupon(s)." : '')
+        );
+    }
+
+    /**
+     * Delete a batch. Its unused codes go with it (they can be issued again);
+     * codes that were already redeemed are kept and detached from the batch so
+     * sale history stays intact.
+     */
+    public function destroyBatch(CouponBatch $batch)
+    {
+        $this->authorize('manage coupon batches');
+
+        try {
+            [$deletableIds, $keptIds] = [[], []];
+
+            foreach ($batch->coupons()->get() as $coupon) {
+                if ($coupon->redemptions()->exists()) {
+                    $keptIds[] = $coupon->id;
+                } else {
+                    $deletableIds[] = $coupon->id;
+                }
+            }
+
+            $deleted = $deletableIds === [] ? 0 : Coupon::whereIn('id', $deletableIds)->forceDelete();
+            $kept = count($keptIds);
+            if ($kept > 0) {
+                Coupon::whereIn('id', $keptIds)->update(['batch_id' => null]);
+            }
+
+            $name = $batch->name;
+            $batch->delete();
+
+            $message = "Batch '{$name}' deleted. {$deleted} unused code(s) removed.";
+            if ($kept > 0) {
+                $message .= " {$kept} redeemed coupon(s) were kept and are now listed without a batch.";
+            }
+
+            return redirect()->route('coupons.batches')->with('success', $message);
+        } catch (\Throwable $e) {
+            \Log::error('Coupon batch delete failed', ['batch' => $batch->id, 'error' => $e->getMessage()]);
+
+            return redirect()->route('coupons.batches')
+                ->with('error', 'We could not delete this batch. Please try again.');
+        }
     }
 
     /**

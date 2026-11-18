@@ -57,11 +57,28 @@
                         @endif
                     </div>
                     <div class="d-flex gap-2">
+                        @can('manage coupon batches')
+                            <a href="{{ route('coupons.batches.edit', $batch) }}" class="btn btn-light btn-sm">
+                                <i class="ti ti-edit me-1"></i> Edit
+                            </a>
+                            <a href="{{ route('coupons.bulk.create', ['batch' => $batch->id]) }}" class="btn btn-outline-primary btn-sm">
+                                <i class="ti ti-plus me-1"></i> Add codes
+                            </a>
+                        @endcan
                         @if($batch->generated_count > 0)
                             <a href="{{ route('coupons.batches.export', $batch) }}" class="btn btn-primary btn-sm">
                                 <i class="ti ti-download me-1"></i> Export CSV
                             </a>
                         @endif
+                        @can('manage coupon batches')
+                            <form method="POST" action="{{ route('coupons.batches.destroy', $batch) }}" id="delete-batch-form" class="d-inline">
+                                @csrf
+                                @method('DELETE')
+                                <button type="button" class="btn btn-danger btn-sm" id="delete-batch-btn">
+                                    <i class="ti ti-trash me-1"></i> Delete
+                                </button>
+                            </form>
+                        @endcan
                         <a href="{{ route('coupons.batches') }}" class="btn btn-light btn-sm">
                             <i class="ti ti-arrow-left me-1"></i> All batches
                         </a>
@@ -125,4 +142,36 @@
             </div>
         </div>
     </div>
+@endsection
+
+@section('scripts')
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            const btn = document.getElementById('delete-batch-btn');
+            const form = document.getElementById('delete-batch-form');
+            if (!btn || !form) return;
+
+            btn.addEventListener('click', function () {
+                const text = 'Unused codes in this batch are removed for good and can be issued again. Redeemed coupons are kept. This cannot be undone.';
+
+                if (!window.Swal) {
+                    if (confirm('Delete batch ' + @json($batch->name) + '?')) form.submit();
+                    return;
+                }
+
+                Swal.fire({
+                    title: 'Delete batch ' + @json($batch->name) + '?',
+                    text: text,
+                    icon: 'warning',
+                    showCancelButton: true,
+                    confirmButtonText: 'Yes, delete it',
+                    cancelButtonText: 'Cancel',
+                    buttonsStyling: false,
+                    customClass: { confirmButton: 'btn btn-danger me-2', cancelButton: 'btn btn-secondary' }
+                }).then(function (result) {
+                    if (result.isConfirmed) form.submit();
+                });
+            });
+        });
+    </script>
 @endsection

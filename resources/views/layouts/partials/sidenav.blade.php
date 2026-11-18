@@ -257,6 +257,12 @@
                         </li>
 
                         <li class="side-nav-item">
+                            <a class="side-nav-link" href="{{ route('coupons.batches') }}">
+                                <span class="menu-text">Batches</span>
+                            </a>
+                        </li>
+
+                        <li class="side-nav-item">
                             <a class="side-nav-link" href="{{ route('customer-groups.index') }}">
                                 <span class="menu-text">Customer Groups</span>
                             </a>

@@ -22,6 +22,7 @@
                             <a class="dropdown-item" href="{{ route('coupons.index') }}">All Coupons</a>
                             <a class="dropdown-item" href="{{ route('coupons.create') }}">Create Coupon</a>
                             <a class="dropdown-item" href="{{ route('coupons.bulk.create') }}">Bulk Generation</a>
+                            <a class="dropdown-item" href="{{ route('coupons.batches') }}">Batches</a>
 
                             <a class="dropdown-item" href="{{ route('customer-groups.index') }}">Customer Groups</a>
                             <a class="dropdown-item" href="{{ route('reports.coupons.index') }}">Reports</a>
