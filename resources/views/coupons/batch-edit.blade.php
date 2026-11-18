@@ -11,6 +11,14 @@
         $isPercentage = ($s['type'] ?? 'fixed') === 'percentage';
     @endphp
 
+    @php
+        // Shared by ShareErrorsFromSession in a normal request; guarded so the view
+        // can also be rendered outside one (tests, exports).
+        if (! isset($errors)) {
+            $errors = new Illuminate\Support\ViewErrorBag();
+        }
+    @endphp
+
     @if ($errors->any())
         <div class="alert alert-danger d-flex align-items-start gap-2" role="alert">
             <i class="ti ti-alert-triangle fs-lg mt-1"></i>
