@@ -50,7 +50,10 @@ class AlertController extends Controller
             $query->whereDate('created_at', '<=', $request->date_to);
         }
 
-        $alerts = $query->paginate(20);
+        // The list is paged in the browser by custom-table.js (data-table / data-table-pagination),
+        // so the controller has to hand it every row: server paging here left the rest of the
+        // records unreachable and made the page-size control look dead.
+        $alerts = $query->get();
 
         // Get statistics
         $stats = $alertService->getAlertStatistics();

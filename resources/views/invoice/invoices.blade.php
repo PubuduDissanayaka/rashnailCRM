@@ -159,7 +159,7 @@
                 <div class="card-footer border-0">
                     <div class="d-flex justify-content-between align-items-center">
                         <div data-table-pagination-info="invoices"></div>
-                        <div data-table-pagination="">{{ $invoices->links() }}</div>
+                        <div data-table-pagination=""></div>
                     </div>
                 </div>
             </div>

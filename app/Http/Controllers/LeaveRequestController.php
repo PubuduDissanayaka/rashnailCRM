@@ -43,7 +43,7 @@ class LeaveRequestController extends Controller
             $query->where('end_date', '<=', $request->end_date);
         }
 
-        $leaveRequests = $query->orderBy('created_at', 'desc')->paginate(15);
+        $leaveRequests = $query->orderBy('created_at', 'desc')->get();
 
         // Get staff members for filter dropdown
         $staffMembers = User::withStaffRole()->get();
@@ -256,7 +256,7 @@ class LeaveRequestController extends Controller
         $user = auth()->user();
         $leaveRequests = LeaveRequest::where('user_id', $user->id)
             ->orderBy('created_at', 'desc')
-            ->paginate(10);
+            ->get();
 
         return view('leaves.my-requests', compact('leaveRequests'));
     }

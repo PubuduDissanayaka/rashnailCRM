@@ -59,7 +59,10 @@ class ExpenseController extends Controller
             });
         }
 
-        $expenses = $query->paginate(20);
+        // The list is paged in the browser by custom-table.js (data-table / data-table-pagination),
+        // so the controller has to hand it every row: server paging here left the rest of the
+        // records unreachable and made the page-size control look dead.
+        $expenses = $query->get();
 
         // Stats
         $stats = [

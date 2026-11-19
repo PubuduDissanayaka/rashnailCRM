@@ -119,7 +119,10 @@
                     </table>
                 </div>
                 <div class="card-footer border-0">
-                    {{ $leaveRequests->links() }}
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div data-table-pagination-info="requests"></div>
+                        <div data-table-pagination=""></div>
+                    </div>
                 </div>
             </div>
         </div>

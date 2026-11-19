@@ -28,7 +28,10 @@ class CustomerController extends Controller
             }
         }
 
-        $customers = $query->latest()->paginate(10);
+        // The list is paged in the browser by custom-table.js (data-table / data-table-pagination),
+        // so the controller has to hand it every row: server paging here left the rest of the
+        // records unreachable and made the page-size control look dead.
+        $customers = $query->latest()->get();
 
         $stats = [
             'total' => Customer::count(),

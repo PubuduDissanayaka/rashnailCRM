@@ -20,7 +20,8 @@ class InvoiceController extends Controller
 
         $invoices = Invoice::with(['sale', 'customer'])
             ->orderBy('created_at', 'desc')
-            ->paginate(15);
+            // Paged in the browser by custom-table.js, so every row has to reach the view.
+            ->get();
 
         $currencySymbol = Setting::get('payment.currency_symbol', '$');
 

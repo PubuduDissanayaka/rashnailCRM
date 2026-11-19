@@ -18,7 +18,10 @@ class Table {
         if (this.thead) {
             this.headers = Array.from(this.thead.querySelectorAll('th'));
         }
-        this.rows = Array.from(this.tbody.querySelectorAll('tr'));
+        // A card grid can carry data-table="" without a <table> inside. Reading rows off a null
+        // tbody threw here and took the whole CustomTable init down with it, so every table after
+        // it on the page lost its search, pager and page-size control.
+        this.rows = this.tbody ? Array.from(this.tbody.querySelectorAll('tr')) : [];
         this.filteredRows = [...this.rows];
         this.rowsPerPage = parseInt(table.getAttribute(this.parentInstance.rowsPerPageAttribute) ?? this.parentInstance.rowsPerPage);
         this.currentPage = this.parentInstance.currentPage;
@@ -121,6 +124,34 @@ class Table {
         });
     }
 
+    // Filter option values and the text in a cell rarely match character for character
+    // ("in_progress" vs "In Progress", "paid" vs "Paid"), which made a working filter look dead.
+    normaliseFilterText(value) {
+        return String(value ?? '')
+            .replace(/[_\-]+/g, ' ')
+            .replace(/\s+/g, ' ')
+            .trim()
+            .toLowerCase();
+    }
+
+    resolveColumnIndex(column) {
+        if (!column) return -1;
+
+        const key = String(column).toLowerCase();
+        const byDataColumn = this.headers.findIndex(th => (th.dataset.column || '').toLowerCase() === key);
+
+        if (byDataColumn !== -1) return byDataColumn;
+
+        // Most tables in this app never carried data-column, so a filter found no column, matched
+        // every row, and looked broken. The sort attribute already names the column (sort-gender),
+        // so use it as the fallback.
+        return this.headers.findIndex(th => {
+            const sort = (th.getAttribute(this.parentInstance.sortAttribute) || '').toLowerCase();
+
+            return sort === key || sort === 'sort-' + key || sort.endsWith('-' + key);
+        });
+    }
+
     applyFilters() {
 
         const matchesFilters = row => {
@@ -129,13 +160,13 @@ class Table {
                 if (!selectedValue || selectedValue === "All") return true;
 
                 const column = filter.dataset.tableFilter;
-                const headerIndex = this.headers.findIndex(th => th.dataset.column === column);
+                const headerIndex = this.resolveColumnIndex(column);
                 if (headerIndex === -1) return true;
 
                 const cell = row.children[headerIndex];
                 if (!cell) return true;
 
-                return cell.textContent.trim().toLowerCase() === selectedValue.toLowerCase();
+                return this.normaliseFilterText(cell.textContent) === this.normaliseFilterText(selectedValue);
             });
         };
 
@@ -145,7 +176,7 @@ class Table {
                 if (!selectedRange || selectedRange === "All") return true;
 
                 const column = filter.dataset.tableRangeFilter;
-                const headerIndex = this.headers.findIndex(th => th.dataset.column === column);
+                const headerIndex = this.resolveColumnIndex(column);
                 if (headerIndex === -1) return true;
 
                 const cell = row.children[headerIndex];
@@ -233,6 +264,13 @@ class Table {
             rowsPerPageSelect.addEventListener('change', (e) => {
                 e.preventDefault();
                 this.rowsPerPage = parseInt(e.target.value);
+
+                // On page 7 of 10 rows and switching to 100 rows per page, page 7 of 2 does not
+                // exist: clamp to the last real page instead of rendering "Nothing found".
+                if (this.currentPage > this.totalPages) {
+                    this.currentPage = this.totalPages;
+                }
+
                 this.update();
             });
         }
@@ -724,6 +762,12 @@ class CustomTable {
 
         tableElements.forEach((table) => {
             const tableInstance = new Table(table, this);
+
+            // Not a table (a card grid carrying the attribute, for instance): leave it alone.
+            if (!tableInstance.tbody) {
+                return;
+            }
+
             this.tables.push(tableInstance);
             tableInstance.init();
         });

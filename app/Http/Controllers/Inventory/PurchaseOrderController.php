@@ -43,7 +43,8 @@ class PurchaseOrderController extends Controller
                 });
             })
             ->orderBy('created_at', 'desc')
-            ->paginate(20);
+            // Paged in the browser by custom-table.js, so every row has to reach the view.
+            ->get();
 
         $stats = [
             'total' => PurchaseOrder::count(),

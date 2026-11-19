@@ -42,7 +42,10 @@ class AppointmentController extends Controller
             $query->whereDate('appointment_date', $request->date);
         }
 
-        $appointments = $query->paginate(20)->withQueryString();
+        // The list is paged in the browser by custom-table.js (data-table / data-table-pagination),
+        // so the controller has to hand it every row: server paging here left the rest of the
+        // records unreachable and made the page-size control look dead.
+        $appointments = $query->get();
 
         // Stats
         $stats = [
